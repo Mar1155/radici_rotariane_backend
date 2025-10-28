@@ -1,0 +1,19 @@
+# Django REST API Template - Requirements
+# This file is auto-generated from pyproject.toml for compatibility
+# Prefer using: uv sync
+
+django>=5.2.7
+djangorestframework>=3.16.1
+djangorestframework-simplejwt>=5.5.1
+python-decouple>=3.8
+pillow>=12.0.0
+psycopg[binary,c]>=3.2.11
+dj-database-url>=2.1.0
+
+# Development dependencies (optional)
+# pytest>=8.0.0
+# pytest-django>=4.7.0
+# coverage>=7.4.0
+# black>=24.0.0
+# flake8>=7.0.0
+# ipython>=8.20.0
