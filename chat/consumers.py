@@ -1,6 +1,6 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import Chat, Message
+from .models import Chat, Message, ChatParticipant
 from django.db.models import Q
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -13,7 +13,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4401)
             return
 
-        # Controllo che l'utente faccia parte della chat
+        # Controllo che l'utente faccia parte della chat (diretta o gruppo)
         if not await self._is_participant(user.id):
             await self.close(code=4403)
             return
@@ -41,9 +41,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _is_participant(self, user_id):
-        return Chat.objects.filter(id=self.chat_id).filter(
-            Q(user1_id=user_id) | Q(user2_id=user_id)
-        ).exists()
+        """Verifica se l'utente fa parte della chat."""
+        try:
+            chat = Chat.objects.get(id=self.chat_id)
+            return ChatParticipant.objects.filter(
+                chat=chat,
+                user_id=user_id
+            ).exists()
+        except Chat.DoesNotExist:
+            return False
 
     @database_sync_to_async
     def _get_message_history(self, limit=50):
