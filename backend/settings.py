@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders']
+INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section']
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
@@ -85,6 +85,12 @@ DATABASES = {
         conn_max_age=600,
         conn_health_checks=True,
     )
+}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 AUTH_PASSWORD_VALIDATORS = [

@@ -1,0 +1,33 @@
+# serializers.py
+from rest_framework import serializers
+from .models import Card
+
+
+class CardSerializer(serializers.ModelSerializer):
+    display_date = serializers.CharField(source='get_display_date', read_only=True)
+    is_past = serializers.BooleanField(source='is_past_event', read_only=True)
+    author_name = serializers.CharField(source='author.username', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Card
+        fields = [
+            'id',
+            'title',
+            'subtitle',
+            'slug',
+            'cover_image',
+            'tags',
+            'content',
+            'date_type',
+            'date',
+            'date_start',
+            'date_end',
+            'display_date',
+            'is_past',
+            'created_at',
+            'updated_at',
+            'is_published',
+            'views_count',
+            'author_name',
+        ]
+        read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']

@@ -21,3 +21,14 @@ whitenoise>=6.6.0
 # black>=24.0.0
 # flake8>=7.0.0
 # ipython>=8.20.0
+
+python-decouple
+dj_database_url
+djangorestframework
+channels
+corsheaders
+django-cors-headers
+psycopg2-binary
+djangorestframework-simplejwt
+Pillow
+whitenoise
