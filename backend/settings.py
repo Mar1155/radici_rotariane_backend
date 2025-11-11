@@ -14,7 +14,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-CHANGE-THIS-SECRET-KE
 
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0,192.168.1.140', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,0.0.0.0,192.168.1.161', cast=Csv())
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -166,7 +166,7 @@ LOGGING = {
         },
         'django.db.backends': {
             'handlers': ['console'],
-            'level': 'DEBUG',  # Cambia a DEBUG per vedere le query SQL
+            'level': 'INFO',  # Cambia a DEBUG per vedere le query SQL
             'propagate': False,
         },
         'app.custom': {

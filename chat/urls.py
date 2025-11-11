@@ -13,6 +13,18 @@ chat_detail = ChatViewSet.as_view({
 chat_direct = ChatViewSet.as_view({
     "post": "direct",
 })
+chat_create_group = ChatViewSet.as_view({
+    "post": "create_group",
+})
+chat_add_participant = ChatViewSet.as_view({
+    "post": "add_participant",
+})
+chat_remove_participant = ChatViewSet.as_view({
+    "post": "remove_participant",
+})
+chat_leave_group = ChatViewSet.as_view({
+    "post": "leave_group",
+})
 
 message_list = MessageViewSet.as_view({
     "get": "list",
@@ -29,8 +41,16 @@ urlpatterns = [
     path("", chat_list, name="chat-list"),
     # crea o recupera chat diretta
     path("direct/", chat_direct, name="chat-direct"),
+    # crea gruppo
+    path("create_group/", chat_create_group, name="chat-create-group"),
     # dettaglio chat
     path("<uuid:pk>/", chat_detail, name="chat-detail"),
+    # aggiungi partecipante al gruppo
+    path("<uuid:pk>/add_participant/", chat_add_participant, name="chat-add-participant"),
+    # rimuovi partecipante dal gruppo
+    path("<uuid:pk>/remove_participant/", chat_remove_participant, name="chat-remove-participant"),
+    # esci dal gruppo
+    path("<uuid:pk>/leave_group/", chat_leave_group, name="chat-leave-group"),
 
     # Messages dentro una chat
     path("<uuid:chat_pk>/messages/", message_list, name="message-list"),

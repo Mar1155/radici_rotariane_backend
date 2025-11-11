@@ -32,7 +32,7 @@ serve:
 	echo "   - http://127.0.0.1:8000"; \
 	if [ -n "$$IP" ]; then echo "   - http://$$IP:8000"; fi; \
 	echo ""; \
-	uv run python manage.py runserver 0.0.0.0:8000
+	uv run daphne -b 0.0.0.0 -p 8000 backend.asgi:application
 
 # Database migrations
 migrate:
