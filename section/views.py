@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from .models import Card
 from .serializers import CardSerializer
 import json
-
+from datetime import datetime
+import traceback
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
@@ -20,6 +21,7 @@ def create_card(request):
         subtitle = request.data.get('subtitle')
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
+        print(tags_json)
         content = request.data.get('content')
         date_type = request.data.get('dateType')
         
@@ -47,14 +49,12 @@ def create_card(request):
         # Aggiungi date in base al tipo
         if date_type == 'single':
             date = request.data.get('date')
-            if date:
-                card_data['date'] = date
+            card_data['date'] = datetime.strptime(date, "%Y-%m-%d").date()
         elif date_type == 'range':
             date_start = request.data.get('dateStart')
             date_end = request.data.get('dateEnd')
-            if date_start and date_end:
-                card_data['date_start'] = date_start
-                card_data['date_end'] = date_end
+            card_data['date_start'] = datetime.strptime(date_start, "%Y-%m-%d").date()
+            card_data['date_end'] = datetime.strptime(date_end, "%Y-%m-%d").date()
         
         # Crea la card
         card = Card.objects.create(**card_data)
@@ -75,6 +75,7 @@ def create_card(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception as e:
+        traceback.print_exc()
         return Response(
             {'error': f'Errore durante la creazione: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR

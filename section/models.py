@@ -41,6 +41,7 @@ class Card(models.Model):
     
     # Tags - usa ArrayField se PostgreSQL, altrimenti JSONField
     # Per PostgreSQL:
+    '''
     tags = ArrayField(
         models.CharField(max_length=50),
         blank=True,
@@ -48,14 +49,15 @@ class Card(models.Model):
         verbose_name="Tags",
         help_text="Lista di tag associati alla card"
     )
+    '''
     
     # Se usi MySQL/SQLite invece di PostgreSQL:
-    # from django.db.models import JSONField
-    # tags = JSONField(
-    #     default=list,
-    #     blank=True,
-    #     verbose_name="Tags"
-    # )
+    from django.db.models import JSONField
+    tags = JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Tags"
+    )
     
     # Contenuto ricco (HTML dall'editor)
     # TextField supporta testo molto grande (fino a ~2GB in PostgreSQL)
@@ -105,7 +107,7 @@ class Card(models.Model):
     )
     
     is_published = models.BooleanField(
-        default=False,
+        default=True,
         verbose_name="Pubblicato",
         help_text="La card è visibile pubblicamente"
     )
