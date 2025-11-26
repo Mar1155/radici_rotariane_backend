@@ -26,7 +26,6 @@ python-decouple
 dj_database_url
 djangorestframework
 channels
-corsheaders
 django-cors-headers
 psycopg2-binary
 djangorestframework-simplejwt
