@@ -13,6 +13,7 @@ Documentazione completa di tutti gli endpoint dell'applicazione Chat.
   - [Dettaglio Chat](#2-dettaglio-chat)
   - [Crea Chat Diretta](#3-crea-chat-diretta)
   - [Crea Gruppo](#4-crea-gruppo)
+  - [Forum Globale](#45-forum-globale)
   - [Elimina Chat](#5-elimina-chat)
   - [Aggiorna Chat](#6-aggiorna-chat)
 - [Gestione Partecipanti](#gestione-partecipanti)
@@ -269,6 +270,37 @@ Content-Type: application/json
 
 **Errori**:
 - `400 Bad Request`: Nome vuoto o participant_ids non validi
+
+---
+
+### 4.5 Forum Globale
+
+Recupera (o crea se non esiste) il forum globale accessibile a tutti.
+
+**Endpoint**: `GET /api/chats/forum/`
+
+**Headers**:
+```
+Authorization: Bearer {access_token}
+```
+
+**Risposta** (200 OK):
+```json
+{
+  "id": "...",
+  "chat_type": "forum",
+  "name": "Forum Globale",
+  "description": "Chat comune a tutti gli utenti",
+  "created_by": null,
+  "created_at": "...",
+  "participants_details": [],
+  "participant_count": 0
+}
+```
+
+**Note**:
+- Il forum è accessibile a tutti gli utenti autenticati.
+- Non richiede di essere aggiunto come partecipante.
 
 ---
 

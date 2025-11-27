@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section']
+INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section', 'forum']
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [

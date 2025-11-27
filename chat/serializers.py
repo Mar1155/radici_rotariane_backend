@@ -6,10 +6,13 @@ User = get_user_model()
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_username = serializers.CharField(source='sender.username', read_only=True)
+    chat = serializers.PrimaryKeyRelatedField(read_only=True)
+    sender = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = Message
         fields = ["id", "chat", "sender", "sender_username", "body", "created_at", "client_msg_id"]
+        read_only_fields = ["id", "created_at"]
 
 
 class ChatParticipantSerializer(serializers.ModelSerializer):
