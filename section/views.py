@@ -11,7 +11,7 @@ import traceback
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-def create_card(request):
+def create_card(request, section):
     """
     Crea una nuova card dal form Next.js
     """
@@ -21,7 +21,6 @@ def create_card(request):
         subtitle = request.data.get('subtitle')
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
-        print(tags_json)
         content = request.data.get('content')
         date_type = request.data.get('dateType')
         
@@ -37,6 +36,7 @@ def create_card(request):
         
         # Prepara i dati per il modello
         card_data = {
+            'section': section,
             'title': title,
             'subtitle': subtitle,
             'cover_image': cover_image,
@@ -83,11 +83,11 @@ def create_card(request):
 
 
 @api_view(['GET'])
-def list_cards(request):
+def list_cards(request, section):
     """
     Lista tutte le cards pubblicate
     """
-    cards = Card.objects.filter(is_published=True)
+    cards = Card.objects.filter(is_published=True, section=section)
     serializer = CardSerializer(cards, many=True)
     return Response(serializer.data)
 

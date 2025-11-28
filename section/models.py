@@ -11,8 +11,24 @@ class Card(models.Model):
         ('range', 'Range di Date'),
         ('none', 'Nessuna Data'),
     ]
+
+    SECTION_CHOICES = [
+        ("storie-e-radici", "Storie e Radici"),
+        ("scopri-la-calabria", "Scopri la Calabria"),
+        ("scambi-e-mobilita", "Scambi e Mobilità"),
+        ("adotta-un-progetto", "Adotta un Progetto"),
+        ("partner-e-collaborazioni", "Partner e Collaborazioni"),
+        ("eccellenze-calabresi", "Eccellenze Calabresi")
+    ]
     
     # Campi base
+    section = models.CharField(
+        max_length=30,
+        choices=SECTION_CHOICES,
+        default="storie-e-radici",
+        verbose_name="Sezione",
+    )
+
     title = models.CharField(
         max_length=255,
         verbose_name="Titolo",
