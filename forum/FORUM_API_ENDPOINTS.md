@@ -63,13 +63,28 @@ Returns post with all comments.
     {
       "id": "uuid",
       "post": "post_uuid",
+      "parent_id": null,
       "author": {
         "id": 2,
         "username": "user2"
       },
       "text": "Comment text",
       "created_at": "2024-11-27T10:00:00Z",
-      "updated_at": "2024-11-27T10:00:00Z"
+      "updated_at": "2024-11-27T10:00:00Z",
+      "replies": [
+        {
+          "id": "reply_uuid",
+          "post": "post_uuid",
+          "parent_id": "uuid",
+          "author": {
+            "id": 3,
+            "username": "user3"
+          },
+          "text": "Reply text",
+          "created_at": "2024-11-27T11:00:00Z",
+          "updated_at": "2024-11-27T11:00:00Z"
+        }
+      ]
     }
   ],
   "created_at": "2024-11-27T10:00:00Z",
@@ -140,7 +155,19 @@ Adds a comment to a post.
 }
 ```
 
-**Response:** Returns the created comment object.
+**Request Body (reply example):**
+```json
+{
+  "text": "Comment text",
+  "parent_id": "parent_comment_uuid" // Optional, only for replies
+}
+```
+
+**Response:** Returns the created comment object, including `parent_id` and nested `replies` (always empty for new comments).
+
+**Notes:**
+- Replies are limited to one nesting level (you cannot reply to an existing reply).
+- `parent_id` must belong to a comment of the same post.
 
 ### Update Comment
 ```

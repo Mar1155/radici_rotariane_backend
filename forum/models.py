@@ -31,6 +31,13 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments'
     )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name='replies',
+        null=True,
+        blank=True
+    )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

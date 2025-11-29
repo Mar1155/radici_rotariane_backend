@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from .models import Post, Comment
 from .serializers import (
     PostListSerializer,
@@ -33,9 +33,27 @@ class PostViewSet(viewsets.ModelViewSet):
     pagination_class = PostPagination
 
     def get_queryset(self):
-        return Post.objects.annotate(
-            comment_count=Count('comments')
+        queryset = Post.objects.annotate(
+            comment_count=Count('comments', distinct=True)
         ).select_related('author').order_by('-created_at')
+
+        if getattr(self, 'action', None) == 'retrieve':
+            reply_prefetch = Prefetch(
+                'comments',
+                queryset=Comment.objects.filter(parent__isnull=True)
+                .select_related('author')
+                .prefetch_related(
+                    Prefetch(
+                        'replies',
+                        queryset=Comment.objects.select_related('author').order_by('created_at')
+                    )
+                )
+                .order_by('created_at'),
+                to_attr='prefetched_comments'
+            )
+            queryset = queryset.prefetch_related(reply_prefetch)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -73,26 +91,32 @@ class PostViewSet(viewsets.ModelViewSet):
     def comments(self, request, pk=None):
         """Get paginated comments for a post."""
         post = self.get_object()
-        comments = post.comments.select_related('author').order_by('created_at')
+        replies_prefetch = Prefetch(
+            'replies',
+            queryset=Comment.objects.select_related('author').order_by('created_at')
+        )
+        comments = post.comments.filter(parent__isnull=True).select_related('author').prefetch_related(
+            replies_prefetch
+        ).order_by('created_at')
         
         paginator = CommentPagination()
         page = paginator.paginate_queryset(comments, request)
         if page is not None:
-            serializer = CommentSerializer(page, many=True)
+            serializer = CommentSerializer(page, many=True, context=self.get_serializer_context())
             return paginator.get_paginated_response(serializer.data)
         
-        serializer = CommentSerializer(comments, many=True)
+        serializer = CommentSerializer(comments, many=True, context=self.get_serializer_context())
         return Response(serializer.data)
 
     @comments.mapping.post
     def add_comment(self, request, pk=None):
         """Add a comment to a post."""
         post = self.get_object()
-        serializer = CommentCreateSerializer(data=request.data)
+        serializer = CommentCreateSerializer(data=request.data, context={'request': request, 'post': post})
         if serializer.is_valid():
             comment = serializer.save(post=post, author=request.user)
             return Response(
-                CommentSerializer(comment).data,
+                CommentSerializer(comment, context=self.get_serializer_context()).data,
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -105,7 +129,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     pagination_class = CommentPagination
 
     def get_queryset(self):
-        return Comment.objects.select_related('author', 'post').order_by('created_at')
+        replies_prefetch = Prefetch(
+            'replies',
+            queryset=Comment.objects.select_related('author').order_by('created_at')
+        )
+        return Comment.objects.select_related('author', 'post', 'parent').prefetch_related(replies_prefetch).order_by('created_at')
 
     def destroy(self, request, *args, **kwargs):
         comment = self.get_object()
