@@ -28,7 +28,7 @@ class JwtAuthMiddlewareInstance:
         self.middleware = middleware
 
     async def __call__(self, receive, send):
-        self.scope["user"] = await self.get_user()
+        self.scope["user"], self.scope["token_error"] = await self.get_user()
         close_old_connections()
         inner = self.middleware.inner
         return await inner(self.scope, receive, send)
@@ -49,7 +49,7 @@ class JwtAuthMiddlewareInstance:
                 token = auth_header.split(" ")[1]
 
         if not token:
-            return AnonymousUser()
+            return AnonymousUser(), "no_token"
 
         try:
             # Valida il token con SimpleJWT
@@ -57,9 +57,13 @@ class JwtAuthMiddlewareInstance:
             decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded.get("user_id")
             if user_id is None:
-                return AnonymousUser()
+                return AnonymousUser(), "invalid_token"
 
             user = await database_sync_to_async(get_user_model().objects.get)(id=user_id)
-            return user
-        except (InvalidToken, TokenError, jwt.DecodeError, jwt.ExpiredSignatureError, get_user_model().DoesNotExist):
-            return AnonymousUser()
+            return user, None
+        except jwt.ExpiredSignatureError:
+            return AnonymousUser(), "token_expired"
+        except (InvalidToken, TokenError, jwt.DecodeError):
+            return AnonymousUser(), "invalid_token"
+        except get_user_model().DoesNotExist:
+            return AnonymousUser(), "user_not_found"

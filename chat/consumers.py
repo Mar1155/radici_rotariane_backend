@@ -5,11 +5,24 @@ from .models import Chat, Message, ChatParticipant
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
+        self.group_name = f"chat_{self.chat_id}"
         user = self.scope["user"]
+        token_error = self.scope.get("token_error")
 
         # Controllo autenticazione
         if not user.is_authenticated:
-            await self.close(code=4401)
+            # Codici di chiusura specifici per il frontend:
+            # 4001 = Token scaduto (richiede refresh)
+            # 4002 = Token invalido (richiede re-login)
+            # 4003 = Nessun token fornito
+            if token_error == "token_expired":
+                await self.close(code=4001)  # Token expired - frontend può fare refresh
+            elif token_error == "invalid_token":
+                await self.close(code=4002)  # Invalid token
+            elif token_error == "user_not_found":
+                await self.close(code=4002)  # User not found
+            else:
+                await self.close(code=4003)  # No token
             return
 
         # Controllo che l'utente faccia parte della chat (diretta o gruppo)
@@ -17,7 +30,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4403)
             return
 
-        self.group_name = f"chat_{self.chat_id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         
@@ -26,7 +38,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json({"type": "history", "data": history})
 
     async def disconnect(self, code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive_json(self, content):
         if content.get("type") == "message.send":
@@ -54,7 +67,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     def _get_message_history(self, limit=50):
         """Recupera gli ultimi messaggi della chat."""
         messages = Message.objects.filter(chat_id=self.chat_id).order_by('-created_at')[:limit]
-        # Inverti l'ordine per avere i messaggi dal più vecchio al più recente
+        # Restituisce i messaggi dal più recente al più vecchio
         return [
             {
                 "id": msg.id,
@@ -62,7 +75,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 "body": msg.body,
                 "created_at": msg.created_at.isoformat()
             }
-            for msg in reversed(messages)
+            for msg in messages
         ]
 
     # Crea un nuovo messaggio nel database quando viene ricevuto, in modo asincrono per non bloccare il consumer
