@@ -29,6 +29,8 @@ class Card(models.Model):
         verbose_name="Sezione",
     )
 
+
+
     title = models.CharField(
         max_length=255,
         verbose_name="Titolo",
@@ -126,6 +128,12 @@ class Card(models.Model):
         default=True,
         verbose_name="Pubblicato",
         help_text="La card è visibile pubblicamente"
+    )
+    
+    is_event = models.BooleanField(
+        default=False,
+        verbose_name="È un evento",
+        help_text="Indica se la card rappresenta un evento"
     )
     
     # Campi opzionali utili
