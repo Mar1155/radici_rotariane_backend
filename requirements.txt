@@ -31,3 +31,4 @@ psycopg2-binary
 djangorestframework-simplejwt
 Pillow
 whitenoise
+requests>=2.32.3

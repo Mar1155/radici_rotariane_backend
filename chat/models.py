@@ -153,3 +153,30 @@ class Message(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["chat", "id"])]
+
+
+class MessageTranslation(models.Model):
+    """Stores cached translations for chat messages."""
+
+    PROVIDER_CHOICES = [
+        ('deepl', 'DeepL'),
+        ('google', 'Google Cloud Translation'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='translations')
+    target_language = models.CharField(max_length=10)
+    translated_text = models.TextField()
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    detected_source_language = models.CharField(max_length=10, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('message', 'target_language')
+        indexes = [
+            models.Index(fields=['message', 'target_language']),
+            models.Index(fields=['target_language']),
+        ]
+
+    def __str__(self):
+        return f"Translation({self.message_id}, {self.target_language})"

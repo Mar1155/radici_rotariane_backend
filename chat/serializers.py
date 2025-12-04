@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Chat, Message, ChatParticipant
+from .models import Chat, Message, ChatParticipant, MessageTranslation
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -61,3 +61,18 @@ class CreateGroupChatSerializer(serializers.Serializer):
             if existing_users != len(value):
                 raise serializers.ValidationError("Alcuni ID utente non sono validi.")
         return value
+
+
+class MessageTranslationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MessageTranslation
+        fields = [
+            'id',
+            'message',
+            'target_language',
+            'translated_text',
+            'provider',
+            'detected_source_language',
+            'created_at',
+        ]
+        read_only_fields = fields

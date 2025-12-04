@@ -26,8 +26,9 @@ Documentazione completa di tutti gli endpoint dell'applicazione Chat.
   - [Dettaglio Messaggio](#12-dettaglio-messaggio)
   - [Elimina Messaggio](#13-elimina-messaggio)
   - [Aggiorna Messaggio](#14-aggiorna-messaggio)
+  - [Traduci Messaggio](#15-traduci-messaggio)
 - [WebSocket](#websocket)
-  - [Connessione Chat](#15-connessione-websocket)
+  - [Connessione Chat](#16-connessione-websocket)
 
 ---
 
@@ -696,9 +697,58 @@ Content-Type: application/json
 
 ---
 
+### 15. Traduci Messaggio
+
+Traduce il testo di un messaggio in una lingua supportata con caching automatico.
+
+**Endpoint**: `POST /api/chats/{chat_id}/messages/{message_id}/translate/`
+
+**Headers**:
+```
+Authorization: Bearer {access_token}
+Content-Type: application/json
+```
+
+**Body**:
+```json
+{
+  "target_language": "en"
+}
+```
+
+**Risposte**:
+- `201 Created`: la traduzione è stata generata e salvata
+- `200 OK`: la traduzione era già in cache e viene restituita immediatamente
+
+**Esempio (201 Created)**:
+```json
+{
+  "id": 42,
+  "message": 5,
+  "target_language": "en",
+  "translated_text": "Hello everyone!",
+  "provider": "deepl",
+  "detected_source_language": "it",
+  "created_at": "2025-11-02T10:40:00Z"
+}
+```
+
+**Note**:
+- La traduzione viene salvata per ciascuna coppia messaggio/lingua per evitare chiamate ripetute al provider.
+- Le lingue disponibili si configurano tramite `TRANSLATION_SUPPORTED_LANGUAGES` (default: it, en, es, fr, de).
+- Se un altro messaggio ha lo stesso testo, viene riutilizzata la traduzione già presente in cache senza chiamare il provider.
+
+**Errori**:
+- `400 Bad Request`: lingua non supportata o messaggio vuoto
+- `403 Forbidden`: l'utente non partecipa alla chat
+- `502 Bad Gateway`: il provider di traduzione ha restituito un errore
+- `503 Service Unavailable`: nessun provider configurato
+
+---
+
 ## WebSocket
 
-### 15. Connessione WebSocket
+### 16. Connessione WebSocket
 
 Connessione WebSocket in tempo reale per ricevere e inviare messaggi.
 

@@ -38,6 +38,9 @@ message_detail = MessageViewSet.as_view({
     "delete": "destroy",
     "patch": "partial_update",
 })
+message_translate = MessageViewSet.as_view({
+    "post": "translate",
+})
 
 urlpatterns = [
     # Chats (il prefisso api/chats/ è già in backend/urls.py)
@@ -61,4 +64,6 @@ urlpatterns = [
     path("<uuid:chat_pk>/messages/", message_list, name="message-list"),
     # dettaglio messaggio
     path("<uuid:chat_pk>/messages/<int:pk>/", message_detail, name="message-detail"),
+    # traduzione messaggio
+    path("<uuid:chat_pk>/messages/<int:pk>/translate/", message_translate, name="message-translate"),
 ]

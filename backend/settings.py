@@ -149,6 +149,29 @@ MEDIA_ROOT = BASE_DIR / config('MEDIA_ROOT', default='media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# =============================================================================
+# Translation settings
+# =============================================================================
+
+TRANSLATION_SUPPORTED_LANGUAGES = config(
+    'TRANSLATION_SUPPORTED_LANGUAGES',
+    default='it,en,es,fr,de',
+    cast=Csv(),
+)
+TRANSLATION_PROVIDER_PRIORITY = config(
+    'TRANSLATION_PROVIDER_PRIORITY',
+    default='deepl,google',
+    cast=Csv(),
+)
+DEEPL_API_KEY = config('DEEPL_API_KEY', default=None)
+DEEPL_API_URL = config('DEEPL_API_URL', default='https://api-free.deepl.com/v2/translate')
+GOOGLE_TRANSLATE_API_KEY = config('GOOGLE_TRANSLATE_API_KEY', default=None)
+GOOGLE_TRANSLATE_API_URL = config(
+    'GOOGLE_TRANSLATE_API_URL',
+    default='https://translation.googleapis.com/language/translate/v2',
+)
+TRANSLATION_HTTP_TIMEOUT = config('TRANSLATION_HTTP_TIMEOUT', default=10, cast=int)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

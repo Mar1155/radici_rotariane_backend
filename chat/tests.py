@@ -3,9 +3,16 @@ from django.contrib.auth import get_user_model
 from channels.testing import WebsocketCommunicator
 from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
+from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Chat, Message
+from unittest.mock import patch
+from .models import Chat, Message, ChatParticipant, MessageTranslation
+from .services.translation import (
+    TranslationProviderError,
+    TranslationResult,
+    TranslationServiceNotConfigured,
+)
 import json
 
 User = get_user_model()
@@ -346,3 +353,83 @@ class MessageViewSetTest(APITestCase):
         """Test che un utente non autenticato non possa accedere ai messaggi"""
         response = self.client.get(f"/api/chats/{self.chat.id}/messages/", follow=True)
         self.assertEqual(response.status_code, 401)
+
+
+class MessageTranslationAPITest(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user1 = User.objects.create_user(
+            username="user1", email="user1@test.com", password="testpass123"
+        )
+        self.user2 = User.objects.create_user(
+            username="user2", email="user2@test.com", password="testpass123"
+        )
+        self.user3 = User.objects.create_user(
+            username="user3", email="user3@test.com", password="testpass123"
+        )
+
+        self.chat = Chat.objects.create(chat_type='direct', created_by=self.user1)
+        ChatParticipant.objects.create(chat=self.chat, user=self.user1, role='member')
+        ChatParticipant.objects.create(chat=self.chat, user=self.user2, role='member')
+
+        self.message = Message.objects.create(chat=self.chat, sender=self.user1, body="Ciao mondo")
+
+        refresh = RefreshToken.for_user(self.user2)
+        self.token_user2 = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token_user2}")
+        self.url = f"/api/chats/{self.chat.id}/messages/{self.message.id}/translate/"
+
+    @patch('chat.views.translate_text')
+    def test_translate_message_caches_result(self, mock_translate):
+        mock_translate.return_value = TranslationResult(text='Hello world', provider='deepl', detected_source_language='it')
+
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['translated_text'], 'Hello world')
+        self.assertEqual(MessageTranslation.objects.count(), 1)
+
+        mock_translate.reset_mock()
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_translate.assert_not_called()
+
+    def test_translate_invalid_language(self):
+        response = self.client.post(self.url, {'target_language': 'ru'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_translate_requires_membership(self):
+        refresh = RefreshToken.for_user(self.user3)
+        token_user3 = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_user3}")
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @patch('chat.views.translate_text')
+    def test_translate_handles_missing_provider(self, mock_translate):
+        mock_translate.side_effect = TranslationServiceNotConfigured('no provider')
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    @patch('chat.views.translate_text')
+    def test_translate_handles_provider_error(self, mock_translate):
+        mock_translate.side_effect = TranslationProviderError('boom')
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_502_BAD_GATEWAY)
+
+    @patch('chat.views.translate_text')
+    def test_translate_reuses_existing_translation_for_same_body(self, mock_translate):
+        mock_translate.return_value = TranslationResult(text='Hello world', provider='deepl', detected_source_language='it')
+        first_response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+        mock_translate.reset_mock()
+
+        other_message = Message.objects.create(chat=self.chat, sender=self.user1, body='Ciao mondo')
+        other_url = f"/api/chats/{self.chat.id}/messages/{other_message.id}/translate/"
+        response = self.client.post(other_url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        mock_translate.assert_not_called()
+
+        self.assertEqual(
+            MessageTranslation.objects.filter(message=other_message, target_language='en').count(),
+            1,
+        )

@@ -18,6 +18,7 @@ dependencies = [
     "channels_redis>=4.0.0",
     "django-cors-headers>=4.3.1",
     "gunicorn>=21.2.0",
+    "requests>=2.32.3",
 ]
 
 [project.optional-dependencies]

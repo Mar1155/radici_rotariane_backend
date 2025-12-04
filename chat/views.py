@@ -1,9 +1,24 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from .models import Chat, Message, ChatParticipant
-from .serializers import ChatSerializer, MessageSerializer, CreateGroupChatSerializer
+from django.db import transaction
 from django.shortcuts import get_object_or_404
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+
+from .models import Chat, ChatParticipant, Message, MessageTranslation
+from .serializers import (
+    ChatSerializer,
+    CreateGroupChatSerializer,
+    MessageSerializer,
+    MessageTranslationSerializer,
+)
+from .services.translation import (
+    TranslationProviderError,
+    TranslationServiceNotConfigured,
+    normalize_language_code,
+    supported_languages,
+    translate_text,
+)
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
@@ -153,10 +168,100 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_chat(self):
         chat_id = self.kwargs.get("chat_pk")
-        return Message.objects.filter(chat_id=chat_id).order_by("-id")[:50]
+        chat = get_object_or_404(Chat, pk=chat_id)
+        if not chat.participants.filter(pk=self.request.user.pk).exists():
+            raise PermissionDenied("Non fai parte di questa chat.")
+        return chat
+
+    def get_queryset(self):
+        chat = self.get_chat()
+        return Message.objects.filter(chat=chat).select_related("sender").order_by("-created_at")
 
     def perform_create(self, serializer):
-        chat = Chat.objects.get(pk=self.kwargs.get("chat_pk"))
+        chat = self.get_chat()
         serializer.save(sender=self.request.user, chat=chat)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())[:50]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def translate(self, request, *args, **kwargs):
+        message = self.get_object()
+        target_language = request.data.get("target_language") or request.query_params.get(
+            "target_language"
+        )
+
+        if not target_language:
+            return Response(
+                {"detail": "target_language è obbligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        normalized_language = normalize_language_code(target_language)
+        if normalized_language not in supported_languages():
+            return Response(
+                {"detail": "Lingua di destinazione non supportata."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        existing = MessageTranslation.objects.filter(
+            message=message, target_language=normalized_language
+        ).first()
+        if existing:
+            serializer = MessageTranslationSerializer(existing)
+            return Response(serializer.data)
+
+        shared_translation = (
+            MessageTranslation.objects.filter(
+                target_language=normalized_language,
+                message__body=message.body,
+            )
+            .exclude(message=message)
+            .order_by("created_at")
+            .first()
+        )
+        if shared_translation:
+            with transaction.atomic():
+                translation = MessageTranslation.objects.create(
+                    message=message,
+                    target_language=normalized_language,
+                    translated_text=shared_translation.translated_text,
+                    provider=shared_translation.provider,
+                    detected_source_language=shared_translation.detected_source_language,
+                )
+            serializer = MessageTranslationSerializer(translation)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if not message.body.strip():
+            return Response(
+                {"detail": "Il messaggio è vuoto, impossibile tradurre."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = translate_text(message.body, normalized_language)
+        except TranslationServiceNotConfigured:
+            return Response(
+                {"detail": "Nessun provider di traduzione configurato."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except TranslationProviderError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        with transaction.atomic():
+            translation, _created = MessageTranslation.objects.get_or_create(
+                message=message,
+                target_language=normalized_language,
+                defaults={
+                    "translated_text": result.text,
+                    "provider": result.provider,
+                    "detected_source_language": result.detected_source_language,
+                },
+            )
+
+        serializer = MessageTranslationSerializer(translation)
+        http_status = status.HTTP_201_CREATED if _created else status.HTTP_200_OK
+        return Response(serializer.data, status=http_status)
