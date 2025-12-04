@@ -52,3 +52,31 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.post.title}"
+
+
+class PostTranslation(models.Model):
+    """Stores cached translations for forum posts."""
+
+    PROVIDER_CHOICES = [
+        ('deepl', 'DeepL'),
+        ('google', 'Google Cloud Translation'),
+    ]
+
+    id = models.BigAutoField(primary_key=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='translations')
+    target_language = models.CharField(max_length=10)
+    translated_title = models.CharField(max_length=255)
+    translated_description = models.TextField()
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    detected_source_language = models.CharField(max_length=10, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'target_language')
+        indexes = [
+            models.Index(fields=['post', 'target_language']),
+            models.Index(fields=['target_language']),
+        ]
+
+    def __str__(self):
+        return f"Translation({self.post_id}, {self.target_language})"

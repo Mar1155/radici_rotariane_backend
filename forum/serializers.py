@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment
+from .models import Post, Comment, PostTranslation
 
 
 class AuthorSerializer(serializers.Serializer):
@@ -107,3 +107,18 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def get_comment_count(self, obj):
         return 0
+
+
+class PostTranslationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostTranslation
+        fields = [
+            'id',
+            'post',
+            'target_language',
+            'translated_title',
+            'translated_description',
+            'provider',
+            'detected_source_language',
+            'created_at',
+        ]

@@ -2,14 +2,23 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from django.db import transaction
 from django.db.models import Count, Prefetch
-from .models import Post, Comment
+from .models import Post, Comment, PostTranslation
 from .serializers import (
     PostListSerializer,
     PostDetailSerializer,
     PostCreateSerializer,
     CommentSerializer,
     CommentCreateSerializer,
+    PostTranslationSerializer,
+)
+from chat.services.translation import (
+    TranslationProviderError,
+    TranslationServiceNotConfigured,
+    normalize_language_code,
+    supported_languages,
+    translate_text,
 )
 
 
@@ -86,6 +95,66 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"])
+    def translate(self, request, pk=None):
+        post = self.get_object()
+        target_language = request.data.get("target_language") or request.query_params.get(
+            "target_language"
+        )
+
+        if not target_language:
+            return Response(
+                {"detail": "target_language è obbligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        normalized_language = normalize_language_code(target_language)
+        if normalized_language not in supported_languages():
+            return Response(
+                {"detail": "Lingua di destinazione non supportata."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        existing = PostTranslation.objects.filter(
+            post=post, target_language=normalized_language
+        ).first()
+        if existing:
+            serializer = PostTranslationSerializer(existing)
+            return Response(serializer.data)
+
+        if not post.title.strip() and not post.description.strip():
+             return Response(
+                {"detail": "Il post è vuoto, impossibile tradurre."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            title_result = translate_text(post.title, normalized_language)
+            description_result = translate_text(post.description, normalized_language)
+        except TranslationServiceNotConfigured:
+            return Response(
+                {"detail": "Nessun provider di traduzione configurato."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except TranslationProviderError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+        with transaction.atomic():
+            translation, _created = PostTranslation.objects.get_or_create(
+                post=post,
+                target_language=normalized_language,
+                defaults={
+                    "translated_title": title_result.text,
+                    "translated_description": description_result.text,
+                    "provider": title_result.provider,
+                    "detected_source_language": title_result.detected_source_language,
+                },
+            )
+
+        serializer = PostTranslationSerializer(translation)
+        http_status = status.HTTP_201_CREATED if _created else status.HTTP_200_OK
+        return Response(serializer.data, status=http_status)
 
     @action(detail=True, methods=['get'])
     def comments(self, request, pk=None):

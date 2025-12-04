@@ -28,8 +28,8 @@ serve:
 	@IP=$$(ifconfig | awk '/inet 192\.168/{print $$2; exit}'); \
 	echo "🚀 Starting server..."; \
 	echo "📡 Available on:"; \
-	echo "   - http://localhost:8000"; \
-	echo "   - http://127.0.0.1:8000"; \
+	echo "   - http://192.168.1.7:8000"; \
+	echo "   - http://192.168.1.7:8000"; \
 	if [ -n "$$IP" ]; then echo "   - http://$$IP:8000"; fi; \
 	echo ""; \
 	uv run daphne -b 0.0.0.0 -p 8000 backend.asgi:application
