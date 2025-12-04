@@ -23,6 +23,7 @@ def create_card(request, section):
         tags_json = request.data.get('tags')
         content = request.data.get('content')
         date_type = request.data.get('dateType')
+        is_event = request.data.get('isEvent').lower() == 'true'
         
         # Parse tags da JSON string
         tags = json.loads(tags_json) if tags_json else []
@@ -43,6 +44,7 @@ def create_card(request, section):
             'tags': tags,
             'content': content,
             'date_type': date_type,
+            'is_event': is_event,
             'author': request.user if request.user.is_authenticated else None,
         }
         
@@ -111,3 +113,13 @@ def get_card(request, slug):
             {'error': 'Card non trovata'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['GET'])
+def list_events(request):
+    """
+    Lista tutti gli eventi pubblicati
+    """
+    events = Card.objects.filter(is_published=True, is_event=True).order_by('-created_at')
+    serializer = CardSerializer(events, many=True)
+    return Response(serializer.data)
