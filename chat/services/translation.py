@@ -47,7 +47,12 @@ class BaseTranslationProvider:
     def is_configured(self) -> bool:
         raise NotImplementedError
 
-    def translate(self, text: str, target_language: str) -> TranslationResult:
+    def translate(
+        self,
+        text: str,
+        target_language: str,
+        text_format: str = "text",
+    ) -> TranslationResult:
         raise NotImplementedError
 
 
@@ -62,12 +67,14 @@ class DeepLTranslationProvider(BaseTranslationProvider):
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
-    def translate(self, text: str, target_language: str) -> TranslationResult:
+    def translate(self, text: str, target_language: str, text_format: str = "text") -> TranslationResult:
         payload = {
             "auth_key": self.api_key,
             "target_lang": target_language.upper(),
             "text": text,
         }
+        if text_format == "html":
+            payload["tag_handling"] = "html"
         try:
             response = requests.post(self.api_url, data=payload, timeout=self.timeout)
             response.raise_for_status()
@@ -103,12 +110,12 @@ class GoogleTranslateProvider(BaseTranslationProvider):
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
-    def translate(self, text: str, target_language: str) -> TranslationResult:
+    def translate(self, text: str, target_language: str, text_format: str = "text") -> TranslationResult:
         params = {"key": self.api_key}
         payload = {
             "q": text,
             "target": target_language.lower(),
-            "format": "text",
+            "format": "html" if text_format == "html" else "text",
         }
         try:
             response = requests.post(self.api_url, params=params, json=payload, timeout=self.timeout)
@@ -146,7 +153,7 @@ def _get_provider_chain() -> List[BaseTranslationProvider]:
     return ordered
 
 
-def translate_text(text: str, target_language: str) -> TranslationResult:
+def translate_text(text: str, target_language: str, text_format: str = "text") -> TranslationResult:
     if not text.strip():
         raise TranslationProviderError("Il messaggio è vuoto, impossibile tradurre")
 
@@ -161,7 +168,7 @@ def translate_text(text: str, target_language: str) -> TranslationResult:
     last_error: Optional[Exception] = None
     for provider in provider_chain:
         try:
-            return provider.translate(text=text, target_language=normalized_language)
+            return provider.translate(text=text, target_language=normalized_language, text_format=text_format)
         except TranslationProviderError as exc:
             last_error = exc
             logger.warning("Translation failed with provider %s", provider.name, exc_info=True)

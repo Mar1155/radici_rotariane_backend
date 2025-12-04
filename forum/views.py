@@ -13,6 +13,7 @@ from .serializers import (
     CommentCreateSerializer,
     PostTranslationSerializer,
 )
+from .utils import sanitize_rich_text
 from chat.services.translation import (
     TranslationProviderError,
     TranslationServiceNotConfigured,
@@ -129,9 +130,16 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        body_has_html = bool(post.content_html and post.content_html.strip())
+        body_source = post.content_html if body_has_html else post.description
+
         try:
             title_result = translate_text(post.title, normalized_language)
-            description_result = translate_text(post.description, normalized_language)
+            description_result = translate_text(
+                body_source,
+                normalized_language,
+                text_format="html" if body_has_html else "text",
+            )
         except TranslationServiceNotConfigured:
             return Response(
                 {"detail": "Nessun provider di traduzione configurato."},
@@ -140,13 +148,17 @@ class PostViewSet(viewsets.ModelViewSet):
         except TranslationProviderError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
+        safe_translated_body = (
+            sanitize_rich_text(description_result.text) if body_has_html else description_result.text
+        )
+
         with transaction.atomic():
-            translation, _created = PostTranslation.objects.get_or_create(
+            translation, _created = PostTranslation.objects.update_or_create(
                 post=post,
                 target_language=normalized_language,
                 defaults={
                     "translated_title": title_result.text,
-                    "translated_description": description_result.text,
+                    "translated_description": safe_translated_body,
                     "provider": title_result.provider,
                     "detected_source_language": title_result.detected_source_language,
                 },
