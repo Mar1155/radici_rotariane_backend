@@ -18,7 +18,8 @@ class Card(models.Model):
         ("scambi-e-mobilita", "Scambi e Mobilità"),
         ("adotta-un-progetto", "Adotta un Progetto"),
         ("partner-e-collaborazioni", "Partner e Collaborazioni"),
-        ("eccellenze-calabresi", "Eccellenze Calabresi")
+        ("eccellenze-calabresi", "Eccellenze Calabresi"),
+        ("eventi", "Eventi")
     ]
     
     # Campi base
