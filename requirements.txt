@@ -1,36 +1,82 @@
-# Django REST API Template - Requirements
-# This file is auto-generated from pyproject.toml for compatibility
-# Prefer using: uv sync
-
-django>=5.2.7
-djangorestframework>=3.16.1
-djangorestframework-simplejwt>=5.5.1
-python-decouple>=3.8
-pillow>=12.0.0
-psycopg[binary,c]>=3.2.11
-dj-database-url>=2.1.0
-
-# Production server
-gunicorn>=21.2.0
-whitenoise>=6.6.0
-
-# Development dependencies (optional)
-# pytest>=8.0.0
-# pytest-django>=4.7.0
-# coverage>=7.4.0
-# black>=24.0.0
-# flake8>=7.0.0
-# ipython>=8.20.0
-
-python-decouple
-dj_database_url
-djangorestframework
-channels
-django-cors-headers
-psycopg2-binary
-djangorestframework-simplejwt
-Pillow
-whitenoise
-requests>=2.32.3
-bleach>=6.1.0
-tinycss2>=1.3.0
+annotated-types==0.7.0
+anyio==4.9.0
+asgiref==3.10.0
+blinker==1.9.0
+cachetools==5.5.2
+certifi==2025.4.26
+charset-normalizer==3.4.2
+click==8.2.1
+contourpy==1.3.3
+cycler==0.12.1
+dj-database-url==3.0.1
+Django==5.2.7
+Faker==38.2.0
+filelock==3.18.0
+Flask==3.1.2
+fonttools==4.60.1
+fsspec==2025.5.1
+google-auth==2.40.3
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.2
+graypy==2.1.0
+h11==0.16.0
+hf-xet==1.1.5
+httpcore==1.0.9
+httplib2==0.22.0
+httpx==0.28.1
+httpx-sse==0.4.0
+huggingface-hub==0.33.2
+idna==3.10
+itsdangerous==2.2.0
+Jinja2==3.1.6
+kiwisolver==1.4.9
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+matplotlib==3.10.7
+mcp==1.9.4
+mdurl==0.1.2
+mpmath==1.3.0
+networkx==3.5
+numpy==2.3.1
+oauthlib==3.2.2
+packaging==25.0
+paho-mqtt==2.1.0
+pillow==12.0.0
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
+pydantic==2.11.5
+pydantic-settings==2.9.1
+pydantic_core==2.33.2
+Pygments==2.19.1
+pyparsing==3.2.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
+python-multipart==0.0.20
+PyYAML==6.0.2
+regex==2024.11.6
+requests==2.32.4
+requests-oauthlib==2.0.0
+rich==14.0.0
+rsa==4.9.1
+safetensors==0.5.3
+setuptools==80.9.0
+shellingham==1.5.4
+six==1.17.0
+sniffio==1.3.1
+sqlparse==0.5.3
+sse-starlette==2.3.6
+starlette==0.47.0
+sympy==1.14.0
+tokenizers==0.21.2
+torch==2.7.1
+tqdm==4.67.1
+transformers==4.53.1
+typer==0.16.0
+typing-inspection==0.4.1
+typing_extensions==4.14.0
+tzdata==2025.2
+urllib3==2.4.0
+uvicorn==0.34.3
+watchfiles==1.1.1
+Werkzeug==3.1.4
+youtube-dl==2021.12.17
