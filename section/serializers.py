@@ -27,8 +27,10 @@ class CardSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'is_published',
-            'is_event',
             'views_count',
             'author_name',
+            'section',
+            'tab',
+            'infoElementValues',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']

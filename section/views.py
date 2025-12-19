@@ -11,7 +11,7 @@ import traceback
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-def create_card(request, section):
+def create_card(request, section, tab=None):
     """
     Crea una nuova card dal form Next.js
     """
@@ -22,41 +22,44 @@ def create_card(request, section):
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
         content = request.data.get('content')
-        date_type = request.data.get('dateType')
-        is_event = request.data.get('isEvent').lower() == 'true'
+        date_type = request.data.get('dateType', 'none')
+        info_element_values_json = request.data.get('infoElementValues')
         
         # Parse tags da JSON string
         tags = json.loads(tags_json) if tags_json else []
         
-        # Validazione base
-        if not title or not subtitle or not cover_image or not content:
-            return Response(
-                {'error': 'Titolo, sottotitolo, immagine e contenuto sono obbligatori'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Parse infoElementValues da JSON string
+        info_element_values = json.loads(info_element_values_json) if info_element_values_json else []
+        
+        # Validazione base - ora i campi possono essere null
+        # Rimuovi la validazione obbligatoria
         
         # Prepara i dati per il modello
         card_data = {
             'section': section,
+            'tab': tab,
             'title': title,
             'subtitle': subtitle,
             'cover_image': cover_image,
             'tags': tags,
             'content': content,
             'date_type': date_type,
-            'is_event': is_event,
             'author': request.user if request.user.is_authenticated else None,
+            'infoElementValues': info_element_values,
         }
         
         # Aggiungi date in base al tipo
         if date_type == 'single':
             date = request.data.get('date')
-            card_data['date'] = datetime.strptime(date, "%Y-%m-%d").date()
+            if date:
+                card_data['date'] = datetime.strptime(date, "%Y-%m-%d").date()
         elif date_type == 'range':
             date_start = request.data.get('dateStart')
             date_end = request.data.get('dateEnd')
-            card_data['date_start'] = datetime.strptime(date_start, "%Y-%m-%d").date()
-            card_data['date_end'] = datetime.strptime(date_end, "%Y-%m-%d").date()
+            if date_start:
+                card_data['date_start'] = datetime.strptime(date_start, "%Y-%m-%d").date()
+            if date_end:
+                card_data['date_end'] = datetime.strptime(date_end, "%Y-%m-%d").date()
         
         # Crea la card
         card = Card.objects.create(**card_data)
@@ -85,11 +88,15 @@ def create_card(request, section):
 
 
 @api_view(['GET'])
-def list_cards(request, section):
+def list_cards(request, section, tab=None):
     """
-    Lista tutte le cards pubblicate
+    Lista tutte le cards pubblicate per section e opzionalmente tab
     """
-    cards = Card.objects.filter(is_published=True, section=section)
+    filters = {'is_published': True, 'section': section}
+    if tab:
+        filters['tab'] = tab
+    
+    cards = Card.objects.filter(**filters)
     serializer = CardSerializer(cards, many=True)
     return Response(serializer.data)
 
@@ -113,13 +120,3 @@ def get_card(request, slug):
             {'error': 'Card non trovata'},
             status=status.HTTP_404_NOT_FOUND
         )
-
-
-@api_view(['GET'])
-def list_events(request):
-    """
-    Lista tutti gli eventi pubblicati
-    """
-    events = Card.objects.filter(is_published=True, is_event=True).order_by('-created_at')
-    serializer = CardSerializer(events, many=True)
-    return Response(serializer.data)

@@ -26,20 +26,33 @@ class Card(models.Model):
     section = models.CharField(
         max_length=30,
         choices=SECTION_CHOICES,
-        default="storie-e-radici",
+        null=True,
+        blank=True,
         verbose_name="Sezione",
+    )
+    
+    tab = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Tab",
+        help_text="Tab specifica all'interno della sezione"
     )
 
 
 
     title = models.CharField(
         max_length=255,
+        null=True,
+        blank=True,
         verbose_name="Titolo",
         help_text="Titolo della card"
     )
     
     subtitle = models.CharField(
         max_length=500,
+        null=True,
+        blank=True,
         verbose_name="Sottotitolo",
         help_text="Sottotitolo/descrizione breve"
     )
@@ -54,6 +67,8 @@ class Card(models.Model):
     # Immagine di copertina
     cover_image = models.ImageField(
         upload_to='cards/covers/%Y/%m/',
+        null=True,
+        blank=True,
         verbose_name="Immagine di copertina",
         help_text="Immagine principale della card"
     )
@@ -81,6 +96,8 @@ class Card(models.Model):
     # Contenuto ricco (HTML dall'editor)
     # TextField supporta testo molto grande (fino a ~2GB in PostgreSQL)
     content = models.TextField(
+        null=True,
+        blank=True,
         verbose_name="Contenuto",
         help_text="Contenuto HTML dell'articolo"
     )
@@ -131,12 +148,6 @@ class Card(models.Model):
         help_text="La card è visibile pubblicamente"
     )
     
-    is_event = models.BooleanField(
-        default=False,
-        verbose_name="È un evento",
-        help_text="Indica se la card rappresenta un evento"
-    )
-    
     # Campi opzionali utili
     views_count = models.PositiveIntegerField(
         default=0,
@@ -150,6 +161,16 @@ class Card(models.Model):
         blank=True,
         related_name='cards',
         verbose_name="Autore"
+    )
+    
+    # Array di valori per gli elementi info
+    from django.db.models import JSONField
+    infoElementValues = JSONField(
+        default=list,
+        null=True,
+        blank=True,
+        verbose_name="Info Element Values",
+        help_text="Array di valori per gli elementi info (uno per ogni tupla della sezione/tab)"
     )
     
     class Meta:

@@ -4,7 +4,8 @@ from . import views
 
 urlpatterns = [
     path('cards/<slug:slug>', views.get_card, name='get-card'),
-    path('events', views.list_events, name='list-events'),
     path('<section>/cards', views.list_cards, name='list-cards'),
+    path('<section>/<tab>/cards', views.list_cards, name='list-cards-with-tab'),
     path('<section>/cards/create', views.create_card, name='create-card'),
+    path('<section>/<tab>/cards/create', views.create_card, name='create-card-with-tab'),
 ]
