@@ -761,7 +761,7 @@ Connessione WebSocket in tempo reale per ricevere e inviare messaggi.
 **Esempio Connessione**:
 ```javascript
 const ws = new WebSocket(
-  'ws://192.168.1.7:8000/ws/chat/550e8400-e29b-41d4-a716-446655440000/?token=eyJ0eXAiOiJKV1QiLCJhbGc...'
+  'ws://192.168.1.47:8000/ws/chat/550e8400-e29b-41d4-a716-446655440000/?token=eyJ0eXAiOiJKV1QiLCJhbGc...'
 );
 ```
 
@@ -821,7 +821,7 @@ const ws = new WebSocket(
 const chatId = '550e8400-e29b-41d4-a716-446655440000';
 const token = 'eyJ0eXAiOiJKV1QiLCJhbGc...';
 
-const ws = new WebSocket(`ws://192.168.1.7:8000/ws/chat/${chatId}/?token=${token}`);
+const ws = new WebSocket(`ws://192.168.1.47:8000/ws/chat/${chatId}/?token=${token}`);
 
 // Connessione aperta
 ws.onopen = () => {

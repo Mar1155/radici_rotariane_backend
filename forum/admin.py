@@ -17,7 +17,7 @@ class PostAdmin(admin.ModelAdmin):
     inlines = [CommentInline]
 
     def comment_count(self, obj):
-        return obj.comment_count
+        return obj.comments.count()
     comment_count.short_description = 'Comments'
 
 

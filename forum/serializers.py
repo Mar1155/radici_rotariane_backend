@@ -20,8 +20,8 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for comments with nested replies."""
 
     author = AuthorSerializer(read_only=True)
-    post_id = serializers.UUIDField(source='post_id', read_only=True)
-    parent_id = serializers.UUIDField(source='parent_id', read_only=True)
+    post_id = serializers.UUIDField(read_only=True)
+    parent_id = serializers.UUIDField(read_only=True)
     replies = serializers.SerializerMethodField()
 
     class Meta:
