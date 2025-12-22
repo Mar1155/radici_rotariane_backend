@@ -43,6 +43,7 @@ class ChatSerializer(serializers.ModelSerializer):
 class CreateGroupChatSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True)
+    chat_type = serializers.ChoiceField(choices=['group', 'general_group'], default='group')
     participant_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,

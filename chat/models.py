@@ -14,8 +14,9 @@ class Chat(models.Model):
     CHAT_TYPE_CHOICES = [
         ('direct', 'Chat Diretta'),
         ('group', 'Chat di Gruppo'),
+        ('general_group', 'Chat di Gruppo Generale'),
     ]
-    chat_type = models.CharField(max_length=10, choices=CHAT_TYPE_CHOICES, default='direct')
+    chat_type = models.CharField(max_length=15, choices=CHAT_TYPE_CHOICES, default='direct')
     
     name = models.CharField(max_length=255, blank=True, null=True)  # Nome del gruppo (opzionale per chat dirette)
     description = models.TextField(blank=True, null=True)
@@ -41,7 +42,7 @@ class Chat(models.Model):
         ]
 
     def __str__(self):
-        if self.chat_type == 'group' and self.name:
+        if self.chat_type in ['group', 'general_group'] and self.name:
             return f"Group: {self.name}"
         elif self.chat_type == 'direct':
             participant_names = " & ".join([p.username for p in self.participants.all()[:2]])
@@ -51,7 +52,7 @@ class Chat(models.Model):
     @property
     def is_group(self):
         """Proprietà per mantenere compatibilità con codice esistente."""
-        return self.chat_type == 'group'
+        return self.chat_type in ['group', 'general_group']
 
     @staticmethod
     def get_or_create_direct_chat(user_a, user_b):

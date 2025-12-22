@@ -47,6 +47,12 @@ class ChatViewSet(viewsets.ModelViewSet):
                 creator=request.user,
                 participant_ids=serializer.validated_data.get('participant_ids', [])
             )
+            
+            # Imposta il tipo di chat se fornito
+            if serializer.validated_data.get('chat_type'):
+                chat.chat_type = serializer.validated_data['chat_type']
+                chat.save()
+
             # Imposta la descrizione se fornita
             if serializer.validated_data.get('description'):
                 chat.description = serializer.validated_data['description']
@@ -56,7 +62,7 @@ class ChatViewSet(viewsets.ModelViewSet):
                 ChatSerializer(chat).data,
                 status=status.HTTP_201_CREATED
             )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["post"])
     def add_participant(self, request, pk=None):
