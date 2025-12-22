@@ -1,9 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from .models import Skill, SoftSkill
 
 User = get_user_model()
 
+@admin.register(Skill)
+class SkillAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+@admin.register(SoftSkill)
+class SoftSkillAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -16,6 +26,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
+    filter_horizontal = ('groups', 'user_permissions', 'skills', 'soft_skills')
     
     # Configurazione per aggiungere un nuovo utente
     add_fieldsets = (
@@ -38,6 +49,9 @@ class UserAdmin(BaseUserAdmin):
         }),
         ('Informazioni personali', {
             'fields': ('first_name', 'last_name', 'email')
+        }),
+        ('Profilo Professionale', {
+            'fields': ('profession', 'sector', 'skills', 'soft_skills', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
         }),
         ('Permessi', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),

@@ -1,5 +1,28 @@
+import json
 from rest_framework import serializers
-from .models import User
+from .models import User, Skill, SoftSkill
+
+
+class JSONField(serializers.JSONField):
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            try:
+                data = json.loads(data)
+            except ValueError:
+                pass
+        return super().to_internal_value(data)
+
+
+class SkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skill
+        fields = ['id', 'name', 'translations']
+
+
+class SoftSkillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SoftSkill
+        fields = ['id', 'name', 'translations']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -22,7 +45,68 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserSearchSerializer(serializers.ModelSerializer):
     """Serializer for user search results."""
+    skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    soft_skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'profession', 'sector', 'location', 'avatar', 'bio',
+            'skills', 'soft_skills'
+        ]
         read_only_fields = fields
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for user profile management."""
+    skills = serializers.SlugRelatedField(
+        many=True, 
+        slug_field='name', 
+        queryset=Skill.objects.all(),
+        required=False
+    )
+    soft_skills = serializers.SlugRelatedField(
+        many=True, 
+        slug_field='name', 
+        queryset=SoftSkill.objects.all(),
+        required=False
+    )
+    languages = JSONField(required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'profession', 'sector', 'skills', 'soft_skills',
+            'languages', 'offers_mentoring',
+            'bio', 'club_name', 'location', 'avatar'
+        ]
+        read_only_fields = ['username', 'email']
+
+    def to_internal_value(self, data):
+        # Handle JSON strings for ManyToMany fields when using FormData
+        # We need to make a mutable copy if it's a QueryDict
+        if hasattr(data, 'copy'):
+            mutable_data = data.copy()
+        else:
+            mutable_data = data
+        
+        for field in ['skills', 'soft_skills']:
+            if field in mutable_data:
+                value = mutable_data.get(field)
+                if isinstance(value, str):
+                    try:
+                        # Try to parse as JSON array
+                        parsed_value = json.loads(value)
+                        if isinstance(parsed_value, list):
+                            if hasattr(mutable_data, 'setlist'):
+                                # For QueryDict, use setlist to avoid nesting
+                                mutable_data.setlist(field, parsed_value)
+                            else:
+                                mutable_data[field] = parsed_value
+                    except (ValueError, TypeError):
+                        pass
+                    
+        return super().to_internal_value(mutable_data)
+
