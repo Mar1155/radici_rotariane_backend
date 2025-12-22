@@ -89,10 +89,10 @@ class Chat(models.Model):
         return chat
 
     @staticmethod
-    def create_group(name, creator, participant_ids=None, description=None):
+    def create_group(name, creator, participant_ids=None, description=None, chat_type='group'):
         """Crea una nuova chat di gruppo con più di 2 partecipanti."""
         chat = Chat.objects.create(
-            chat_type='group',
+            chat_type=chat_type,
             name=name,
             description=description,
             created_by=creator

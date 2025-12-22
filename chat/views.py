@@ -45,14 +45,10 @@ class ChatViewSet(viewsets.ModelViewSet):
             chat = Chat.create_group(
                 name=serializer.validated_data['name'],
                 creator=request.user,
-                participant_ids=serializer.validated_data.get('participant_ids', [])
+                participant_ids=serializer.validated_data.get('participant_ids', []),
+                chat_type=serializer.validated_data.get('chat_type', 'group')
             )
             
-            # Imposta il tipo di chat se fornito
-            if serializer.validated_data.get('chat_type'):
-                chat.chat_type = serializer.validated_data['chat_type']
-                chat.save()
-
             # Imposta la descrizione se fornita
             if serializer.validated_data.get('description'):
                 chat.description = serializer.validated_data['description']
