@@ -16,6 +16,11 @@ class SoftSkill(models.Model):
         return self.name
 
 class User(AbstractUser):
+    class Types(models.TextChoices):
+        NORMAL = 'NORMAL', 'Normal User'
+        CLUB = 'CLUB', 'Club'
+
+    user_type = models.CharField(max_length=10, choices=Types.choices, default=Types.NORMAL)
     email = models.EmailField(unique=True)
     
     # Profile fields
@@ -29,6 +34,17 @@ class User(AbstractUser):
     club_name = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=200, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+
+    # Club specific fields
+    club_city = models.CharField(max_length=100, blank=True)
+    club_country = models.CharField(max_length=100, blank=True)
+    club_district = models.CharField(max_length=100, blank=True)
+    
+    club_latitude = models.FloatField(null=True, blank=True)
+    club_longitude = models.FloatField(null=True, blank=True)
+    
+    club_members_count = models.IntegerField(default=0, help_text="Number of members in the club")
+    club_sister_clubs_count = models.IntegerField(default=0, help_text="Number of sister clubs")
 
     def __str__(self):
         return self.username

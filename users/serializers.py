@@ -30,15 +30,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'first_name', 'last_name']
+        fields = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'user_type', 'club_name', 'club_city', 'club_country',
+            'club_district', 'club_members_count', 'club_sister_clubs_count'
+        ]
 
     def create(self, validated_data):
+        password = validated_data.pop('password')
         user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', '')
+            password=password,
+            **validated_data
         )
         return user
 
@@ -80,7 +82,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name',
             'profession', 'sector', 'skills', 'soft_skills',
             'languages', 'offers_mentoring',
-            'bio', 'club_name', 'location', 'avatar'
+            'bio', 'club_name', 'location', 'avatar',
+            'user_type',
+            'club_city', 'club_country', 'club_district',
+            'club_latitude', 'club_longitude',
+            'club_members_count', 'club_sister_clubs_count'
         ]
         read_only_fields = ['username', 'email']
 

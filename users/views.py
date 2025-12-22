@@ -71,9 +71,22 @@ class SkillsSearchView(generics.ListAPIView):
 
 
 
+class ClubListView(generics.ListAPIView):
+    """List all club users."""
+    permission_classes = [AllowAny]
+    serializer_class = UserProfileSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(user_type='CLUB')
+
+
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for searching users."""
-    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return [AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -81,7 +94,11 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return UserSearchSerializer
 
     def get_queryset(self):
-        queryset = User.objects.exclude(id=self.request.user.id)
+        if self.request.user.is_authenticated:
+            queryset = User.objects.exclude(id=self.request.user.id)
+        else:
+            queryset = User.objects.all()
+
         search = self.request.query_params.get('search', None)
         if search:
             queryset = queryset.filter(
