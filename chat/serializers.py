@@ -43,8 +43,13 @@ class ChatSerializer(serializers.ModelSerializer):
 class CreateGroupChatSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True)
-    chat_type = serializers.ChoiceField(choices=['group', 'general_group'], default='group')
+    chat_type = serializers.ChoiceField(choices=['group', 'general_group', 'gemellaggio'], default='group')
     participant_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        allow_empty=True
+    )
+    club_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
         allow_empty=True
@@ -62,6 +67,19 @@ class CreateGroupChatSerializer(serializers.Serializer):
             if existing_users != len(value):
                 raise serializers.ValidationError("Alcuni ID utente non sono validi.")
         return value
+
+    def validate(self, data):
+        chat_type = data.get('chat_type')
+        if chat_type == 'gemellaggio':
+            club_ids = data.get('club_ids')
+            if not club_ids:
+                raise serializers.ValidationError({"club_ids": "Required for gemellaggio."})
+            
+            # Verify clubs exist and are of type CLUB
+            clubs = User.objects.filter(id__in=club_ids, user_type='CLUB')
+            if clubs.count() != len(club_ids):
+                raise serializers.ValidationError({"club_ids": "Some IDs are not valid clubs."})
+        return data
 
 
 class MessageTranslationSerializer(serializers.ModelSerializer):

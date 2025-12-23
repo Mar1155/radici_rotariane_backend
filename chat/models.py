@@ -15,6 +15,7 @@ class Chat(models.Model):
         ('direct', 'Chat Diretta'),
         ('group', 'Chat di Gruppo'),
         ('general_group', 'Chat di Gruppo Generale'),
+        ('gemellaggio', 'Gemellaggio'),
     ]
     chat_type = models.CharField(max_length=15, choices=CHAT_TYPE_CHOICES, default='direct')
     
@@ -25,6 +26,13 @@ class Chat(models.Model):
         settings.AUTH_USER_MODEL, 
         through='ChatParticipant',
         related_name="chats"
+    )
+
+    related_clubs = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="gemellaggi_chats",
+        blank=True,
+        limit_choices_to={'user_type': 'CLUB'}
     )
     
     created_by = models.ForeignKey(
@@ -89,7 +97,7 @@ class Chat(models.Model):
         return chat
 
     @staticmethod
-    def create_group(name, creator, participant_ids=None, description=None, chat_type='group'):
+    def create_group(name, creator, participant_ids=None, description=None, chat_type='group', club_ids=None):
         """Crea una nuova chat di gruppo con più di 2 partecipanti."""
         chat = Chat.objects.create(
             chat_type=chat_type,
@@ -97,13 +105,27 @@ class Chat(models.Model):
             description=description,
             created_by=creator
         )
+
+        if chat_type == 'gemellaggio' and club_ids:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            clubs = User.objects.filter(id__in=club_ids, user_type='CLUB')
+            chat.related_clubs.set(clubs)
+            
+            # Note: The 'm2m_changed' signal on Chat.related_clubs (in signals.py)
+            # automatically adds all members of these clubs to the chat.
         
         # Aggiungi il creatore come admin
-        ChatParticipant.objects.create(
-            chat=chat,
-            user=creator,
-            role='admin'
-        )
+        # Check if creator is already added (e.g. via club)
+        if not ChatParticipant.objects.filter(chat=chat, user=creator).exists():
+            ChatParticipant.objects.create(
+                chat=chat,
+                user=creator,
+                role='admin'
+            )
+        else:
+            # Update role to admin if they were added as member
+            ChatParticipant.objects.filter(chat=chat, user=creator).update(role='admin')
         
         # Aggiungi altri partecipanti come membri
         if participant_ids:
@@ -111,15 +133,16 @@ class Chat(models.Model):
             User = get_user_model()
             for user_id in participant_ids:
                 if user_id != creator.id:
-                    try:
-                        user = User.objects.get(pk=user_id)
-                        ChatParticipant.objects.create(
-                            chat=chat,
-                            user=user,
-                            role='member'
-                        )
-                    except User.DoesNotExist:
-                        pass
+                    if not ChatParticipant.objects.filter(chat=chat, user_id=user_id).exists():
+                        try:
+                            user = User.objects.get(pk=user_id)
+                            ChatParticipant.objects.create(
+                                chat=chat,
+                                user=user,
+                                role='member'
+                            )
+                        except User.DoesNotExist:
+                            pass
         
         return chat
 

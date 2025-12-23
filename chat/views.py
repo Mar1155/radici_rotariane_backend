@@ -42,11 +42,34 @@ class ChatViewSet(viewsets.ModelViewSet):
         """Crea una nuova chat di gruppo."""
         serializer = CreateGroupChatSerializer(data=request.data)
         if serializer.is_valid():
+            chat_type = serializer.validated_data.get('chat_type', 'group')
+            
+            # Verifica permessi per gemellaggio
+            club_ids = serializer.validated_data.get('club_ids', [])
+            if chat_type == 'gemellaggio':
+                if request.user.user_type != 'CLUB':
+                    return Response(
+                        {"error": "Solo i Club possono creare gemellaggi."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Assicura che il club creatore sia incluso
+                if request.user.id not in club_ids:
+                    club_ids.append(request.user.id)
+                
+                # Verifica che ci siano esattamente 2 club
+                if len(set(club_ids)) != 2:
+                    return Response(
+                        {"error": "Un gemellaggio deve essere tra esattamente due club (il tuo e un altro)."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
             chat = Chat.create_group(
                 name=serializer.validated_data['name'],
                 creator=request.user,
                 participant_ids=serializer.validated_data.get('participant_ids', []),
-                chat_type=serializer.validated_data.get('chat_type', 'group')
+                chat_type=chat_type,
+                club_ids=club_ids
             )
             
             # Imposta la descrizione se fornita

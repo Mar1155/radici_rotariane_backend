@@ -22,8 +22,8 @@ class UserAdmin(BaseUserAdmin):
     l'hashing delle password quando create/modificate
     """
     # Campi mostrati nella lista utenti
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_superuser', 'is_active')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'user_type', 'club', 'is_staff', 'is_active')
+    list_filter = ('user_type', 'club', 'is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
     filter_horizontal = ('groups', 'user_permissions', 'skills', 'soft_skills')
@@ -51,7 +51,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('first_name', 'last_name', 'email')
         }),
         ('Profilo Professionale', {
-            'fields': ('profession', 'sector', 'skills', 'soft_skills', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
+            'fields': ('user_type', 'club', 'profession', 'sector', 'skills', 'soft_skills', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
         }),
         ('Permessi', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),

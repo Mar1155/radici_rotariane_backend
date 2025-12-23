@@ -27,14 +27,26 @@ class SoftSkillSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    club = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(user_type='CLUB'),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'first_name', 'last_name',
             'user_type', 'club_name', 'club_city', 'club_country',
-            'club_district', 'club_members_count', 'club_sister_clubs_count'
+            'club_district', 'club_members_count', 'club_sister_clubs_count',
+            'club'
         ]
+
+    def validate(self, data):
+        user_type = data.get('user_type', User.Types.NORMAL)
+        if user_type == User.Types.NORMAL and not data.get('club'):
+            raise serializers.ValidationError({"club": "Club is required for normal users."})
+        return data
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -86,7 +98,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'user_type',
             'club_city', 'club_country', 'club_district',
             'club_latitude', 'club_longitude',
-            'club_members_count', 'club_sister_clubs_count'
+            'club_members_count', 'club_sister_clubs_count',
+            'club'
         ]
         read_only_fields = ['username', 'email']
 

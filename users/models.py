@@ -32,6 +32,14 @@ class User(AbstractUser):
     offers_mentoring = models.BooleanField(default=False)
     bio = models.TextField(blank=True)
     club_name = models.CharField(max_length=200, blank=True)
+    club = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        limit_choices_to={'user_type': 'CLUB'}, 
+        related_name='members'
+    )
     location = models.CharField(max_length=200, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
 
