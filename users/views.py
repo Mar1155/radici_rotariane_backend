@@ -1,5 +1,5 @@
 from rest_framework import viewsets, permissions, generics
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes as perm_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
@@ -108,3 +108,33 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(email__icontains=search)
             )
         return queryset
+
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def platform_stats(request):
+    """Return platform statistics for the homepage."""
+    from forum.models import Post
+    
+    # Count clubs (users with user_type='CLUB')
+    clubs_count = User.objects.filter(user_type='CLUB').count()
+    
+    # Count rotarians (users with user_type='NORMAL')
+    rotarians_count = User.objects.filter(user_type='NORMAL').count()
+    
+    # Count unique countries from clubs
+    countries = User.objects.filter(
+        user_type='CLUB', 
+        club_country__isnull=False
+    ).exclude(club_country='').values_list('club_country', flat=True).distinct()
+    countries_count = len(set(countries))
+    
+    # Count forum posts as "projects"
+    projects_count = Post.objects.count()
+    
+    return Response({
+        'clubs': clubs_count,
+        'rotarians': rotarians_count,
+        'countries': countries_count,
+        'projects': projects_count,
+    })

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserViewSet, RegisterView, MeView, SkillsSearchView, SkillListView, SoftSkillListView, ClubListView
+from .views import UserViewSet, RegisterView, MeView, SkillsSearchView, SkillListView, SoftSkillListView, ClubListView, platform_stats
 
 router = DefaultRouter()
 router.register(r'', UserViewSet, basename='user')
@@ -12,5 +12,6 @@ urlpatterns = [
     path('skills/', SkillsSearchView.as_view(), name='skills-search'),
     path('skills-list/', SkillListView.as_view(), name='skills-list'),
     path('soft-skills-list/', SoftSkillListView.as_view(), name='soft-skills-list'),
+    path('stats/', platform_stats, name='platform-stats'),
     path('', include(router.urls)),
 ]
