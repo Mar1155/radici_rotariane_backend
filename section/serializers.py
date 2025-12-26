@@ -7,6 +7,7 @@ class CardSerializer(serializers.ModelSerializer):
     display_date = serializers.CharField(source='get_display_date', read_only=True)
     is_past = serializers.BooleanField(source='is_past_event', read_only=True)
     author_name = serializers.CharField(source='author.username', read_only=True, allow_null=True)
+    author_club = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -29,8 +30,21 @@ class CardSerializer(serializers.ModelSerializer):
             'is_published',
             'views_count',
             'author_name',
+            'author_club',
             'section',
             'tab',
             'infoElementValues',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']
+    
+    def get_author_club(self, obj):
+        """Estrai il club dall'autore"""
+        if obj.author:
+            # Assume che l'utente abbia un campo club o simile
+            # Adatta questo in base alla tua struttura User
+            club = getattr(obj.author, 'club', None)
+            if club:
+                # Se club è un oggetto, ritorna l'ID o il nome
+                # Dipende dalla struttura - usa quello che è disponibile
+                return getattr(club, 'id', None) or getattr(club, 'name', None)
+        return None

@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 
 class Card(models.Model):
@@ -17,9 +18,9 @@ class Card(models.Model):
         ("scopri-la-calabria", "Scopri la Calabria"),
         ("scambi-e-mobilita", "Scambi e Mobilità"),
         ("adotta-un-progetto", "Adotta un Progetto"),
-        ("partner-e-collaborazioni", "Partner e Collaborazioni"),
         ("eccellenze-calabresi", "Eccellenze Calabresi"),
-        ("eventi", "Eventi")
+        ("calendario-delle-radici", "Calendario delle Radici"),
+        ("archivio", "Archivio")
     ]
     
     # Campi base
@@ -55,6 +56,14 @@ class Card(models.Model):
         blank=True,
         verbose_name="Sottotitolo",
         help_text="Sottotitolo/descrizione breve"
+    )
+    
+    location = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Localizzazione",
+        help_text="Luogo o locazione della card"
     )
     
     slug = models.SlugField(
@@ -187,6 +196,9 @@ class Card(models.Model):
         return self.title
     
     def save(self, *args, **kwargs):
+        """
+        Override save to generate slug and call full_clean() for validation.
+        """
         # Genera automaticamente lo slug dal titolo se non esiste
         if not self.slug:
             base_slug = slugify(self.title)
@@ -231,3 +243,54 @@ class Card(models.Model):
             return self.date_end < today
         
         return False
+
+    def validate_consistency(self) -> None:
+        """
+        Validate card consistency with the structure configuration.
+        
+        Ensures:
+        - Section and tab are valid
+        - All tags belong to the allowed set for this section-tab
+        - Info elements count matches expected count
+        
+        Raises:
+            ValidationError: If any consistency check fails
+        """
+        from section.validators import validate_card_consistency_all
+        
+        tags = self.tags if isinstance(self.tags, list) else []
+        info_elements_count = len(self.infoElementValues) if self.infoElementValues else 0
+        
+        validate_card_consistency_all(
+            section=self.section,
+            tab=self.tab,
+            tags=tags,
+            info_elements_count=info_elements_count
+        )
+
+    def clean(self) -> None:
+        """
+        Called during model validation (e.g., in forms and admin).
+        Validates both field-level and model-level constraints.
+        """
+        super().clean()
+        self.validate_consistency()
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to generate slug and call full_clean() for validation.
+        """
+        # Genera automaticamente lo slug dal titolo se non esiste
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            counter = 1
+            
+            # Gestisci slug duplicati aggiungendo un numero
+            while Card.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            self.slug = slug
+        
+        super().save(*args, **kwargs)

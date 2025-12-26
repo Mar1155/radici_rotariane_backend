@@ -5,24 +5,64 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from .models import Card
 from .serializers import CardSerializer
+from .structure import (
+    get_required_fields,
+    get_expected_info_elements_count,
+    can_user_add_article,
+    validate_card_consistency,
+)
 import json
 from datetime import datetime
 import traceback
+from django.core.exceptions import ValidationError
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
-def create_card(request, section, tab=None):
+def create_card(request, section, tab):
     """
     Crea una nuova card dal form Next.js
+    
+    Validazioni:
+    - section e tab devono essere validi e non null
+    - Solo i campi 'required' della struttura devono avere valori
+    - I campi 'hidden' devono essere null
+    - Tags devono appartenere alla lista consentita per section/tab
+    - infoElementValues deve avere esattamente il numero di elementi atteso
+    - L'utente deve avere il ruolo corretto per creare un articolo in questa sezione
     """
     try:
-        # Estrai i dati dal FormData
+        # 1. Validazione section/tab - non possono essere null
+        if not section or not tab:
+            return Response(
+                {'error': 'Section e tab sono obbligatori'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 2. Validazione utente autenticato e ruolo
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Utente non autenticato'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Determina il ruolo dell'utente
+        user_role = 'admin' if request.user.is_staff else 'club' if hasattr(request.user, 'club') and request.user.club else 'user'
+        
+        # Controlla se l'utente può aggiungere articoli in questa sezione/tab
+        if not can_user_add_article(section, tab, user_role):
+            return Response(
+                {'error': f'Utente con ruolo "{user_role}" non può aggiungere articoli in questa sezione'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # 3. Estrai i dati dal FormData
         title = request.data.get('title')
         subtitle = request.data.get('subtitle')
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
         content = request.data.get('content')
         date_type = request.data.get('dateType', 'none')
+        location = request.data.get('location')
         info_element_values_json = request.data.get('infoElementValues')
         
         # Parse tags da JSON string
@@ -31,10 +71,57 @@ def create_card(request, section, tab=None):
         # Parse infoElementValues da JSON string
         info_element_values = json.loads(info_element_values_json) if info_element_values_json else []
         
-        # Validazione base - ora i campi possono essere null
-        # Rimuovi la validazione obbligatoria
+        # 4. Ottieni la configurazione dei campi per questa section/tab
+        required_fields = get_required_fields(section, tab)
+        expected_info_elements = get_expected_info_elements_count(section, tab)
         
-        # Prepara i dati per il modello
+        # 5. Validazione campi obbligatori
+        missing_fields = []
+        for field in required_fields:
+            if field == 'infoElements':
+                continue  # Validato separatamente
+            
+            value = None
+            if field == 'title':
+                value = title
+            elif field == 'subtitle':
+                value = subtitle
+            elif field == 'content':
+                value = content
+            elif field == 'coverImage':
+                value = cover_image
+            elif field == 'tags':
+                value = tags
+            elif field == 'location':
+                value = location
+            elif field == 'author':
+                value = request.user
+            
+            if not value:
+                missing_fields.append(field)
+        
+        if missing_fields:
+            return Response(
+                {'error': f'Campi obbligatori mancanti: {", ".join(missing_fields)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 6. Validazione infoElements count
+        if len(info_element_values) != expected_info_elements:
+            return Response(
+                {'error': f'Info elements count non valido. Atteso {expected_info_elements}, ricevuto {len(info_element_values)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 7. Validazione completa della consistenza (tags, section/tab)
+        is_valid, errors = validate_card_consistency(section, tab, tags, len(info_element_values))
+        if not is_valid:
+            return Response(
+                {'error': 'Validazione della card fallita', 'details': errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # 8. Prepara i dati per il modello
         card_data = {
             'section': section,
             'tab': tab,
@@ -44,8 +131,10 @@ def create_card(request, section, tab=None):
             'tags': tags,
             'content': content,
             'date_type': date_type,
-            'author': request.user if request.user.is_authenticated else None,
+            'location': location,
+            'author': request.user,
             'infoElementValues': info_element_values,
+            'is_published': True,
         }
         
         # Aggiungi date in base al tipo
@@ -61,7 +150,7 @@ def create_card(request, section, tab=None):
             if date_end:
                 card_data['date_end'] = datetime.strptime(date_end, "%Y-%m-%d").date()
         
-        # Crea la card
+        # 9. Crea la card
         card = Card.objects.create(**card_data)
         
         # Serializza e ritorna
@@ -76,7 +165,17 @@ def create_card(request, section, tab=None):
         
     except json.JSONDecodeError:
         return Response(
-            {'error': 'Formato tags non valido'},
+            {'error': 'Formato JSON non valido per tags o infoElementValues'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except ValueError as e:
+        return Response(
+            {'error': f'Errore nel parsing dei dati: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except ValidationError as e:
+        return Response(
+            {'error': 'Validazione della card fallita', 'details': str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
     except Exception as e:
@@ -88,13 +187,11 @@ def create_card(request, section, tab=None):
 
 
 @api_view(['GET'])
-def list_cards(request, section, tab=None):
+def list_cards(request, section, tab):
     """
-    Lista tutte le cards pubblicate per section e opzionalmente tab
+    Lista tutte le cards pubblicate per una specifica section e tab
     """
-    filters = {'is_published': True, 'section': section}
-    if tab:
-        filters['tab'] = tab
+    filters = {'is_published': True, 'section': section, 'tab': tab}
     
     cards = Card.objects.filter(**filters)
     serializer = CardSerializer(cards, many=True)
