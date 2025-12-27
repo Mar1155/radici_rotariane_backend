@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions, generics
 from rest_framework.decorators import action, api_view, permission_classes as perm_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import User, Skill, SoftSkill
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
@@ -77,7 +77,10 @@ class ClubListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
 
     def get_queryset(self):
-        return User.objects.filter(user_type='CLUB')
+        return User.objects.filter(user_type='CLUB').annotate(
+            members_count=Count('members', filter=Q(members__user_type=User.Types.NORMAL), distinct=True),
+            gemellaggi_count=Count('gemellaggi_chats', filter=Q(gemellaggi_chats__chat_type='gemellaggio'), distinct=True),
+        )
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

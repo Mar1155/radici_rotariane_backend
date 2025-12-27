@@ -38,7 +38,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'email', 'password', 'first_name', 'last_name',
             'user_type', 'club_name', 'club_city', 'club_country',
-            'club_district', 'club_members_count', 'club_sister_clubs_count',
+            'club_district',
             'club'
         ]
 
@@ -86,6 +86,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         queryset=SoftSkill.objects.all(),
         required=False
     )
+    club_members_count = serializers.SerializerMethodField()
+    club_sister_clubs_count = serializers.SerializerMethodField()
     languages = JSONField(required=False)
 
     class Meta:
@@ -101,7 +103,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'club_members_count', 'club_sister_clubs_count',
             'club'
         ]
-        read_only_fields = ['username', 'email']
+        read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count']
+
+    def get_club_members_count(self, obj):
+        if obj.user_type != User.Types.CLUB:
+            return 0
+        if hasattr(obj, 'members_count'):
+            return obj.members_count or 0
+        return obj.members.filter(user_type=User.Types.NORMAL).count()
+
+    def get_club_sister_clubs_count(self, obj):
+        if obj.user_type != User.Types.CLUB:
+            return 0
+        if hasattr(obj, 'gemellaggi_count'):
+            return obj.gemellaggi_count or 0
+        return obj.gemellaggi_chats.filter(chat_type='gemellaggio').count()
 
     def to_internal_value(self, data):
         # Handle JSON strings for ManyToMany fields when using FormData
@@ -128,4 +144,3 @@ class UserProfileSerializer(serializers.ModelSerializer):
                         pass
                     
         return super().to_internal_value(mutable_data)
-
