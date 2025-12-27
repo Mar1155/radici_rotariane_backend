@@ -97,6 +97,7 @@ class Command(BaseCommand):
         clubs_data = [
             {
                 "club_name": "Rotary Club Milano Duomo",
+                "club_president": "Lorenzo Bernardi",
                 "club_city": "Milano",
                 "club_country": "Italia",
                 "club_district": "2042",
@@ -106,6 +107,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Torino Valentino",
+                "club_president": "Gianni Ferri",
                 "club_city": "Torino",
                 "club_country": "Italia",
                 "club_district": "2032",
@@ -115,6 +117,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Genova Porto Antico",
+                "club_president": "Marco De Santis",
                 "club_city": "Genova",
                 "club_country": "Italia",
                 "club_district": "2032",
@@ -124,6 +127,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Bologna Galvani",
+                "club_president": "Paola Rinaldi",
                 "club_city": "Bologna",
                 "club_country": "Italia",
                 "club_district": "2072",
@@ -133,6 +137,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Verona Arena",
+                "club_president": "Luca Monti",
                 "club_city": "Verona",
                 "club_country": "Italia",
                 "club_district": "2060",
@@ -142,6 +147,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Venezia Laguna",
+                "club_president": "Chiara Bellini",
                 "club_city": "Venezia",
                 "club_country": "Italia",
                 "club_district": "2060",
@@ -151,6 +157,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Firenze Brunelleschi",
+                "club_president": "Alessandro Moretti",
                 "club_city": "Firenze",
                 "club_country": "Italia",
                 "club_district": "2071",
@@ -160,6 +167,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Pisa Galilei",
+                "club_president": "Federica Conti",
                 "club_city": "Pisa",
                 "club_country": "Italia",
                 "club_district": "2071",
@@ -169,6 +177,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Perugia Etrusca",
+                "club_president": "Matteo Guidi",
                 "club_city": "Perugia",
                 "club_country": "Italia",
                 "club_district": "2090",
@@ -178,6 +187,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Roma Foro",
+                "club_president": "Francesca Gatti",
                 "club_city": "Roma",
                 "club_country": "Italia",
                 "club_district": "2080",
@@ -187,6 +197,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Pescara Adriatica",
+                "club_president": "Riccardo Bassi",
                 "club_city": "Pescara",
                 "club_country": "Italia",
                 "club_district": "2090",
@@ -196,6 +207,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Napoli Partenope",
+                "club_president": "Giulia Romano",
                 "club_city": "Napoli",
                 "club_country": "Italia",
                 "club_district": "2101",
@@ -205,6 +217,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Bari Levante",
+                "club_president": "Andrea Leone",
                 "club_city": "Bari",
                 "club_country": "Italia",
                 "club_district": "2120",
@@ -214,6 +227,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Lecce Barocco",
+                "club_president": "Serena Caruso",
                 "club_city": "Lecce",
                 "club_country": "Italia",
                 "club_district": "2120",
@@ -223,6 +237,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Cagliari Castello",
+                "club_president": "Paolo Serra",
                 "club_city": "Cagliari",
                 "club_country": "Italia",
                 "club_district": "2080",
@@ -232,6 +247,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Palermo Normanna",
+                "club_president": "Giorgio Vitale",
                 "club_city": "Palermo",
                 "club_country": "Italia",
                 "club_district": "2110",
@@ -241,6 +257,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Messina Peloro",
+                "club_president": "Elena Greco",
                 "club_city": "Messina",
                 "club_country": "Italia",
                 "club_district": "2110",
@@ -250,6 +267,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Cosenza",
+                "club_president": "Antonio Russo",
                 "club_city": "Cosenza",
                 "club_country": "Italia",
                 "club_district": "2102",
@@ -259,6 +277,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Reggio Calabria",
+                "club_president": "Valentina Costa",
                 "club_city": "Reggio Calabria",
                 "club_country": "Italia",
                 "club_district": "2102",
@@ -268,6 +287,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Catanzaro",
+                "club_president": "Simone Gallo",
                 "club_city": "Catanzaro",
                 "club_country": "Italia",
                 "club_district": "2102",
@@ -277,6 +297,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Lamezia Terme",
+                "club_president": "Marta Ferraro",
                 "club_city": "Lamezia Terme",
                 "club_country": "Italia",
                 "club_district": "2102",
@@ -286,6 +307,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club Toronto Calabria",
+                "club_president": "Giovanni Marino",
                 "club_city": "Toronto",
                 "club_country": "Canada",
                 "club_district": "7070",
@@ -295,6 +317,7 @@ class Command(BaseCommand):
             },
             {
                 "club_name": "Rotary Club New York Calabria",
+                "club_president": "Sara Lombardi",
                 "club_city": "New York",
                 "club_country": "USA",
                 "club_district": "7230",
@@ -314,6 +337,7 @@ class Command(BaseCommand):
                     "email": email,
                     "user_type": User.Types.CLUB,
                     "club_name": data["club_name"],
+                    "club_president": data["club_president"],
                     "club_city": data["club_city"],
                     "club_country": data["club_country"],
                     "club_district": data["club_district"],

@@ -44,6 +44,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
 
     # Club specific fields
+    club_president = models.CharField(max_length=150, blank=True)
     club_city = models.CharField(max_length=100, blank=True)
     club_country = models.CharField(max_length=100, blank=True)
     club_district = models.CharField(max_length=100, blank=True)

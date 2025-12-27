@@ -37,7 +37,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'first_name', 'last_name',
-            'user_type', 'club_name', 'club_city', 'club_country',
+            'user_type', 'club_name', 'club_president', 'club_city', 'club_country',
             'club_district',
             'club'
         ]
@@ -98,7 +98,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'languages', 'offers_mentoring',
             'bio', 'club_name', 'location', 'avatar',
             'user_type',
-            'club_city', 'club_country', 'club_district',
+            'club_president', 'club_city', 'club_country', 'club_district',
             'club_latitude', 'club_longitude',
             'club_members_count', 'club_sister_clubs_count',
             'club'
