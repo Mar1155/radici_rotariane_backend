@@ -10,7 +10,9 @@ class UserTests(TestCase):
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='testpassword'
+            password='testpassword',
+            first_name='Test',
+            last_name='User'
         )
         self.token_url = reverse('token_obtain_pair')
         self.me_url = '/api/users/me/' # Hardcoded to verify the path structure
@@ -22,7 +24,8 @@ class UserTests(TestCase):
 
         # Get token
         response = self.client.post(self.token_url, {
-            'username': 'testuser',
+            'first_name': 'Test',
+            'last_name': 'User',
             'password': 'testpassword'
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)

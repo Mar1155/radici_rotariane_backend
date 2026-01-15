@@ -22,9 +22,9 @@ class UserAdmin(BaseUserAdmin):
     l'hashing delle password quando create/modificate
     """
     # Campi mostrati nella lista utenti
-    list_display = ('username', 'email', 'first_name', 'last_name', 'user_type', 'club', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'rotary_id', 'user_type', 'club', 'is_staff', 'is_active')
     list_filter = ('user_type', 'club', 'is_staff', 'is_superuser', 'is_active')
-    search_fields = ('username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email', 'first_name', 'last_name', 'rotary_id')
     ordering = ('username',)
     filter_horizontal = ('groups', 'user_permissions', 'skills', 'soft_skills')
     
@@ -32,7 +32,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'password1', 'password2'),
+            'fields': ('username', 'email', 'rotary_id', 'password1', 'password2'),
         }),
         ('Informazioni personali', {
             'fields': ('first_name', 'last_name'),
@@ -48,7 +48,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('username', 'password')
         }),
         ('Informazioni personali', {
-            'fields': ('first_name', 'last_name', 'email')
+            'fields': ('first_name', 'last_name', 'email', 'rotary_id')
         }),
         ('Profilo Professionale', {
             'fields': ('user_type', 'club', 'profession', 'sector', 'skills', 'soft_skills', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')

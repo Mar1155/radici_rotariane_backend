@@ -1,5 +1,8 @@
 import json
+from django.utils.text import slugify
 from rest_framework import serializers
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, Skill, SoftSkill
 
 
@@ -27,6 +30,8 @@ class SoftSkillSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    rotary_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    username = serializers.CharField(read_only=True)
     club = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.filter(user_type='CLUB'),
         required=False,
@@ -37,24 +42,51 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'first_name', 'last_name',
-            'user_type', 'club_name', 'club_president', 'club_city', 'club_country',
+            'rotary_id', 'user_type', 'club_name', 'club_president', 'club_city', 'club_country',
             'club_district',
             'club'
         ]
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'email': {'required': True},
+        }
 
     def validate(self, data):
+        if not data.get('first_name') or not data.get('last_name'):
+            raise serializers.ValidationError({"name": "First name and last name are required."})
+
         user_type = data.get('user_type', User.Types.NORMAL)
         if user_type == User.Types.NORMAL and not data.get('club'):
             raise serializers.ValidationError({"club": "Club is required for normal users."})
         return data
 
+    def validate_rotary_id(self, value):
+        if value and User.objects.filter(rotary_id=value).exists():
+            raise serializers.ValidationError("A user with this Rotarian ID already exists.")
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop('password')
+        validated_data['username'] = self.generate_username(
+            validated_data.get('first_name', ''),
+            validated_data.get('last_name', ''),
+            validated_data.get('email', ''),
+        )
         user = User.objects.create_user(
             password=password,
             **validated_data
         )
         return user
+
+    def generate_username(self, first_name: str, last_name: str, email: str = "") -> str:
+        base_slug = slugify(f"{first_name}.{last_name}") or slugify(email.split('@')[0]) or 'user'
+        username = base_slug
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_slug}{counter}"
+            counter += 1
+        return username
 
 
 class UserSearchSerializer(serializers.ModelSerializer):
@@ -89,11 +121,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     club_members_count = serializers.SerializerMethodField()
     club_sister_clubs_count = serializers.SerializerMethodField()
     languages = JSONField(required=False)
+    rotary_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
+            'rotary_id',
             'profession', 'sector', 'skills', 'soft_skills',
             'languages', 'offers_mentoring',
             'bio', 'club_name', 'location', 'avatar',
@@ -104,6 +138,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'club'
         ]
         read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count']
+
+    def validate_rotary_id(self, value):
+        if not value:
+            return value
+
+        queryset = User.objects.filter(rotary_id=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise serializers.ValidationError("A user with this Rotarian ID already exists.")
+        return value
 
     def get_club_members_count(self, obj):
         if obj.user_type != User.Types.CLUB:
@@ -144,3 +190,37 @@ class UserProfileSerializer(serializers.ModelSerializer):
                         pass
                     
         return super().to_internal_value(mutable_data)
+
+
+class NameTokenObtainPairSerializer(TokenObtainPairSerializer):
+    first_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[self.username_field].required = False
+        self.fields[self.username_field].allow_blank = True
+        self.fields[self.username_field].allow_null = True
+
+    def validate(self, attrs):
+        first_name = attrs.get('first_name', '').strip()
+        last_name = attrs.get('last_name', '').strip()
+        password = attrs.get('password')
+
+        if not first_name or not last_name:
+            raise AuthenticationFailed("First name and last name are required for login.")
+
+        user = User.objects.filter(
+            first_name__iexact=first_name,
+            last_name__iexact=last_name,
+        ).order_by('id').first()
+
+        if not user:
+            raise AuthenticationFailed(self.error_messages['no_active_account'], 'no_active_account')
+
+        credentials = {
+            self.username_field: user.get_username(),
+            'password': password,
+        }
+
+        return super().validate(credentials)

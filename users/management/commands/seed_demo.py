@@ -43,6 +43,15 @@ class Command(BaseCommand):
         Card.objects.all().delete()
         User.objects.exclude(is_superuser=True).delete()
 
+    def _unique_rotary_id(self, prefix: str, start: int = 1) -> str:
+        """Generate a unique rotary_id with the given prefix and numeric suffix."""
+        counter = start
+        while True:
+            candidate = f"{prefix}-{counter:04d}"
+            if not User.objects.filter(rotary_id=candidate).exists():
+                return candidate
+            counter += 1
+
     def _ensure_skills(self):
         if Skill.objects.exists() and SoftSkill.objects.exists():
             return
@@ -331,11 +340,16 @@ class Command(BaseCommand):
         for idx, data in enumerate(clubs_data, start=1):
             username = slugify(data["club_name"]).replace("-", "_")
             email = f"{username}@demo.rotary"
-            club, _ = User.objects.get_or_create(
+            rotary_id = self._unique_rotary_id("RID-CLUB", idx)
+            president_name = data["club_president"].strip()
+            pres_first, pres_last = (president_name.split(" ", 1) + [data["club_name"]])[:2]
+            club, created = User.objects.get_or_create(
                 username=username,
                 defaults={
                     "email": email,
                     "user_type": User.Types.CLUB,
+                    "first_name": pres_first,
+                    "last_name": pres_last,
                     "club_name": data["club_name"],
                     "club_president": data["club_president"],
                     "club_city": data["club_city"],
@@ -344,8 +358,18 @@ class Command(BaseCommand):
                     "club_latitude": data["club_latitude"],
                     "club_longitude": data["club_longitude"],
                     "bio": data["bio"],
+                    "rotary_id": rotary_id,
                 },
             )
+            if not created:
+                # Ensure rotary_id and name fields are populated for existing records
+                if not club.rotary_id:
+                    club.rotary_id = rotary_id
+                if not club.first_name:
+                    club.first_name = pres_first
+                if not club.last_name:
+                    club.last_name = pres_last
+                club.email = club.email or email
             club.set_password("demo12345")
             club.save()
             clubs.append(club)
@@ -448,6 +472,15 @@ class Command(BaseCommand):
             username = f"{slugify(first_name)}_{slugify(last_name)}_{idx + 1}"
             email = f"{username}@demo.rotary"
             club = random.choice(clubs)
+            rotary_id = self._unique_rotary_id("RID-MEM", idx + 1)
+
+            if User.objects.filter(username=username).exists():
+                user = User.objects.get(username=username)
+                if not user.rotary_id:
+                    user.rotary_id = rotary_id
+                    user.save(update_fields=["rotary_id"])
+                members.append(user)
+                continue
 
             user = User.objects.create_user(
                 username=username,
@@ -467,6 +500,7 @@ class Command(BaseCommand):
                     {"name": "Italiano", "proficiency": "Native"},
                     {"name": "Inglese", "proficiency": "Fluent"},
                 ],
+                rotary_id=rotary_id,
             )
 
             user.skills.set(random.sample(skills, k=random.randint(2, 4)))

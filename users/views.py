@@ -3,10 +3,11 @@ from rest_framework.decorators import action, api_view, permission_classes as pe
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q, Count
+from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, Skill, SoftSkill
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
-    SkillSerializer, SoftSkillSerializer
+    SkillSerializer, SoftSkillSerializer, NameTokenObtainPairSerializer
 )
 
 
@@ -14,6 +15,10 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = UserRegistrationSerializer
+
+
+class NameTokenObtainPairView(TokenObtainPairView):
+    serializer_class = NameTokenObtainPairSerializer
 
 
 class MeView(generics.RetrieveUpdateAPIView):

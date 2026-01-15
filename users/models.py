@@ -22,6 +22,7 @@ class User(AbstractUser):
 
     user_type = models.CharField(max_length=10, choices=Types.choices, default=Types.NORMAL)
     email = models.EmailField(unique=True)
+    rotary_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     
     # Profile fields
     profession = models.CharField(max_length=100, blank=True)
