@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, Skill, SoftSkill
+from .models import User, Skill, SoftSkill, FocusArea
 
 
 class JSONField(serializers.JSONField):
@@ -25,6 +25,12 @@ class SkillSerializer(serializers.ModelSerializer):
 class SoftSkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = SoftSkill
+        fields = ['id', 'name', 'translations']
+
+
+class FocusAreaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FocusArea
         fields = ['id', 'name', 'translations']
 
 
@@ -93,13 +99,14 @@ class UserSearchSerializer(serializers.ModelSerializer):
     """Serializer for user search results."""
     skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
     soft_skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    focus_areas = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'profession', 'sector', 'location', 'avatar', 'bio',
-            'skills', 'soft_skills'
+            'skills', 'soft_skills', 'focus_areas'
         ]
         read_only_fields = fields
 
@@ -118,6 +125,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         queryset=SoftSkill.objects.all(),
         required=False
     )
+    focus_areas = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=FocusArea.objects.all(),
+        required=False
+    )
     club_members_count = serializers.SerializerMethodField()
     club_sister_clubs_count = serializers.SerializerMethodField()
     languages = JSONField(required=False)
@@ -128,7 +141,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'rotary_id',
-            'profession', 'sector', 'skills', 'soft_skills',
+            'profession', 'sector', 'skills', 'soft_skills', 'focus_areas',
             'languages', 'offers_mentoring',
             'bio', 'club_name', 'location', 'avatar',
             'user_type',
@@ -173,7 +186,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         else:
             mutable_data = data
         
-        for field in ['skills', 'soft_skills']:
+        for field in ['skills', 'soft_skills', 'focus_areas']:
             if field in mutable_data:
                 value = mutable_data.get(field)
                 if isinstance(value, str):

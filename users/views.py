@@ -4,10 +4,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q, Count
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import User, Skill, SoftSkill
+from .models import User, Skill, SoftSkill, FocusArea
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
-    SkillSerializer, SoftSkillSerializer, NameTokenObtainPairSerializer
+    SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, NameTokenObtainPairSerializer
 )
 
 
@@ -38,6 +38,12 @@ class SkillListView(generics.ListAPIView):
 class SoftSkillListView(generics.ListAPIView):
     queryset = SoftSkill.objects.all()
     serializer_class = SoftSkillSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class FocusAreaListView(generics.ListAPIView):
+    queryset = FocusArea.objects.all()
+    serializer_class = FocusAreaSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 

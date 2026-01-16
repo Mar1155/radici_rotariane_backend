@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Skill, SoftSkill
+from .models import Skill, SoftSkill, FocusArea
 
 User = get_user_model()
 
@@ -12,6 +12,12 @@ class SkillAdmin(admin.ModelAdmin):
 
 @admin.register(SoftSkill)
 class SoftSkillAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+
+
+@admin.register(FocusArea)
+class FocusAreaAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
@@ -26,7 +32,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ('user_type', 'club', 'is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name', 'rotary_id')
     ordering = ('username',)
-    filter_horizontal = ('groups', 'user_permissions', 'skills', 'soft_skills')
+    filter_horizontal = ('groups', 'user_permissions', 'skills', 'soft_skills', 'focus_areas')
     
     # Configurazione per aggiungere un nuovo utente
     add_fieldsets = (
@@ -51,7 +57,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('first_name', 'last_name', 'email', 'rotary_id')
         }),
         ('Profilo Professionale', {
-            'fields': ('user_type', 'club', 'profession', 'sector', 'skills', 'soft_skills', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
+            'fields': ('user_type', 'club', 'profession', 'sector', 'skills', 'soft_skills', 'focus_areas', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
         }),
         ('Permessi', {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),

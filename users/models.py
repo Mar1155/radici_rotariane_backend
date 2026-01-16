@@ -15,6 +15,14 @@ class SoftSkill(models.Model):
     def __str__(self):
         return self.name
 
+
+class FocusArea(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    translations = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return self.name
+
 class User(AbstractUser):
     class Types(models.TextChoices):
         NORMAL = 'NORMAL', 'Normal User'
@@ -29,6 +37,7 @@ class User(AbstractUser):
     sector = models.CharField(max_length=100, blank=True)
     skills = models.ManyToManyField(Skill, blank=True)
     soft_skills = models.ManyToManyField(SoftSkill, blank=True)
+    focus_areas = models.ManyToManyField(FocusArea, blank=True)
     languages = models.JSONField(default=list, blank=True)
     offers_mentoring = models.BooleanField(default=False)
     bio = models.TextField(blank=True)
