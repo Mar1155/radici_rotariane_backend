@@ -122,8 +122,20 @@ class GoogleTranslateProvider(BaseTranslationProvider):
             response.raise_for_status()
             data = response.json()
         except requests.RequestException as exc:
+            error_detail = "Errore durante la traduzione con Google Translate"
+            try:
+                if hasattr(exc, "response") and exc.response is not None:
+                    logger.error(
+                        "Google Translate error response: status=%s body=%s",
+                        exc.response.status_code,
+                        exc.response.text,
+                    )
+                    payload = exc.response.json()
+                    error_detail = payload.get("error", {}).get("message") or error_detail
+            except Exception:
+                logger.exception("Google Translate error parsing failed")
             logger.exception("Google Translate request failed")
-            raise TranslationProviderError("Errore durante la traduzione con Google Translate") from exc
+            raise TranslationProviderError(error_detail) from exc
 
         translations = (data.get("data") or {}).get("translations") or []
         if not translations:

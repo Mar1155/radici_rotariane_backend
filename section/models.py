@@ -31,7 +31,7 @@ class Card(models.Model):
         blank=True,
         verbose_name="Sezione",
     )
-    
+
     tab = models.CharField(
         max_length=100,
         null=True,
@@ -40,8 +40,6 @@ class Card(models.Model):
         help_text="Tab specifica all'interno della sezione"
     )
 
-
-
     title = models.CharField(
         max_length=255,
         null=True,
@@ -49,7 +47,7 @@ class Card(models.Model):
         verbose_name="Titolo",
         help_text="Titolo della card"
     )
-    
+
     subtitle = models.CharField(
         max_length=500,
         null=True,
@@ -57,7 +55,7 @@ class Card(models.Model):
         verbose_name="Sottotitolo",
         help_text="Sottotitolo/descrizione breve"
     )
-    
+
     location = models.CharField(
         max_length=255,
         null=True,
@@ -65,14 +63,14 @@ class Card(models.Model):
         verbose_name="Localizzazione",
         help_text="Luogo o locazione della card"
     )
-    
+
     slug = models.SlugField(
         max_length=255,
         unique=True,
         blank=True,
         help_text="URL-friendly version del titolo (generato automaticamente)"
     )
-    
+
     # Immagine di copertina
     cover_image = models.ImageField(
         upload_to='cards/covers/%Y/%m/',
@@ -211,7 +209,8 @@ class Card(models.Model):
                 counter += 1
             
             self.slug = slug
-        
+
+        self.full_clean()
         super().save(*args, **kwargs)
     
     def get_absolute_url(self):
@@ -276,21 +275,74 @@ class Card(models.Model):
         super().clean()
         self.validate_consistency()
 
-    def save(self, *args, **kwargs):
-        """
-        Override save to generate slug and call full_clean() for validation.
-        """
-        # Genera automaticamente lo slug dal titolo se non esiste
-        if not self.slug:
-            base_slug = slugify(self.title)
-            slug = base_slug
-            counter = 1
-            
-            # Gestisci slug duplicati aggiungendo un numero
-            while Card.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            
-            self.slug = slug
-        
-        super().save(*args, **kwargs)
+class CardAttachment(models.Model):
+    FILE_TYPE_CHOICES = [
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('file', 'File'),
+    ]
+
+    card = models.ForeignKey(
+        Card,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+    file = models.FileField(upload_to='cards/gallery/%Y/%m/')
+    file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES, default='file')
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Card Attachment'
+        verbose_name_plural = 'Card Attachments'
+        ordering = ['uploaded_at']
+
+    def __str__(self):
+        return self.original_name or self.file.name
+
+
+class CardReport(models.Model):
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='reports')
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='card_reports'
+    )
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Card Report'
+        verbose_name_plural = 'Card Reports'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Report #{self.pk} for {self.card_id}"
+
+
+class CardTranslation(models.Model):
+    PROVIDER_CHOICES = [
+        ('deepl', 'DeepL'),
+        ('google', 'Google Cloud Translation'),
+    ]
+
+    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='translations')
+    target_language = models.CharField(max_length=10)
+    translated_title = models.CharField(max_length=255)
+    translated_subtitle = models.TextField(blank=True)
+    translated_content = models.TextField(blank=True)
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    detected_source_language = models.CharField(max_length=10, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('card', 'target_language')
+        indexes = [
+            models.Index(fields=['card', 'target_language']),
+            models.Index(fields=['target_language']),
+        ]
+
+    def __str__(self):
+        return f"CardTranslation({self.card_id}, {self.target_language})"

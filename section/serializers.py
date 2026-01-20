@@ -1,6 +1,28 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Card
+from .models import Card, CardAttachment, CardTranslation
+
+
+class CardAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CardAttachment
+        fields = ['id', 'file', 'file_type', 'original_name', 'uploaded_at']
+
+
+class CardTranslationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CardTranslation
+        fields = [
+            'id',
+            'card',
+            'target_language',
+            'translated_title',
+            'translated_subtitle',
+            'translated_content',
+            'provider',
+            'detected_source_language',
+            'created_at',
+        ]
 
 
 class CardSerializer(serializers.ModelSerializer):
@@ -8,6 +30,7 @@ class CardSerializer(serializers.ModelSerializer):
     is_past = serializers.BooleanField(source='is_past_event', read_only=True)
     author_name = serializers.CharField(source='author.username', read_only=True, allow_null=True)
     author_club = serializers.SerializerMethodField(read_only=True)
+    attachments = CardAttachmentSerializer(many=True, read_only=True)
     
     class Meta:
         model = Card
@@ -17,6 +40,7 @@ class CardSerializer(serializers.ModelSerializer):
             'subtitle',
             'slug',
             'cover_image',
+            'attachments',
             'tags',
             'content',
             'date_type',

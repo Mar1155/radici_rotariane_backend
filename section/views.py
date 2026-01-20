@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
-from .models import Card
-from .serializers import CardSerializer
+from .models import Card, CardAttachment, CardReport, CardTranslation
+from .serializers import CardSerializer, CardTranslationSerializer
 from .structure import (
     get_required_fields,
     get_expected_info_elements_count,
@@ -15,6 +15,15 @@ import json
 from datetime import datetime
 import traceback
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from forum.utils import sanitize_rich_text
+from chat.services.translation import (
+    TranslationProviderError,
+    TranslationServiceNotConfigured,
+    normalize_language_code,
+    supported_languages,
+    translate_text,
+)
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
@@ -152,6 +161,24 @@ def create_card(request, section, tab):
         
         # 9. Crea la card
         card = Card.objects.create(**card_data)
+
+        # 10. Salva eventuali allegati (galleria)
+        gallery_files = request.FILES.getlist('galleryFiles')
+        for file in gallery_files:
+            content_type = (file.content_type or '').lower()
+            if content_type.startswith('image/'):
+                file_type = 'image'
+            elif content_type.startswith('video/'):
+                file_type = 'video'
+            else:
+                file_type = 'file'
+
+            CardAttachment.objects.create(
+                card=card,
+                file=file,
+                file_type=file_type,
+                original_name=getattr(file, 'name', '') or ''
+            )
         
         # Serializza e ritorna
         serializer = CardSerializer(card)
@@ -217,3 +244,97 @@ def get_card(request, slug):
             {'error': 'Card non trovata'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['POST'])
+def report_card(request, slug):
+    """Segnala una card."""
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'Utente non autenticato'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    try:
+        card = Card.objects.get(slug=slug)
+    except Card.DoesNotExist:
+        return Response(
+            {'error': 'Card non trovata'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    reason = request.data.get('reason', '')
+    CardReport.objects.create(card=card, reporter=request.user, reason=reason)
+    return Response({'message': 'Segnalazione inviata'}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def translate_card(request, slug):
+    """Traduci una card nella lingua richiesta, con caching."""
+    try:
+        card = Card.objects.get(slug=slug)
+    except Card.DoesNotExist:
+        return Response(
+            {'detail': 'Card non trovata.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    target_language = request.data.get('target_language') or request.query_params.get('target_language')
+    if not target_language:
+        return Response(
+            {'detail': 'target_language è obbligatorio.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    normalized_language = normalize_language_code(target_language)
+    if normalized_language not in supported_languages():
+        return Response(
+            {'detail': 'Lingua di destinazione non supportata.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    existing = CardTranslation.objects.filter(card=card, target_language=normalized_language).first()
+    if existing:
+        serializer = CardTranslationSerializer(existing)
+        return Response(serializer.data)
+
+    if not (card.title or card.subtitle or card.content):
+        return Response(
+            {'detail': 'La card è vuota, impossibile tradurre.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        title_result = translate_text(card.title or '', normalized_language)
+        subtitle_result = translate_text(card.subtitle or '', normalized_language)
+        content_result = translate_text(
+            card.content or '',
+            normalized_language,
+            text_format='html'
+        )
+    except TranslationServiceNotConfigured:
+        return Response(
+            {'detail': 'Nessun provider di traduzione configurato.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+    except TranslationProviderError as exc:
+        return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
+
+    safe_content = sanitize_rich_text(content_result.text) if content_result.text else ''
+
+    with transaction.atomic():
+        translation, created = CardTranslation.objects.update_or_create(
+            card=card,
+            target_language=normalized_language,
+            defaults={
+                'translated_title': title_result.text,
+                'translated_subtitle': subtitle_result.text,
+                'translated_content': safe_content,
+                'provider': title_result.provider,
+                'detected_source_language': title_result.detected_source_language,
+            }
+        )
+
+    serializer = CardTranslationSerializer(translation)
+    http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+    return Response(serializer.data, status=http_status)
