@@ -65,7 +65,7 @@ TEMPLATES = [
 ASGI_APPLICATION = "backend.asgi.application"
 
 # Channel Layers Configuration
-REDIS_HOST = config('REDIS_HOST', default='192.168.1.11')
+REDIS_HOST = config('REDIS_HOST', default='192.168.1.9')
 REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
 
 
@@ -81,7 +81,7 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://django_user:django_password@192.168.1.11:5432/django_db',
+        default='postgresql://django_user:django_password@192.168.1.9:5432/django_db',
         conn_max_age=600,
         conn_health_checks=True,
     )

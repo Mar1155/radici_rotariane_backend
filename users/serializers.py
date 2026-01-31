@@ -145,12 +145,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'languages', 'offers_mentoring',
             'bio', 'club_name', 'location', 'avatar',
             'user_type',
+            'is_superuser',
             'club_president', 'club_city', 'club_country', 'club_district',
             'club_latitude', 'club_longitude',
             'club_members_count', 'club_sister_clubs_count',
             'club'
         ]
-        read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count']
+        read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser']
 
     def validate_rotary_id(self, value):
         if not value:
@@ -205,35 +206,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return super().to_internal_value(mutable_data)
 
 
-class NameTokenObtainPairSerializer(TokenObtainPairSerializer):
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields[self.username_field].required = False
-        self.fields[self.username_field].allow_blank = True
-        self.fields[self.username_field].allow_null = True
+        # Keep the serializer aligned with email-based auth
+        self.fields[self.username_field].required = True
+        self.fields[self.username_field].allow_blank = False
+        self.fields[self.username_field].allow_null = False
 
     def validate(self, attrs):
-        first_name = attrs.get('first_name', '').strip()
-        last_name = attrs.get('last_name', '').strip()
-        password = attrs.get('password')
+        email = attrs.get(self.username_field, '').strip().lower()
 
-        if not first_name or not last_name:
-            raise AuthenticationFailed("First name and last name are required for login.")
+        if not email:
+            raise AuthenticationFailed("Email is required for login.")
 
-        user = User.objects.filter(
-            first_name__iexact=first_name,
-            last_name__iexact=last_name,
-        ).order_by('id').first()
-
-        if not user:
-            raise AuthenticationFailed(self.error_messages['no_active_account'], 'no_active_account')
-
-        credentials = {
-            self.username_field: user.get_username(),
-            'password': password,
-        }
-
-        return super().validate(credentials)
+        attrs[self.username_field] = email
+        return super().validate(attrs)

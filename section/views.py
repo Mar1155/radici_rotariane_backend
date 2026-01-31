@@ -1,7 +1,7 @@
 # views.py
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from .models import Card, CardAttachment, CardReport, CardTranslation
 from .serializers import CardSerializer, CardTranslationSerializer
@@ -225,25 +225,116 @@ def list_cards(request, section, tab):
     return Response(serializer.data)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH', 'DELETE'])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def get_card(request, slug):
     """
-    Recupera una singola card per slug
+    Recupera, aggiorna o elimina una singola card per slug.
+    PATCH/DELETE consentiti solo al proprietario o superuser.
     """
     try:
-        card = Card.objects.get(slug=slug, is_published=True)
-        
-        # Incrementa views
-        card.views_count += 1
-        card.save(update_fields=['views_count'])
-        
-        serializer = CardSerializer(card)
-        return Response(serializer.data)
+        if request.method == 'GET':
+            card = Card.objects.get(slug=slug, is_published=True)
+        else:
+            card = Card.objects.get(slug=slug)
     except Card.DoesNotExist:
         return Response(
             {'error': 'Card non trovata'},
             status=status.HTTP_404_NOT_FOUND
         )
+
+    if request.method == 'GET':
+        # Incrementa views
+        card.views_count += 1
+        card.save(update_fields=['views_count'])
+        serializer = CardSerializer(card)
+        return Response(serializer.data)
+
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'Utente non autenticato'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    if not (request.user.is_superuser or (card.author_id and card.author_id == request.user.id)):
+        return Response(
+            {'error': 'Non autorizzato'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    if request.method == 'DELETE':
+        card.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    data = request.data
+
+    def parse_json_field(value, default):
+        if value is None:
+            return default
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except ValueError:
+                return default
+        return value
+
+    if 'title' in data:
+        card.title = data.get('title') or None
+    if 'subtitle' in data:
+        card.subtitle = data.get('subtitle') or None
+    if 'content' in data:
+        card.content = data.get('content') or None
+    if 'location' in data:
+        card.location = data.get('location') or None
+
+    if 'dateType' in data:
+        date_type = data.get('dateType') or 'none'
+        card.date_type = date_type
+        if date_type == 'none':
+            card.date = None
+            card.date_start = None
+            card.date_end = None
+
+    if 'date' in data:
+        date = data.get('date')
+        card.date = datetime.strptime(date, "%Y-%m-%d").date() if date else None
+    if 'dateStart' in data:
+        date_start = data.get('dateStart')
+        card.date_start = datetime.strptime(date_start, "%Y-%m-%d").date() if date_start else None
+    if 'dateEnd' in data:
+        date_end = data.get('dateEnd')
+        card.date_end = datetime.strptime(date_end, "%Y-%m-%d").date() if date_end else None
+
+    if 'tags' in data:
+        card.tags = parse_json_field(data.get('tags'), [])
+
+    if 'infoElementValues' in data:
+        card.infoElementValues = parse_json_field(data.get('infoElementValues'), [])
+
+    if 'coverImage' in request.FILES:
+        card.cover_image = request.FILES.get('coverImage')
+
+    card.save()
+
+    gallery_files = request.FILES.getlist('galleryFiles')
+    for file in gallery_files:
+        content_type = (file.content_type or '').lower()
+        if content_type.startswith('image/'):
+            file_type = 'image'
+        elif content_type.startswith('video/'):
+            file_type = 'video'
+        else:
+            file_type = 'file'
+
+        CardAttachment.objects.create(
+            card=card,
+            file=file,
+            file_type=file_type,
+            original_name=getattr(file, 'name', '') or ''
+        )
+
+    serializer = CardSerializer(card)
+    return Response(serializer.data)
 
 
 @api_view(['POST'])

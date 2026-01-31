@@ -24,8 +24,7 @@ class UserTests(TestCase):
 
         # Get token
         response = self.client.post(self.token_url, {
-            'first_name': 'Test',
-            'last_name': 'User',
+            'email': 'test@example.com',
             'password': 'testpassword'
         })
         self.assertEqual(response.status_code, status.HTTP_200_OK)

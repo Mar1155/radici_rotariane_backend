@@ -65,6 +65,11 @@ class User(AbstractUser):
     club_members_count = models.IntegerField(default=0, help_text="Number of members in the club")
     club_sister_clubs_count = models.IntegerField(default=0, help_text="Number of sister clubs")
 
+    # Use email as the primary login identifier
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    EMAIL_FIELD = 'email'
+
     def __str__(self):
         return self.username
 

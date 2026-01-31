@@ -29,6 +29,7 @@ class CardSerializer(serializers.ModelSerializer):
     display_date = serializers.CharField(source='get_display_date', read_only=True)
     is_past = serializers.BooleanField(source='is_past_event', read_only=True)
     author_name = serializers.CharField(source='author.username', read_only=True, allow_null=True)
+    author_id = serializers.IntegerField(source='author.id', read_only=True, allow_null=True)
     author_club = serializers.SerializerMethodField(read_only=True)
     attachments = CardAttachmentSerializer(many=True, read_only=True)
     
@@ -54,6 +55,7 @@ class CardSerializer(serializers.ModelSerializer):
             'is_published',
             'views_count',
             'author_name',
+            'author_id',
             'author_club',
             'section',
             'tab',

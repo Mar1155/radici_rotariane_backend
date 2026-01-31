@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, Skill, SoftSkill, FocusArea
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
-    SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, NameTokenObtainPairSerializer
+    SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer
 )
 
 
@@ -17,8 +17,8 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
 
 
-class NameTokenObtainPairView(TokenObtainPairView):
-    serializer_class = NameTokenObtainPairSerializer
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
 
 
 class MeView(generics.RetrieveUpdateAPIView):
