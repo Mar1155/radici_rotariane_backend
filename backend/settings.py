@@ -79,19 +79,23 @@ CHANNEL_LAYERS = {
 # =============================================================================
 # Database Configuration
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://django_user:django_password@192.168.1.9:5432/django_db',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Prefer DATABASE_URL when provided (e.g., Railway/Render/Heroku); fallback to local sqlite
+DATABASE_URL = config('DATABASE_URL', default=None)
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
