@@ -10,6 +10,7 @@ from .structure import (
     get_expected_info_elements_count,
     can_user_add_article,
     validate_card_consistency,
+    get_tab_fields_config,
 )
 import json
 from datetime import datetime
@@ -24,6 +25,73 @@ from chat.services.translation import (
     supported_languages,
     translate_text,
 )
+
+
+def validate_card_fields(section, tab, title, subtitle, content, cover_image, tags, 
+                        location, info_element_values, gallery_files, author=None, date_value=None):
+    """
+    Centralizzata validazione di tutti i campi richiesti per una card.
+    Usa la configurazione da structure.py per determinare quali campi sono required/hidden.
+    
+    Ritorna: (is_valid, error_message)
+    """
+    # 1. Ottieni configurazione dalla struttura
+    fields_config = get_tab_fields_config(section, tab)
+    required_fields = fields_config['required']
+    hidden_fields = fields_config['hidden']
+    expected_info_elements = get_expected_info_elements_count(section, tab)
+    
+    # 2. Mappa dei campi con i loro valori
+    field_values = {
+        'title': title,
+        'subtitle': subtitle,
+        'content': content,
+        'coverImage': cover_image,
+        'tags': tags,
+        'location': location,
+        'author': author,
+        'gallery': gallery_files,
+        'date': date_value,
+        # infoElements gestito separatamente
+    }
+    
+    # 3. Valida campi obbligatori (devono avere un valore)
+    missing_fields = []
+    for field in required_fields:
+        if field == 'infoElements':
+            continue  # Validato separatamente
+        
+        value = field_values.get(field)
+        if not value:
+            missing_fields.append(field)
+    
+    if missing_fields:
+        return False, f'Campi obbligatori mancanti: {", ".join(missing_fields)}'
+    
+    # 4. Valida campi hidden (NON devono avere un valore)
+    forbidden_fields = []
+    for field in hidden_fields:
+        if field == 'infoElements':
+            continue  # Validato separatamente
+        
+        value = field_values.get(field)
+        if value:
+            forbidden_fields.append(field)
+    
+    if forbidden_fields:
+        return False, f'Campi non consentiti per questa sezione: {", ".join(forbidden_fields)}'
+    
+    # 5. Validazione infoElements count
+    if len(info_element_values) != expected_info_elements:
+        return False, f'Info elements count non valido. Atteso {expected_info_elements}, ricevuto {len(info_element_values)}'
+    
+    # 6. Validazione consistenza (tags, section/tab)
+    is_valid, errors = validate_card_consistency(section, tab, tags, len(info_element_values))
+    if not is_valid:
+        return False, f'Validazione della card fallita: {", ".join(errors)}'
+    
+    return True, None
+
 
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
@@ -73,6 +141,15 @@ def create_card(request, section, tab):
         date_type = request.data.get('dateType', 'none')
         location = request.data.get('location')
         info_element_values_json = request.data.get('infoElementValues')
+        gallery_files = request.FILES.getlist('galleryFiles')
+        
+        # Estrai date
+        date_raw = request.data.get('date')
+        date_start_raw = request.data.get('dateStart')
+        date_end_raw = request.data.get('dateEnd')
+        
+        # Determina se c'è una data valida (per validazione)
+        has_date = (date_type == 'single' and date_raw) or (date_type == 'range' and date_start_raw)
         
         # Parse tags da JSON string
         tags = json.loads(tags_json) if tags_json else []
@@ -80,57 +157,29 @@ def create_card(request, section, tab):
         # Parse infoElementValues da JSON string
         info_element_values = json.loads(info_element_values_json) if info_element_values_json else []
         
-        # 4. Ottieni la configurazione dei campi per questa section/tab
-        required_fields = get_required_fields(section, tab)
-        expected_info_elements = get_expected_info_elements_count(section, tab)
+        # 4. Validazione centralizzata di tutti i campi richiesti
+        is_valid, error_msg = validate_card_fields(
+            section=section,
+            tab=tab,
+            title=title,
+            subtitle=subtitle,
+            content=content,
+            cover_image=cover_image,
+            tags=tags,
+            location=location,
+            info_element_values=info_element_values,
+            gallery_files=gallery_files,
+            author=request.user,
+            date_value=has_date
+        )
         
-        # 5. Validazione campi obbligatori
-        missing_fields = []
-        for field in required_fields:
-            if field == 'infoElements':
-                continue  # Validato separatamente
-            
-            value = None
-            if field == 'title':
-                value = title
-            elif field == 'subtitle':
-                value = subtitle
-            elif field == 'content':
-                value = content
-            elif field == 'coverImage':
-                value = cover_image
-            elif field == 'tags':
-                value = tags
-            elif field == 'location':
-                value = location
-            elif field == 'author':
-                value = request.user
-            
-            if not value:
-                missing_fields.append(field)
-        
-        if missing_fields:
-            return Response(
-                {'error': f'Campi obbligatori mancanti: {", ".join(missing_fields)}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # 6. Validazione infoElements count
-        if len(info_element_values) != expected_info_elements:
-            return Response(
-                {'error': f'Info elements count non valido. Atteso {expected_info_elements}, ricevuto {len(info_element_values)}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # 7. Validazione completa della consistenza (tags, section/tab)
-        is_valid, errors = validate_card_consistency(section, tab, tags, len(info_element_values))
         if not is_valid:
             return Response(
-                {'error': 'Validazione della card fallita', 'details': errors},
+                {'error': error_msg},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # 8. Prepara i dati per il modello
+        # 5. Prepara i dati per il modello
         card_data = {
             'section': section,
             'tab': tab,
@@ -148,22 +197,18 @@ def create_card(request, section, tab):
         
         # Aggiungi date in base al tipo
         if date_type == 'single':
-            date = request.data.get('date')
-            if date:
-                card_data['date'] = datetime.strptime(date, "%Y-%m-%d").date()
+            if date_raw:
+                card_data['date'] = datetime.strptime(date_raw, "%Y-%m-%d").date()
         elif date_type == 'range':
-            date_start = request.data.get('dateStart')
-            date_end = request.data.get('dateEnd')
-            if date_start:
-                card_data['date_start'] = datetime.strptime(date_start, "%Y-%m-%d").date()
-            if date_end:
-                card_data['date_end'] = datetime.strptime(date_end, "%Y-%m-%d").date()
+            if date_start_raw:
+                card_data['date_start'] = datetime.strptime(date_start_raw, "%Y-%m-%d").date()
+            if date_end_raw:
+                card_data['date_end'] = datetime.strptime(date_end_raw, "%Y-%m-%d").date()
         
-        # 9. Crea la card
+        # 6. Crea la card
         card = Card.objects.create(**card_data)
 
-        # 10. Salva eventuali allegati (galleria)
-        gallery_files = request.FILES.getlist('galleryFiles')
+        # 7. Salva eventuali allegati (galleria)
         for file in gallery_files:
             content_type = (file.content_type or '').lower()
             if content_type.startswith('image/'):
@@ -266,8 +311,10 @@ def get_card(request, slug):
         card.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # PATCH - Aggiorna la card
     data = request.data
-
+    gallery_files = request.FILES.getlist('galleryFiles')
+    
     def parse_json_field(value, default):
         if value is None:
             return default
@@ -278,6 +325,41 @@ def get_card(request, slug):
                 return default
         return value
 
+    # Prepara i dati per la validazione (usa valori attuali se non forniti)
+    title = data.get('title') if 'title' in data else card.title
+    subtitle = data.get('subtitle') if 'subtitle' in data else card.subtitle
+    content = data.get('content') if 'content' in data else card.content
+    cover_image = request.FILES.get('coverImage') if 'coverImage' in request.FILES else card.cover_image
+    tags = parse_json_field(data.get('tags'), None) if 'tags' in data else card.tags
+    location = data.get('location') if 'location' in data else card.location
+    info_element_values = parse_json_field(data.get('infoElementValues'), None) if 'infoElementValues' in data else card.infoElementValues
+    
+    # Determina se c'è una data valida (per validazione)
+    has_date = card.date or card.date_start  # Controlla se la card ha già date
+    
+    # Validazione centralizzata
+    is_valid, error_msg = validate_card_fields(
+        section=card.section,
+        tab=card.tab,
+        title=title,
+        subtitle=subtitle,
+        content=content,
+        cover_image=cover_image,
+        tags=tags,
+        location=location,
+        info_element_values=info_element_values,
+        gallery_files=gallery_files,
+        author=card.author,
+        date_value=has_date
+    )
+    
+    if not is_valid:
+        return Response(
+            {'error': error_msg},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Se la validazione passa, aggiorna i campi
     if 'title' in data:
         card.title = data.get('title') or None
     if 'subtitle' in data:
@@ -316,7 +398,7 @@ def get_card(request, slug):
 
     card.save()
 
-    gallery_files = request.FILES.getlist('galleryFiles')
+    # Salva nuovi allegati se forniti
     for file in gallery_files:
         content_type = (file.content_type or '').lower()
         if content_type.startswith('image/'):

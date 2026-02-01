@@ -445,7 +445,7 @@ class Command(BaseCommand):
                 'title': 'Ristorante "Nduja & Tradizione" - Cosenza',
                 'subtitle': 'Specialità calabresi autentiche con atmosfera storica e convivialità',
                 'location': 'Cosenza, Italia',
-                'tags': self._select_tags(allowed_tags, ['sconto']),
+                'tags': self._select_tags(allowed_tags, ['sconto', 'cosenza']),
                 'content': self._generate_rich_content(
                     'La vera Calabria a tavola',
                     'Ristorante specializzato in piatti tradizionali calabresi. La \'nduja, il caciocavallo, le lagane, lo stocco alla messinese. '
@@ -454,7 +454,7 @@ class Command(BaseCommand):
                     include_list=False,
                     include_link=False
                 ),
-                'cover_image': None,
+                'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
                 'infoElementValues': ['20% sconto per i Rotariani'],
                 'is_published': True,
@@ -463,7 +463,7 @@ class Command(BaseCommand):
                 'title': 'Azienda Agricola "Terre di Reggio" - Reggio Calabria',
                 'subtitle': 'Produttore biologico certificato di agrumi e bergamotto calabrese',
                 'location': 'Reggio Calabria, Italia',
-                'tags': self._select_tags(allowed_tags, ['sconto']),
+                'tags': self._select_tags(allowed_tags, ['sconto', 'reggio-calabria']),
                 'content': self._generate_rich_content(
                     'Eccellenza biologica calabrese',
                     'Azienda agricola che produce agrumi e bergamotto secondo i più rigidi standard biologici. '
@@ -472,7 +472,7 @@ class Command(BaseCommand):
                     include_list=False,
                     include_link=False
                 ),
-                'cover_image': None,
+                'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
                 'infoElementValues': ['Degustazione gratuita e sconto 15% su acquisti'],
                 'is_published': True,
@@ -481,7 +481,7 @@ class Command(BaseCommand):
                 'title': 'Biblioteca Storica "Codex Calabricus" - Crotone',
                 'subtitle': 'Centro di ricerca con collezione unica di manoscritti calabresi medievali',
                 'location': 'Crotone, Italia',
-                'tags': self._select_tags(allowed_tags, ['gratis']),
+                'tags': self._select_tags(allowed_tags, ['gratis', 'crotone']),
                 'content': self._generate_rich_content(
                     'Un tesoro di storia calabrese',
                     'Centro di ricerca con collezione unica di manoscritti calabresi dal medioevo all\'era moderna. '
@@ -490,7 +490,7 @@ class Command(BaseCommand):
                     include_list=False,
                     include_link=False
                 ),
-                'cover_image': None,
+                'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
                 'infoElementValues': ['Visita libera gratuita per i soci Rotary'],
                 'is_published': True,
@@ -499,7 +499,7 @@ class Command(BaseCommand):
                 'title': 'Laboratorio di Artigianato "Ceramiche Seminara" - Reggio Calabria',
                 'subtitle': 'Produzione artigianale di ceramiche secondo i metodi tradizionali del XVI secolo',
                 'location': 'Reggio Calabria, Italia',
-                'tags': self._select_tags(allowed_tags, ['sconto']),
+                'tags': self._select_tags(allowed_tags, ['sconto', 'reggio-calabria']),
                 'content': self._generate_rich_content(
                     'L\'arte della ceramica vive ancora',
                     'Laboratorio dove maestri ceramisti produce opere secondo le tecniche del XVI secolo. '
@@ -508,7 +508,7 @@ class Command(BaseCommand):
                     include_list=False,
                     include_link=False
                 ),
-                'cover_image': None,
+                'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
                 'infoElementValues': ['25% di sconto su tutti i prodotti artigianali'],
                 'is_published': True,
@@ -537,7 +537,7 @@ class Command(BaseCommand):
                     include_list=True,
                     include_link=True
                 ),
-                'tags': [],
+                'tags': ['in-presenza'],
                 'date_type': 'range',
                 'date_start': timezone.now().date() + timedelta(days=90),
                 'date_end': timezone.now().date() + timedelta(days=92),
@@ -556,7 +556,7 @@ class Command(BaseCommand):
                     include_list=True,
                     include_link=True
                 ),
-                'tags': [],
+                'tags': ['in-presenza'],
                 'date_type': 'single',
                 'date': timezone.now().date() + timedelta(days=120),
                 'is_published': True,
@@ -575,7 +575,7 @@ class Command(BaseCommand):
                     include_list=True,
                     include_link=True
                 ),
-                'tags': [],
+                'tags': ['online', 'in-presenza'],
                 'date_type': 'range',
                 'date_start': timezone.now().date() + timedelta(days=150),
                 'date_end': timezone.now().date() + timedelta(days=152),
@@ -595,7 +595,7 @@ class Command(BaseCommand):
                     include_list=True,
                     include_link=True
                 ),
-                'tags': [],
+                'tags': ['in-presenza'],
                 'date_type': 'range',
                 'date_start': timezone.now().date() + timedelta(days=60),
                 'date_end': timezone.now().date() + timedelta(days=90),
