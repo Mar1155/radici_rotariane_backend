@@ -70,7 +70,11 @@ ASGI_APPLICATION = "backend.asgi.application"
 
 # Channel Layers Configuration
 REDIS_HOST = config('REDIS_HOST', default='192.168.1.9')
-REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
+_redis_port_raw = config('REDIS_PORT', default='6379')
+try:
+    REDIS_PORT = int(_redis_port_raw)
+except (TypeError, ValueError):
+    REDIS_PORT = 6379
 
 
 CHANNEL_LAYERS = {
