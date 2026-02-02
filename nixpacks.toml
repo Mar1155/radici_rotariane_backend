@@ -2,10 +2,19 @@
 nixPkgs = ["python312", "postgresql"]
 
 [phases.install]
-cmds = ["python -m pip install --upgrade pip", "python -m pip install -r requirements.txt"]
+cmds = [
+	"python -m ensurepip --upgrade",
+	"python -m pip install --upgrade pip",
+	"python -m pip install -r requirements.txt",
+]
 
 [phases.build]
-cmds = ["python manage.py collectstatic --noinput"]
+cmds = [
+	"python -m ensurepip --upgrade",
+	"python -m pip install --upgrade pip",
+	"python -m pip install -r requirements.txt",
+	"python manage.py collectstatic --noinput",
+]
 
 [start]
 cmd = "python manage.py migrate && gunicorn backend.wsgi --log-file -"
