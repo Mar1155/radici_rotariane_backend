@@ -169,9 +169,15 @@ MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / config('MEDIA_ROOT', default='media')
 
 # S3 media storage (toggle with USE_S3=true)
+# Auto-enable S3 if keys are provided and not default
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)
 USE_S3 = config('USE_S3', default=False, cast=bool)
+
+if AWS_ACCESS_KEY_ID and 'fake' not in AWS_ACCESS_KEY_ID and not USE_S3:
+    print("--> AWS keys detected. Enabling S3 storage automatically.")
+    USE_S3 = True
+
 if USE_S3:
-    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='fake-access-key')
     AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='fake-secret-key')
     AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='fake-bucket')
     AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
@@ -181,6 +187,11 @@ if USE_S3:
     AWS_S3_ADDRESSING_STYLE = config('AWS_S3_ADDRESSING_STYLE', default='virtual')
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default=None)
+
+    # Cache control for static files
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
 
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
@@ -203,6 +214,8 @@ if USE_S3:
             "location": "static",
         },
     }
+    
+    print(f"--> S3 Storage Configured. Bucket: {AWS_STORAGE_BUCKET_NAME}, Region: {AWS_S3_REGION_NAME}")
 
 if not USE_S3:
     MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
