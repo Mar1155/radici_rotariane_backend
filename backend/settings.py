@@ -25,12 +25,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section', 'forum']
+INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section', 'forum', 'storages']
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -185,17 +184,28 @@ if USE_S3:
 
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+        STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
     else:
-        MEDIA_URL = (
-            f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/media/"
-        )
+        MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/media/"
+        STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/static/"
 
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
         "OPTIONS": {
             "location": "media",
+            "file_overwrite": False,
         },
     }
+    
+    STORAGES["staticfiles"] = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "location": "static",
+        },
+    }
+
+if not USE_S3:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
