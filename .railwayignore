@@ -36,6 +36,7 @@ README_old.md
 .env.example
 Makefile
 pyproject.toml
+.env
 
 # Tests
 .coverage
