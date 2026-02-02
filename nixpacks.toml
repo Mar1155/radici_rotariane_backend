@@ -1,18 +1,11 @@
 [phases.setup]
-# Use plain python and create a venv; avoid modifying the Nix store.
 nixPkgs = ["python312", "postgresql"]
-
-[phases.install]
-cmds = [
-	"python -m venv /opt/venv",
-	"/opt/venv/bin/pip install --upgrade pip",
-	"/opt/venv/bin/pip install -r requirements.txt",
-]
 
 [phases.build]
 cmds = [
-	"python manage.py collectstatic --noinput",
+    "mkdir -p staticfiles",
+    "python manage.py collectstatic --noinput"
 ]
 
 [start]
-cmd = "mkdir -p staticfiles && python manage.py collectstatic --noinput && python manage.py migrate && gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker --log-file -"
+cmd = "python manage.py collectstatic --noinput --clear && python manage.py migrate && gunicorn backend.asgi:application -k uvicorn.workers.UvicornWorker --log-file -"
