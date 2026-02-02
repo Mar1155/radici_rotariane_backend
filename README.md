@@ -1,20 +1,31 @@
-# Radici Rotariane Server
+# Radici Rotariane — Backend
 
-Backend Django per il progetto Radici Rotariane.
+Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 
-## Traduzione messaggi chat
+## Struttura essenziale
 
-La traduzione dei messaggi sfrutta provider esterni (DeepL, Google Cloud Translation) con caching locale.
-Configura le seguenti variabili nel tuo `.env` per abilitarla:
+- `backend/` — Configurazione Django (settings, urls, asgi/wsgi) e middleware principali.
+- `users/` — App utenti, modelli e logica di autenticazione.
+- `chat/` — App realtime/Channels per messaggistica.
+- `forum/` — App forum e contenuti.
+- `section/` — App per sezioni/moduli del progetto.
+- `scripts/` — Utility per dati demo.
+- `manage.py` — Entry point Django.
+- `requirements.txt` — Dipendenze runtime.
+- `nixpacks.toml` — Build/deploy Railway (venv + pip).
 
-```env
-DEEPL_API_KEY=your-deepl-key
-GOOGLE_TRANSLATE_API_KEY=your-google-key
-TRANSLATION_SUPPORTED_LANGUAGES=it,en,es,fr,de
-TRANSLATION_PROVIDER_PRIORITY=deepl,google
-TRANSLATION_HTTP_TIMEOUT=10
+## Script demo
+
+Popola il database con dati di esempio:
+
+```bash
+python scripts/populate_demo.py
 ```
 
-- Imposta almeno una delle chiavi `DEEPL_API_KEY` o `GOOGLE_TRANSLATE_API_KEY`.
-- `TRANSLATION_SUPPORTED_LANGUAGES` accetta una lista di codici ISO2 separati da virgole.
-- L'ordine in `TRANSLATION_PROVIDER_PRIORITY` decide il fallback tra i provider configurati.
+Opzioni:
+
+```bash
+python scripts/populate_demo.py clubs
+python scripts/populate_demo.py skills
+```
+

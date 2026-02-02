@@ -1,12 +1,12 @@
 [phases.setup]
-# Explicitly include pip; nix python variants do not always bundle it.
-nixPkgs = ["python312", "python312Packages.pip", "postgresql"]
+# Use plain python and create a venv; avoid modifying the Nix store.
+nixPkgs = ["python312", "postgresql"]
 
 [phases.install]
 cmds = [
-	"python -m ensurepip --upgrade",
-	"python -m pip install --upgrade pip",
-	"python -m pip install -r requirements.txt",
+	"python -m venv /opt/venv",
+	"/opt/venv/bin/pip install --upgrade pip",
+	"/opt/venv/bin/pip install -r requirements.txt",
 ]
 
 [phases.build]
