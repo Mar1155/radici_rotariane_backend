@@ -46,7 +46,9 @@ class Command(BaseCommand):
 
     def _get_random_image_url(self):
         """Generate a random image URL using picsum.photos"""
-        self.image_counter += random.randint(1, 100)
+        rnd = random.randint(1, 9)
+        return f"examples/image-100{rnd}.jpg"
+        self.image_counter += random.randint(1, 9)
         return f"https://picsum.photos/300/200?random={self.image_counter}"
 
     def _generate_rich_content(self, title, content_text, include_list=False, include_link=True):
