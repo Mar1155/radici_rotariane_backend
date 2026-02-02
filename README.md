@@ -29,3 +29,42 @@ python scripts/populate_demo.py clubs
 python scripts/populate_demo.py skills
 ```
 
+## Variabili d’ambiente (runtime)
+
+Essenziali:
+- `SECRET_KEY` — Chiave Django.
+- `DEBUG` — `false` in produzione.
+- `ALLOWED_HOSTS` — Lista separata da virgole (es. `example.com,api.example.com`).
+- `DATABASE_URL` — Connessione Postgres (es. Railway).
+
+Consigliate per produzione:
+- `CORS_ALLOW_ALL_ORIGINS` — `false` in produzione (usa `CORS_ALLOWED_ORIGINS`).
+- `CORS_ALLOWED_ORIGINS` — Lista separata da virgole.
+- `CSRF_TRUSTED_ORIGINS` — Lista separata da virgole con schema (es. `https://example.com`).
+- `LOG_LEVEL` — `INFO`/`DEBUG`.
+
+Realtime (Channels):
+- `REDIS_HOST` — Host Redis.
+- `REDIS_PORT` — Porta Redis (default `6379`).
+
+Media su S3 (se `USE_S3=true`):
+- `USE_S3` — `true` per usare S3.
+- `AWS_ACCESS_KEY_ID` — Access key.
+- `AWS_SECRET_ACCESS_KEY` — Secret key.
+- `AWS_STORAGE_BUCKET_NAME` — Nome bucket.
+- `AWS_S3_REGION_NAME` — Regione (es. `us-east-1`).
+- `AWS_S3_CUSTOM_DOMAIN` — (opzionale) CDN o custom domain.
+- `AWS_S3_ADDRESSING_STYLE` — `virtual` o `path` (default `virtual`).
+
+Opzionali:
+- `LOG_FILE` — Path file log (default `app.log`).
+- `STATIC_URL`, `STATIC_ROOT` — Static files (default `/static/`, `staticfiles`).
+- `MEDIA_URL`, `MEDIA_ROOT` — Media files (default `/media/`, `media`).
+- `DEEPL_API_KEY`, `DEEPL_API_URL` — Traduzioni.
+- `GOOGLE_TRANSLATE_API_KEY`, `GOOGLE_TRANSLATE_API_URL` — Traduzioni.
+
+## Componenti necessari
+
+Per funzionare in produzione servono:
+- **PostgreSQL** — Database principale (via `DATABASE_URL`).
+- **Redis** — Backend per Django Channels (via `REDIS_HOST/REDIS_PORT`).
