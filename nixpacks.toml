@@ -1,16 +1,15 @@
 [phases.setup]
-nixPkgs = ["python312", "postgresql"]
+# Use python312Full so pip is available out of the box in the Nix environment
+nixPkgs = ["python312Full", "postgresql"]
 
 [phases.install]
 cmds = [
-	"python -m ensurepip --upgrade",
 	"python -m pip install --upgrade pip",
 	"python -m pip install -r requirements.txt",
 ]
 
 [phases.build]
 cmds = [
-	"python -m ensurepip --upgrade",
 	"python -m pip install --upgrade pip",
 	"python -m pip install -r requirements.txt",
 	"python manage.py collectstatic --noinput",
