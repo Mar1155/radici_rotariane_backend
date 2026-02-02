@@ -20,45 +20,14 @@ class RichContentGenerator:
     """Generate rich HTML content with various formatting features"""
     
     @staticmethod
-    def generate_content(title, content_text, include_list=False, include_link=True):
+    def generate_content(title=None, content_text=None, include_list=False, include_link=True):
         """
-        Generate rich HTML content with formatting.
-        
-        Args:
-            title: Main heading for the content
-            content_text: Body text for paragraphs
-            include_list: Whether to include an ordered list
-            include_link: Whether to include a link
+        Returns the content from content.txt file.
         """
-        html_parts = [
-            f'<h1>{title}</h1>',
-            '<h2>Dettagli Importanti</h2>',
-            f'<p>{content_text}</p>',
-            '<p><strong>Punto principale:</strong> Leggi attentamente le informazioni.</p>',
-            '<p><em>Questo è un elemento importante</em></p>',
-            '<p><u>Sottolineato per enfasi</u></p>',
-            f'<p><span style="color: rgb(230, 0, 0);">Informazione critica</span></p>',
-            '<p>Questo è <span style="background-color: rgb(255, 255, 0);">evidenziato</span> per importanza</p>',
-        ]
-        
-        if include_list:
-            html_parts.append(
-                '<ol>'
-                '<li data-list="ordered"><span class="ql-ui" contenteditable="false"></span>Prima considerazione</li>'
-                '<li data-list="ordered"><span class="ql-ui" contenteditable="false"></span>Seconda considerazione</li>'
-                '</ol>'
-            )
-        
-        html_parts.append('<p class="ql-align-center">Informazioni Aggiuntive</p>')
-        html_parts.append('<p class="ql-align-center"><br></p>')
-        
-        if include_link:
-            html_parts.append(
-                '<p><a href="https://www.rotary.org" rel="noopener noreferrer" target="_blank">'
-                'Per saperne di più visita il sito ufficiale</a></p>'
-            )
-        
-        return ''.join(html_parts)
+        import os
+        content_file = os.path.join(os.path.dirname(__file__), 'content.txt')
+        with open(content_file, 'r', encoding='utf-8') as f:
+            return f.read()
 
 
 class Command(BaseCommand):
