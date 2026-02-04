@@ -184,9 +184,9 @@ if USE_S3:
     AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
     AWS_S3_SIGNATURE_VERSION = 's3v4'
     AWS_S3_FILE_OVERWRITE = False
-    AWS_DEFAULT_ACL = None
+    AWS_DEFAULT_ACL = None  # ACLs disabled - using bucket policy for public access
     AWS_S3_ADDRESSING_STYLE = config('AWS_S3_ADDRESSING_STYLE', default='virtual')
-    AWS_QUERYSTRING_AUTH = False
+    AWS_QUERYSTRING_AUTH = False  # Don't use signed URLs for public access
     AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default=None)
 
     # Cache control for static files
@@ -210,7 +210,7 @@ if USE_S3:
     }
     
     STORAGES["staticfiles"] = {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
         "OPTIONS": {
             "location": "static",
         },
