@@ -55,9 +55,8 @@ class SkillsSearchView(generics.ListAPIView):
     def get_queryset(self):
         queryset = User.objects.exclude(id=self.request.user.id)
         
-        # Filter users who have completed their profile (must have skills and soft_skills)
+        # Filter users who have completed their profile (must have at least one skill)
         queryset = queryset.filter(skills__isnull=False).distinct()
-        queryset = queryset.filter(soft_skills__isnull=False).distinct()
         
         search = self.request.query_params.get('search', None)
         sector = self.request.query_params.get('sector', None)
