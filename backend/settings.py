@@ -69,20 +69,32 @@ TEMPLATES = [
 ASGI_APPLICATION = "backend.asgi.application"
 
 # Channel Layers Configuration
-REDIS_HOST = config('REDIS_HOST', default='192.168.1.9')
-_redis_port_raw = config('REDIS_PORT', default='6379')
-try:
-    REDIS_PORT = int(_redis_port_raw)
-except (TypeError, ValueError):
-    REDIS_PORT = 6379
+# Support REDIS_URL (Railway/Heroku style) or REDIS_HOST/REDIS_PORT
+REDIS_URL = config('REDIS_URL', default=None)
 
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [(REDIS_HOST, REDIS_PORT)]},
+if REDIS_URL:
+    # Parse Redis URL for channels_redis
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [REDIS_URL]},
+        }
     }
-}
+else:
+    # Fallback to host/port configuration
+    REDIS_HOST = config('REDIS_HOST', default='localhost')
+    _redis_port_raw = config('REDIS_PORT', default='6379')
+    try:
+        REDIS_PORT = int(_redis_port_raw)
+    except (TypeError, ValueError):
+        REDIS_PORT = 6379
+
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": [(REDIS_HOST, REDIS_PORT)]},
+        }
+    }
 
 # =============================================================================
 # Database Configuration
