@@ -27,17 +27,32 @@ class ChatParticipantSerializer(serializers.ModelSerializer):
 class ChatSerializer(serializers.ModelSerializer):
     participants_details = ChatParticipantSerializer(source='chat_participants', many=True, read_only=True)
     participant_count = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Chat
         fields = [
             "id", "chat_type", "name", "description",
-            "created_by", "created_at", "participants_details", "participant_count"
+            "created_by", "created_at", "participants_details", "participant_count", "unread_count"
         ]
         read_only_fields = ["id", "created_at", "created_by"]
 
     def get_participant_count(self, obj):
         return obj.chat_participants.count()
+
+    def get_unread_count(self, obj):
+        request = self.context.get("request")
+        if not request or not hasattr(request, "user"):
+            return 0
+
+        participant = obj.chat_participants.filter(user=request.user).only(
+            "last_read_at", "joined_at"
+        ).first()
+        if not participant:
+            return 0
+
+        last_read_at = participant.last_read_at or participant.joined_at
+        return obj.messages.filter(created_at__gt=last_read_at).exclude(sender=request.user).count()
 
 
 class CreateGroupChatSerializer(serializers.Serializer):

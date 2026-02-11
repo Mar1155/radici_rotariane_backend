@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -64,6 +65,9 @@ class ChatViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
+                # Non permettere partecipanti extra in un gemellaggio
+                serializer.validated_data['participant_ids'] = []
+
             chat = Chat.create_group(
                 name=serializer.validated_data['name'],
                 creator=request.user,
@@ -91,6 +95,12 @@ class ChatViewSet(viewsets.ModelViewSet):
         if chat.chat_type == 'direct':
             return Response(
                 {"error": "Non puoi aggiungere partecipanti alle chat dirette. Crea un gruppo invece."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if chat.chat_type == 'gemellaggio':
+            return Response(
+                {"error": "Non puoi aggiungere partecipanti a un gemellaggio."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -129,6 +139,12 @@ class ChatViewSet(viewsets.ModelViewSet):
         if chat.chat_type == 'direct':
             return Response(
                 {"error": "Non puoi rimuovere partecipanti dalle chat dirette."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if chat.chat_type == 'gemellaggio':
+            return Response(
+                {"error": "Non puoi rimuovere partecipanti da un gemellaggio."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -171,6 +187,12 @@ class ChatViewSet(viewsets.ModelViewSet):
                 {"error": "Non puoi uscire da una chat diretta. Puoi solo eliminarla."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if chat.chat_type == 'gemellaggio':
+            return Response(
+                {"error": "Non puoi uscire da un gemellaggio."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         participant = ChatParticipant.objects.filter(chat=chat, user=request.user).first()
         if not participant:
@@ -187,6 +209,18 @@ class ChatViewSet(viewsets.ModelViewSet):
             return Response({"message": "Gruppo eliminato (ultimo partecipante uscito)."})
         
         return Response({"message": "Sei uscito dal gruppo."})
+
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        """Segna come letti i messaggi per l'utente corrente."""
+        chat = self.get_object()
+        if not chat.participants.filter(pk=request.user.pk).exists():
+            raise PermissionDenied("Non fai parte di questa chat.")
+
+        ChatParticipant.objects.filter(chat=chat, user=request.user).update(
+            last_read_at=timezone.now()
+        )
+        return Response({"status": "ok"})
 
 
 class MessageViewSet(viewsets.ModelViewSet):
@@ -209,8 +243,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         serializer.save(sender=self.request.user, chat=chat)
 
     def list(self, request, *args, **kwargs):
+        chat = self.get_chat()
         queryset = self.filter_queryset(self.get_queryset())[:50]
         serializer = self.get_serializer(queryset, many=True)
+        ChatParticipant.objects.filter(chat=chat, user=request.user).update(last_read_at=timezone.now())
         return Response(serializer.data)
 
     def translate(self, request, *args, **kwargs):

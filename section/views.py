@@ -73,6 +73,10 @@ def validate_card_fields(section, tab, title, subtitle, content, cover_image, ta
     for field in hidden_fields:
         if field == 'infoElements':
             continue  # Validato separatamente
+
+        if field == 'author':
+            # Author e' sempre valorizzato lato server, non deve bloccare la creazione
+            continue
         
         value = field_values.get(field)
         if value:

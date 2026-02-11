@@ -127,8 +127,8 @@ class Chat(models.Model):
             # Update role to admin if they were added as member
             ChatParticipant.objects.filter(chat=chat, user=creator).update(role='admin')
         
-        # Aggiungi altri partecipanti come membri
-        if participant_ids:
+        # Aggiungi altri partecipanti come membri (non per gemellaggi)
+        if participant_ids and chat_type != 'gemellaggio':
             from django.contrib.auth import get_user_model
             User = get_user_model()
             for user_id in participant_ids:
@@ -158,6 +158,7 @@ class ChatParticipant(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     joined_at = models.DateTimeField(default=timezone.now)
+    last_read_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         unique_together = ['chat', 'user']
