@@ -255,17 +255,21 @@ class Card(models.Model):
         Raises:
             ValidationError: If any consistency check fails
         """
-        from section.validators import validate_card_consistency_all
-        
+        from section.structure import validate_card_consistency
+
         tags = self.tags if isinstance(self.tags, list) else []
         info_elements_count = len(self.infoElementValues) if self.infoElementValues else 0
-        
-        validate_card_consistency_all(
+
+        # Solo consistenza dati (section, tab, tags, info elements).
+        # I permessi utente sono già verificati nella view.
+        is_valid, errors = validate_card_consistency(
             section=self.section,
             tab=self.tab,
             tags=tags,
-            info_elements_count=info_elements_count
+            info_elements_count=info_elements_count,
         )
+        if not is_valid:
+            raise ValidationError(errors)
 
     def clean(self) -> None:
         """

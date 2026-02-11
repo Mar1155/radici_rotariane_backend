@@ -123,7 +123,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                     'hidden': ['date', 'content', 'author', 'gallery'],
                 },
                 'infoElements': 1,
-                'canAddArticle': ['user', 'club', 'admin'],
+                'canAddArticle': ['admin'],
             }
         }
     },
@@ -173,7 +173,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                     'hidden': ['date', 'location', 'tags', 'infoElements', 'coverImage', 'content', 'author', 'gallery'],
                 },
                 'infoElements': 0,
-                'canAddArticle': ['user', 'club', 'admin'],
+                'canAddArticle': ['admin'],
             },
         }
     },

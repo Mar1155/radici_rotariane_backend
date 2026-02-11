@@ -69,15 +69,12 @@ def validate_card_fields(section, tab, title, subtitle, content, cover_image, ta
         return False, f'Campi obbligatori mancanti: {", ".join(missing_fields)}'
     
     # 4. Valida campi hidden (NON devono avere un valore)
+    # 'author' è escluso: anche se hidden nel frontend, deve sempre essere presente per l'autenticazione
     forbidden_fields = []
     for field in hidden_fields:
-        if field == 'infoElements':
-            continue  # Validato separatamente
+        if field in ('infoElements', 'author'):
+            continue  # infoElements validato separatamente, author sempre richiesto
 
-        if field == 'author':
-            # Author e' sempre valorizzato lato server, non deve bloccare la creazione
-            continue
-        
         value = field_values.get(field)
         if value:
             forbidden_fields.append(field)
