@@ -63,6 +63,22 @@ Opzionali:
 - `DEEPL_API_KEY`, `DEEPL_API_URL` — Traduzioni.
 - `GOOGLE_TRANSLATE_API_KEY`, `GOOGLE_TRANSLATE_API_URL` — Traduzioni.
 
+Email (Gmail SMTP):
+- `EMAIL_HOST` — Default `smtp.gmail.com`.
+- `EMAIL_PORT` — Default `587`.
+- `EMAIL_USE_TLS` — Default `true`.
+- `EMAIL_HOST_USER` — Account Gmail.
+- `EMAIL_HOST_PASSWORD` — App Password Gmail.
+- `DEFAULT_FROM_EMAIL` — Mittente (default `EMAIL_HOST_USER`).
+- `SUPPORT_EMAIL` — Email supporto (default `EMAIL_HOST_USER`).
+- `SITE_NAME` — Nome visualizzato nelle email.
+
+Reset password (OTP):
+- `PASSWORD_RESET_OTP_TTL_MINUTES` — Default `30`.
+- `PASSWORD_RESET_RESEND_SECONDS` — Default `60`.
+- `PASSWORD_RESET_MAX_PER_HOUR` — Default `5`.
+- `PASSWORD_RESET_MAX_ATTEMPTS` — Default `5`.
+
 ## Componenti necessari
 
 Per funzionare in produzione servono:

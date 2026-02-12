@@ -224,3 +224,25 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         attrs[self.username_field] = email
         return super().validate(attrs)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(min_length=6, max_length=6)
+    new_password = serializers.CharField(min_length=8)
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+    def validate_code(self, value):
+        cleaned = value.strip()
+        if not cleaned.isdigit():
+            raise serializers.ValidationError('Il codice deve contenere solo cifre.')
+        return cleaned

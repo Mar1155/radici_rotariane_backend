@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Skill, SoftSkill, FocusArea
+from .models import Skill, SoftSkill, FocusArea, PasswordResetToken
 
 User = get_user_model()
 
@@ -66,3 +66,11 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('last_login', 'date_joined')
         }),
     )
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'expires_at', 'used_at', 'attempts')
+    list_filter = ('used_at',)
+    search_fields = ('user__email', 'user__username')
+    readonly_fields = ('user', 'code_hash', 'created_at', 'expires_at', 'used_at', 'attempts', 'requested_ip', 'user_agent')

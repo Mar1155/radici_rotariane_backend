@@ -181,6 +181,30 @@ WHITENOISE_MANIFEST_STRICT = False
 MEDIA_URL = config('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / config('MEDIA_ROOT', default='media')
 
+# =============================================================================
+# Email (Gmail SMTP)
+# =============================================================================
+
+SITE_NAME = config('SITE_NAME', default='Radici Rotariane')
+
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'no-reply@example.com')
+SUPPORT_EMAIL = config('SUPPORT_EMAIL', default=EMAIL_HOST_USER or '')
+
+# Password reset (OTP)
+PASSWORD_RESET_OTP_TTL_MINUTES = config('PASSWORD_RESET_OTP_TTL_MINUTES', default=30, cast=int)
+PASSWORD_RESET_RESEND_SECONDS = config('PASSWORD_RESET_RESEND_SECONDS', default=60, cast=int)
+PASSWORD_RESET_MAX_PER_HOUR = config('PASSWORD_RESET_MAX_PER_HOUR', default=5, cast=int)
+PASSWORD_RESET_MAX_ATTEMPTS = config('PASSWORD_RESET_MAX_ATTEMPTS', default=5, cast=int)
+
 # S3 media storage (toggle with USE_S3=true)
 # Auto-enable S3 if keys are provided and not default
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)

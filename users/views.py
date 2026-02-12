@@ -1,14 +1,28 @@
-from rest_framework import viewsets, permissions, generics
+from rest_framework import viewsets, permissions, generics, status
 from rest_framework.decorators import action, api_view, permission_classes as perm_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q, Count
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils import timezone
+from datetime import timedelta
+import secrets
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .models import User, Skill, SoftSkill, FocusArea
+import logging
+from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
-    SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer
+    SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer,
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 )
+
+logger = logging.getLogger('app.custom')
 
 
 class RegisterView(generics.CreateAPIView):
@@ -151,3 +165,147 @@ def platform_stats(request):
         'countries': countries_count,
         'projects': projects_count,
     })
+
+
+def _get_client_ip(request):
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _build_reset_email_context(code: str, ttl_minutes: int):
+    return {
+        'code': code,
+        'ttl_minutes': ttl_minutes,
+        'site_name': getattr(settings, 'SITE_NAME', 'Radici Rotariane'),
+        'support_email': getattr(settings, 'SUPPORT_EMAIL', ''),
+    }
+
+
+@api_view(['POST'])
+@perm_classes([AllowAny])
+def password_reset_request(request):
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+
+    cooldown_seconds = getattr(settings, 'PASSWORD_RESET_RESEND_SECONDS', 60)
+    max_per_hour = getattr(settings, 'PASSWORD_RESET_MAX_PER_HOUR', 5)
+    ttl_minutes = getattr(settings, 'PASSWORD_RESET_OTP_TTL_MINUTES', 30)
+
+    response_payload = {
+        'detail': 'Se esiste un account associato a questa email, abbiamo inviato un codice di verifica.',
+        'cooldown_seconds': cooldown_seconds,
+    }
+
+    try:
+        user = get_user_model().objects.get(email__iexact=email)
+    except get_user_model().DoesNotExist:
+        return Response(response_payload)
+
+    if not user.is_active:
+        return Response(response_payload)
+
+    now = timezone.now()
+    recent_count = PasswordResetToken.objects.filter(
+        user=user,
+        created_at__gte=now - timedelta(hours=1)
+    ).count()
+
+    if recent_count >= max_per_hour:
+        return Response(response_payload)
+
+    last_token = PasswordResetToken.objects.filter(user=user).order_by('-created_at').first()
+    if last_token and (now - last_token.created_at).total_seconds() < cooldown_seconds:
+        return Response(response_payload)
+
+    code = f"{secrets.randbelow(1000000):06d}"
+    expires_at = now + timedelta(minutes=ttl_minutes)
+    token = PasswordResetToken.objects.create(
+        user=user,
+        code_hash=make_password(code),
+        expires_at=expires_at,
+        requested_ip=_get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+    )
+
+    context = _build_reset_email_context(code, ttl_minutes)
+    subject = f"{context['site_name']} - Codice per reimpostare la password"
+    text_body = render_to_string('users/password_reset_code.txt', context).strip()
+    html_body = render_to_string('users/password_reset_code.html', context).strip()
+
+    try:
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+            to=[user.email],
+        )
+        if html_body:
+            email_message.attach_alternative(html_body, 'text/html')
+        email_message.send(fail_silently=False)
+    except Exception as exc:
+        logger.exception('Failed to send password reset email: %s', exc)
+        token.used_at = timezone.now()
+        token.save(update_fields=['used_at'])
+
+    return Response(response_payload)
+
+
+@api_view(['POST'])
+@perm_classes([AllowAny])
+def password_reset_confirm(request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+    code = serializer.validated_data['code']
+    new_password = serializer.validated_data['new_password']
+
+    invalid_response = Response(
+        {'detail': 'Codice non valido o scaduto.'},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+    try:
+        user = get_user_model().objects.get(email__iexact=email)
+    except get_user_model().DoesNotExist:
+        return invalid_response
+
+    if not user.is_active:
+        return invalid_response
+
+    now = timezone.now()
+    token = PasswordResetToken.objects.filter(
+        user=user,
+        used_at__isnull=True,
+        expires_at__gt=now,
+    ).order_by('-created_at').first()
+
+    if not token:
+        return invalid_response
+
+    max_attempts = getattr(settings, 'PASSWORD_RESET_MAX_ATTEMPTS', 5)
+    if not token.verify_code(code):
+        token.attempts += 1
+        if token.attempts >= max_attempts:
+            token.used_at = now
+        token.save(update_fields=['attempts', 'used_at'])
+        return invalid_response
+
+    try:
+        validate_password(new_password, user=user)
+    except ValidationError as exc:
+        return Response(
+            {'detail': exc.messages[0], 'errors': exc.messages},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    user.set_password(new_password)
+    user.save(update_fields=['password'])
+    PasswordResetToken.objects.filter(
+        user=user,
+        used_at__isnull=True
+    ).update(used_at=now)
+
+    return Response({'detail': 'Password aggiornata con successo.'})

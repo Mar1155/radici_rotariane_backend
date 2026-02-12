@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.db import models
+from django.utils import timezone
 
 class Skill(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -77,3 +80,31 @@ class User(AbstractUser):
     def has_skills_profile(self):
         """Check if user has completed their skills profile."""
         return self.skills.exists() and self.soft_skills.exists()
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='password_reset_tokens'
+    )
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    requested_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def verify_code(self, code: str) -> bool:
+        return check_password(code, self.code_hash)
+
+    @property
+    def is_expired(self) -> bool:
+        return self.expires_at <= timezone.now()
