@@ -31,6 +31,8 @@ class CardSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True, allow_null=True)
     author_id = serializers.IntegerField(source='author.id', read_only=True, allow_null=True)
     author_club = serializers.SerializerMethodField(read_only=True)
+    club_name = serializers.CharField(source='author.club_name', read_only=True, allow_null=True)
+    club_id = serializers.IntegerField(source='author.club.id', read_only=True, allow_null=True)
     attachments = CardAttachmentSerializer(many=True, read_only=True)
     
     class Meta:
@@ -57,6 +59,8 @@ class CardSerializer(serializers.ModelSerializer):
             'author_name',
             'author_id',
             'author_club',
+            'club_name',
+            'club_id',
             'section',
             'tab',
             'infoElementValues',

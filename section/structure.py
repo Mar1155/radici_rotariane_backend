@@ -122,7 +122,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                     'required': ['title', 'subtitle', 'tags', 'infoElements', 'location', 'coverImage'],
                     'hidden': ['date', 'content', 'author', 'gallery'],
                 },
-                'infoElements': 1,
+                'infoElements': 2,
                 'canAddArticle': ['admin'],
             }
         }

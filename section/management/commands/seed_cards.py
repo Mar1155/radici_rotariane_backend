@@ -427,7 +427,7 @@ class Command(BaseCommand):
                 ),
                 'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
-                'infoElementValues': ['20% sconto per i Rotariani'],
+                'infoElementValues': ['20% sconto per i Rotariani', '+39 0984 12345 - info@ndujatradizione.it'],
                 'is_published': True,
             },
             {
@@ -445,7 +445,7 @@ class Command(BaseCommand):
                 ),
                 'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
-                'infoElementValues': ['Degustazione gratuita e sconto 15% su acquisti'],
+                'infoElementValues': ['Degustazione gratuita e sconto 15% su acquisti', '+39 0965 54321 - www.terredireggio.it'],
                 'is_published': True,
             },
             {
@@ -463,7 +463,7 @@ class Command(BaseCommand):
                 ),
                 'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
-                'infoElementValues': ['Visita libera gratuita per i soci Rotary'],
+                'infoElementValues': ['Visita libera gratuita per i soci Rotary', '+39 0962 23456 - biblioteca@codexcalabricus.it'],
                 'is_published': True,
             },
             {
@@ -481,7 +481,7 @@ class Command(BaseCommand):
                 ),
                 'cover_image': self._get_random_image_url(),
                 'date_type': 'none',
-                'infoElementValues': ['25% di sconto su tutti i prodotti artigianali'],
+                'infoElementValues': ['25% di sconto su tutti i prodotti artigianali', '+39 0965 67890 - www.ceramicheseminara.it'],
                 'is_published': True,
             },
         ]
