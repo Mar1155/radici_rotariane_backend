@@ -79,6 +79,12 @@ Reset password (OTP):
 - `PASSWORD_RESET_MAX_PER_HOUR` — Default `5`.
 - `PASSWORD_RESET_MAX_ATTEMPTS` — Default `5`.
 
+Verifica email (OTP):
+- `EMAIL_VERIFICATION_OTP_TTL_MINUTES` — Default `30`.
+- `EMAIL_VERIFICATION_RESEND_SECONDS` — Default `60`.
+- `EMAIL_VERIFICATION_MAX_PER_HOUR` — Default `5`.
+- `EMAIL_VERIFICATION_MAX_ATTEMPTS` — Default `5`.
+
 ## Componenti necessari
 
 Per funzionare in produzione servono:

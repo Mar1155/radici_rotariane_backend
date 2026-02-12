@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Skill, SoftSkill, FocusArea, PasswordResetToken
+from .models import Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
 
 User = get_user_model()
 
@@ -28,7 +28,7 @@ class UserAdmin(BaseUserAdmin):
     l'hashing delle password quando create/modificate
     """
     # Campi mostrati nella lista utenti
-    list_display = ('username', 'email', 'first_name', 'last_name', 'rotary_id', 'user_type', 'club', 'is_staff', 'is_active')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'rotary_id', 'user_type', 'club', 'email_verified_at', 'is_staff', 'is_active')
     list_filter = ('user_type', 'club', 'is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name', 'rotary_id')
     ordering = ('username',)
@@ -54,7 +54,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('username', 'password')
         }),
         ('Informazioni personali', {
-            'fields': ('first_name', 'last_name', 'email', 'rotary_id')
+            'fields': ('first_name', 'last_name', 'email', 'rotary_id', 'email_verified_at')
         }),
         ('Profilo Professionale', {
             'fields': ('user_type', 'club', 'profession', 'sector', 'skills', 'soft_skills', 'focus_areas', 'languages', 'offers_mentoring', 'bio', 'club_name', 'location', 'avatar')
@@ -70,6 +70,14 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(PasswordResetToken)
 class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'created_at', 'expires_at', 'used_at', 'attempts')
+    list_filter = ('used_at',)
+    search_fields = ('user__email', 'user__username')
+    readonly_fields = ('user', 'code_hash', 'created_at', 'expires_at', 'used_at', 'attempts', 'requested_ip', 'user_agent')
+
+
+@admin.register(EmailVerificationToken)
+class EmailVerificationTokenAdmin(admin.ModelAdmin):
     list_display = ('user', 'created_at', 'expires_at', 'used_at', 'attempts')
     list_filter = ('used_at',)
     search_fields = ('user__email', 'user__username')

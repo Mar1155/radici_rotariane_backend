@@ -205,6 +205,12 @@ PASSWORD_RESET_RESEND_SECONDS = config('PASSWORD_RESET_RESEND_SECONDS', default=
 PASSWORD_RESET_MAX_PER_HOUR = config('PASSWORD_RESET_MAX_PER_HOUR', default=5, cast=int)
 PASSWORD_RESET_MAX_ATTEMPTS = config('PASSWORD_RESET_MAX_ATTEMPTS', default=5, cast=int)
 
+# Email verification (OTP)
+EMAIL_VERIFICATION_OTP_TTL_MINUTES = config('EMAIL_VERIFICATION_OTP_TTL_MINUTES', default=30, cast=int)
+EMAIL_VERIFICATION_RESEND_SECONDS = config('EMAIL_VERIFICATION_RESEND_SECONDS', default=60, cast=int)
+EMAIL_VERIFICATION_MAX_PER_HOUR = config('EMAIL_VERIFICATION_MAX_PER_HOUR', default=5, cast=int)
+EMAIL_VERIFICATION_MAX_ATTEMPTS = config('EMAIL_VERIFICATION_MAX_ATTEMPTS', default=5, cast=int)
+
 # S3 media storage (toggle with USE_S3=true)
 # Auto-enable S3 if keys are provided and not default
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)

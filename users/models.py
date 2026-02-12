@@ -68,6 +68,8 @@ class User(AbstractUser):
     club_members_count = models.IntegerField(default=0, help_text="Number of members in the club")
     club_sister_clubs_count = models.IntegerField(default=0, help_text="Number of sister clubs")
 
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+
     # Use email as the primary login identifier
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -80,6 +82,38 @@ class User(AbstractUser):
     def has_skills_profile(self):
         """Check if user has completed their skills profile."""
         return self.skills.exists() and self.soft_skills.exists()
+
+    @property
+    def is_email_verified(self):
+        return self.email_verified_at is not None
+
+
+class EmailVerificationToken(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='email_verification_tokens'
+    )
+    code_hash = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    requested_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def verify_code(self, code: str) -> bool:
+        return check_password(code, self.code_hash)
+
+    @property
+    def is_expired(self) -> bool:
+        return self.expires_at <= timezone.now()
 
 
 class PasswordResetToken(models.Model):

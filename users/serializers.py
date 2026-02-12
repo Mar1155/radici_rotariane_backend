@@ -145,13 +145,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'languages', 'offers_mentoring',
             'bio', 'club_name', 'location', 'avatar',
             'user_type',
+            'is_email_verified',
             'is_superuser',
             'club_president', 'club_city', 'club_country', 'club_district',
             'club_latitude', 'club_longitude',
             'club_members_count', 'club_sister_clubs_count',
             'club'
         ]
-        read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser']
+        read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser', 'is_email_verified']
 
     def validate_rotary_id(self, value):
         if not value:
@@ -223,7 +224,10 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise AuthenticationFailed("Email is required for login.")
 
         attrs[self.username_field] = email
-        return super().validate(attrs)
+        data = super().validate(attrs)
+        if not self.user.is_email_verified:
+            raise AuthenticationFailed("Email non verificata. Controlla la tua posta e completa la verifica.")
+        return data
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
@@ -237,6 +241,27 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(min_length=6, max_length=6)
     new_password = serializers.CharField(min_length=8)
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+    def validate_code(self, value):
+        cleaned = value.strip()
+        if not cleaned.isdigit():
+            raise serializers.ValidationError('Il codice deve contenere solo cifre.')
+        return cleaned
+
+
+class EmailVerificationRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return value.strip().lower()
+
+
+class EmailVerificationConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(min_length=6, max_length=6)
 
     def validate_email(self, value):
         return value.strip().lower()

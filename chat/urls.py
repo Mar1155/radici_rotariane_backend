@@ -25,6 +25,9 @@ chat_remove_participant = ChatViewSet.as_view({
 chat_leave_group = ChatViewSet.as_view({
     "post": "leave_group",
 })
+chat_mark_read = ChatViewSet.as_view({
+    "post": "mark_read",
+})
 chat_forum = ChatViewSet.as_view({
     "get": "forum",
 })
@@ -59,6 +62,8 @@ urlpatterns = [
     path("<uuid:pk>/remove_participant/", chat_remove_participant, name="chat-remove-participant"),
     # esci dal gruppo
     path("<uuid:pk>/leave_group/", chat_leave_group, name="chat-leave-group"),
+    # segna messaggi come letti
+    path("<uuid:pk>/mark_read/", chat_mark_read, name="chat-mark-read"),
 
     # Messages dentro una chat
     path("<uuid:chat_pk>/messages/", message_list, name="message-list"),

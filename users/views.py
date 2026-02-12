@@ -15,11 +15,12 @@ from datetime import timedelta
 import secrets
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
-from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken
+from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
     SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer,
-    PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer
 )
 
 logger = logging.getLogger('app.custom')
@@ -29,6 +30,11 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = UserRegistrationSerializer
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        if not user.is_email_verified:
+            _send_email_verification(user, self.request, force_send=True)
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
@@ -183,6 +189,70 @@ def _build_reset_email_context(code: str, ttl_minutes: int):
     }
 
 
+def _build_verification_email_context(code: str, ttl_minutes: int):
+    return {
+        'code': code,
+        'ttl_minutes': ttl_minutes,
+        'site_name': getattr(settings, 'SITE_NAME', 'Radici Rotariane'),
+        'support_email': getattr(settings, 'SUPPORT_EMAIL', ''),
+    }
+
+
+def _send_email_verification(user, request, force_send: bool = False) -> bool:
+    if user.is_email_verified:
+        return True
+
+    cooldown_seconds = getattr(settings, 'EMAIL_VERIFICATION_RESEND_SECONDS', 60)
+    max_per_hour = getattr(settings, 'EMAIL_VERIFICATION_MAX_PER_HOUR', 5)
+    ttl_minutes = getattr(settings, 'EMAIL_VERIFICATION_OTP_TTL_MINUTES', 30)
+
+    now = timezone.now()
+    if not force_send:
+        recent_count = EmailVerificationToken.objects.filter(
+            user=user,
+            created_at__gte=now - timedelta(hours=1)
+        ).count()
+
+        if recent_count >= max_per_hour:
+            return False
+
+        last_token = EmailVerificationToken.objects.filter(user=user).order_by('-created_at').first()
+        if last_token and (now - last_token.created_at).total_seconds() < cooldown_seconds:
+            return False
+
+    code = f"{secrets.randbelow(1000000):06d}"
+    expires_at = now + timedelta(minutes=ttl_minutes)
+    token = EmailVerificationToken.objects.create(
+        user=user,
+        code_hash=make_password(code),
+        expires_at=expires_at,
+        requested_ip=_get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+    )
+
+    context = _build_verification_email_context(code, ttl_minutes)
+    subject = f"{context['site_name']} - Verifica la tua email"
+    text_body = render_to_string('users/email_verification_code.txt', context).strip()
+    html_body = render_to_string('users/email_verification_code.html', context).strip()
+
+    try:
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+            to=[user.email],
+        )
+        if html_body:
+            email_message.attach_alternative(html_body, 'text/html')
+        email_message.send(fail_silently=False)
+        return True
+    except Exception as exc:
+        logger.exception('Failed to send email verification: %s', exc)
+        token.used_at = timezone.now()
+        token.save(update_fields=['used_at'])
+        return False
+
+
 @api_view(['POST'])
 @perm_classes([AllowAny])
 def password_reset_request(request):
@@ -309,3 +379,81 @@ def password_reset_confirm(request):
     ).update(used_at=now)
 
     return Response({'detail': 'Password aggiornata con successo.'})
+
+
+@api_view(['POST'])
+@perm_classes([AllowAny])
+def email_verification_request(request):
+    serializer = EmailVerificationRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+
+    cooldown_seconds = getattr(settings, 'EMAIL_VERIFICATION_RESEND_SECONDS', 60)
+
+    response_payload = {
+        'detail': 'Se esiste un account associato a questa email, abbiamo inviato un codice di verifica.',
+        'cooldown_seconds': cooldown_seconds,
+    }
+
+    try:
+        user = get_user_model().objects.get(email__iexact=email)
+    except get_user_model().DoesNotExist:
+        return Response(response_payload)
+
+    if not user.is_active or user.is_email_verified:
+        return Response(response_payload)
+
+    _send_email_verification(user, request, force_send=False)
+    return Response(response_payload)
+
+
+@api_view(['POST'])
+@perm_classes([AllowAny])
+def email_verification_confirm(request):
+    serializer = EmailVerificationConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+    code = serializer.validated_data['code']
+
+    invalid_response = Response(
+        {'detail': 'Codice non valido o scaduto.'},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+    try:
+        user = get_user_model().objects.get(email__iexact=email)
+    except get_user_model().DoesNotExist:
+        return invalid_response
+
+    if user.is_email_verified:
+        return Response({'detail': 'Email gia verificata.'})
+
+    if not user.is_active:
+        return invalid_response
+
+    now = timezone.now()
+    token = EmailVerificationToken.objects.filter(
+        user=user,
+        used_at__isnull=True,
+        expires_at__gt=now,
+    ).order_by('-created_at').first()
+
+    if not token:
+        return invalid_response
+
+    max_attempts = getattr(settings, 'EMAIL_VERIFICATION_MAX_ATTEMPTS', 5)
+    if not token.verify_code(code):
+        token.attempts += 1
+        if token.attempts >= max_attempts:
+            token.used_at = now
+        token.save(update_fields=['attempts', 'used_at'])
+        return invalid_response
+
+    user.email_verified_at = now
+    user.save(update_fields=['email_verified_at'])
+    EmailVerificationToken.objects.filter(
+        user=user,
+        used_at__isnull=True
+    ).update(used_at=now)
+
+    return Response({'detail': 'Email verificata con successo.'})

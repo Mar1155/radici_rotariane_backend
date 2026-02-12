@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, RegisterView, MeView, SkillsSearchView,
     SkillListView, SoftSkillListView, FocusAreaListView,
-    ClubListView, platform_stats, password_reset_request, password_reset_confirm
+    ClubListView, platform_stats, password_reset_request, password_reset_confirm,
+    email_verification_request, email_verification_confirm
 )
 
 router = DefaultRouter()
@@ -11,6 +12,8 @@ router.register(r'', UserViewSet, basename='user')
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
+    path('email-verification/request/', email_verification_request, name='email-verification-request'),
+    path('email-verification/confirm/', email_verification_confirm, name='email-verification-confirm'),
     path('password-reset/request/', password_reset_request, name='password-reset-request'),
     path('password-reset/confirm/', password_reset_confirm, name='password-reset-confirm'),
     path('me/', MeView.as_view(), name='me'),
