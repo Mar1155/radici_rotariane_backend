@@ -36,7 +36,7 @@ class ChatViewSet(viewsets.ModelViewSet):
         target_id = request.data.get("user_id")
         target_user = get_object_or_404(request.user.__class__, pk=target_id)
         chat = Chat.get_or_create_direct_chat(request.user, target_user)
-        return Response(ChatSerializer(chat).data)
+        return Response(ChatSerializer(chat, context={'request': request}).data)
 
     @action(detail=False, methods=["post"])
     def create_group(self, request):
@@ -82,7 +82,7 @@ class ChatViewSet(viewsets.ModelViewSet):
                 chat.save()
             
             return Response(
-                ChatSerializer(chat).data,
+                ChatSerializer(chat, context={'request': request}).data,
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -129,7 +129,7 @@ class ChatViewSet(viewsets.ModelViewSet):
             )
         
         ChatParticipant.objects.create(chat=chat, user=user_to_add, role='member')
-        return Response(ChatSerializer(chat).data)
+        return Response(ChatSerializer(chat, context={'request': request}).data)
 
     @action(detail=True, methods=["post"])
     def remove_participant(self, request, pk=None):
@@ -175,7 +175,7 @@ class ChatViewSet(viewsets.ModelViewSet):
             )
         
         participant_to_remove.delete()
-        return Response(ChatSerializer(chat).data)
+        return Response(ChatSerializer(chat, context={'request': request}).data)
 
     @action(detail=True, methods=["post"])
     def leave_group(self, request, pk=None):
