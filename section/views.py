@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
-from .models import Card, CardAttachment, CardReport, CardTranslation
+from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
 from .serializers import CardSerializer, CardTranslationSerializer
 from .structure import (
     get_required_fields,
@@ -227,7 +227,7 @@ def create_card(request, section, tab):
             )
         
         # Serializza e ritorna
-        serializer = CardSerializer(card)
+        serializer = CardSerializer(card, context={'request': request})
         return Response(
             {
                 'message': 'Card creata con successo',
@@ -267,7 +267,7 @@ def list_cards(request, section, tab):
     filters = {'is_published': True, 'section': section, 'tab': tab}
     
     cards = Card.objects.filter(**filters)
-    serializer = CardSerializer(cards, many=True)
+    serializer = CardSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -293,7 +293,7 @@ def get_card(request, slug):
         # Incrementa views
         card.views_count += 1
         card.save(update_fields=['views_count'])
-        serializer = CardSerializer(card)
+        serializer = CardSerializer(card, context={'request': request})
         return Response(serializer.data)
 
     if not request.user.is_authenticated:
@@ -416,7 +416,7 @@ def get_card(request, slug):
             original_name=getattr(file, 'name', '') or ''
         )
 
-    serializer = CardSerializer(card)
+    serializer = CardSerializer(card, context={'request': request})
     return Response(serializer.data)
 
 
@@ -512,3 +512,72 @@ def translate_card(request, slug):
     serializer = CardTranslationSerializer(translation)
     http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
     return Response(serializer.data, status=http_status)
+
+
+@api_view(['POST'])
+def toggle_save_card(request, slug):
+    """Toggle salvataggio di una card (salva/rimuovi)."""
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'Utente non autenticato'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    try:
+        card = Card.objects.get(slug=slug)
+    except Card.DoesNotExist:
+        return Response(
+            {'error': 'Card non trovata'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    saved, created = SavedCard.objects.get_or_create(user=request.user, card=card)
+    if not created:
+        # Già salvata, la rimuoviamo
+        saved.delete()
+        return Response({'is_saved': False}, status=status.HTTP_200_OK)
+    
+    return Response({'is_saved': True}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def list_saved_cards(request):
+    """
+    Lista le card salvate.
+    ?user_id=<id> per vedere i salvati di un altro utente (pubblico).
+    ?section=<section> per filtrare per sezione.
+    Senza user_id, mostra i salvati dell'utente autenticato.
+    """
+    user_id = request.query_params.get('user_id')
+    section = request.query_params.get('section')
+
+    if user_id:
+        # Salvati pubblici di un utente specifico
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Utente non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    else:
+        # Salvati dell'utente autenticato
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Utente non autenticato'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        target_user = request.user
+
+    saved_qs = SavedCard.objects.filter(user=target_user).select_related('card', 'card__author')
+    if section:
+        saved_qs = saved_qs.filter(card__section=section)
+    
+    # Estrai solo le card pubblicate, ordinate per data di salvataggio
+    saved_qs = saved_qs.filter(card__is_published=True).order_by('-created_at')
+    cards = [saved.card for saved in saved_qs]
+    
+    serializer = CardSerializer(cards, many=True, context={'request': request})
+    return Response(serializer.data)

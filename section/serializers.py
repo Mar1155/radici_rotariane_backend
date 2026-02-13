@@ -34,6 +34,7 @@ class CardSerializer(serializers.ModelSerializer):
     club_name = serializers.CharField(source='author.club_name', read_only=True, allow_null=True)
     club_id = serializers.IntegerField(source='author.club.id', read_only=True, allow_null=True)
     attachments = CardAttachmentSerializer(many=True, read_only=True)
+    is_saved = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -64,9 +65,17 @@ class CardSerializer(serializers.ModelSerializer):
             'section',
             'tab',
             'infoElementValues',
+            'is_saved',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']
     
+    def get_is_saved(self, obj):
+        """Controlla se l'utente corrente ha salvato questa card"""
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            return obj.saved_by.filter(user=request.user).exists()
+        return False
+
     def get_author_club(self, obj):
         """Estrai il club dall'autore"""
         if obj.author:
