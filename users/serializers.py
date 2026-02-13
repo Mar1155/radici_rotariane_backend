@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, Skill, SoftSkill, FocusArea
+from .services.geocoding import GeocodingError, geocode_city
 
 
 class JSONField(serializers.JSONField):
@@ -32,6 +33,36 @@ class FocusAreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = FocusArea
         fields = ['id', 'name', 'translations']
+
+
+def _enrich_club_geodata(data: dict):
+    city = str(data.get("club_city", "")).strip()
+    country = str(data.get("club_country", "")).strip()
+    if city:
+        data["club_city"] = city
+    if country:
+        data["club_country"] = country
+
+    if not city:
+        return
+
+    existing_lat = data.get("club_latitude")
+    existing_lng = data.get("club_longitude")
+
+    try:
+        geodata = geocode_city(city=city, country=country or None)
+        data["club_country"] = geodata["country"]
+        data["club_latitude"] = geodata["latitude"]
+        data["club_longitude"] = geodata["longitude"]
+    except GeocodingError:
+        # Fallback: keep manually provided coordinates if present.
+        if existing_lat is None or existing_lng is None:
+            raise serializers.ValidationError(
+                {"club_city": "Impossibile geolocalizzare la citta selezionata."}
+            )
+
+    if data.get("club_city") and data.get("club_country"):
+        data["location"] = f"{data['club_city']}, {data['club_country']}"
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -73,7 +104,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                 "club_name": "Club name is required.",
                 "club_president": "Club president is required.",
                 "club_city": "Club city is required.",
-                "club_country": "Club country is required.",
                 "club_district": "Club district is required.",
             }
             errors = {}
@@ -83,15 +113,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
                     errors[field] = message
             if errors:
                 raise serializers.ValidationError(errors)
-
-            city = str(data.get("club_city", "")).strip()
-            country = str(data.get("club_country", "")).strip()
-            if city:
-                data["club_city"] = city
-            if country:
-                data["club_country"] = country
-            if city and country and not data.get("location"):
-                data["location"] = f"{city}, {country}"
+            _enrich_club_geodata(data)
         return data
 
     def validate_rotary_id(self, value):
@@ -192,6 +214,32 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A user with this Rotarian ID already exists.")
         return value
+
+    def validate(self, data):
+        user_type = data.get("user_type")
+        if user_type is None and self.instance:
+            user_type = self.instance.user_type
+
+        if user_type == User.Types.CLUB:
+            city = data.get("club_city", self.instance.club_city if self.instance else "")
+            country = data.get("club_country", self.instance.club_country if self.instance else "")
+            lat = data.get("club_latitude", self.instance.club_latitude if self.instance else None)
+            lng = data.get("club_longitude", self.instance.club_longitude if self.instance else None)
+
+            geodata_payload = dict(data)
+            geodata_payload["club_city"] = city
+            geodata_payload["club_country"] = country
+            geodata_payload["club_latitude"] = lat
+            geodata_payload["club_longitude"] = lng
+            _enrich_club_geodata(geodata_payload)
+
+            data["club_city"] = geodata_payload.get("club_city")
+            data["club_country"] = geodata_payload.get("club_country")
+            data["club_latitude"] = geodata_payload.get("club_latitude")
+            data["club_longitude"] = geodata_payload.get("club_longitude")
+            data["location"] = geodata_payload.get("location")
+
+        return data
 
     def get_club_members_count(self, obj):
         if obj.user_type != User.Types.CLUB:

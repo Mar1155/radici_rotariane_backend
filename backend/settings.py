@@ -222,6 +222,12 @@ EMAIL_VERIFICATION_RESEND_SECONDS = config('EMAIL_VERIFICATION_RESEND_SECONDS', 
 EMAIL_VERIFICATION_MAX_PER_HOUR = config('EMAIL_VERIFICATION_MAX_PER_HOUR', default=5, cast=int)
 EMAIL_VERIFICATION_MAX_ATTEMPTS = config('EMAIL_VERIFICATION_MAX_ATTEMPTS', default=5, cast=int)
 
+# Geocoding (club city -> country + coordinates)
+GEOCODING_ENABLED = config('GEOCODING_ENABLED', default=True, cast=bool)
+GEOCODING_API_URL = config('GEOCODING_API_URL', default='https://nominatim.openstreetmap.org/search')
+GEOCODING_TIMEOUT_SECONDS = config('GEOCODING_TIMEOUT_SECONDS', default=8, cast=int)
+GEOCODING_USER_AGENT = config('GEOCODING_USER_AGENT', default='radici-rotariane/1.0')
+
 # S3 media storage (toggle with USE_S3=true)
 # Auto-enable S3 if keys are provided and not default
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)
