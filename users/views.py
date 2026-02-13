@@ -248,8 +248,7 @@ def _send_email_verification(user, request, force_send: bool = False) -> bool:
         return True
     except Exception as exc:
         logger.exception('Failed to send email verification: %s', exc)
-        token.used_at = timezone.now()
-        token.save(update_fields=['used_at'])
+        EmailVerificationToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
         return False
 
 
@@ -317,8 +316,7 @@ def password_reset_request(request):
         email_message.send(fail_silently=False)
     except Exception as exc:
         logger.exception('Failed to send password reset email: %s', exc)
-        token.used_at = timezone.now()
-        token.save(update_fields=['used_at'])
+        PasswordResetToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
 
     return Response(response_payload)
 
