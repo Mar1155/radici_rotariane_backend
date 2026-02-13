@@ -43,6 +43,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    location = serializers.CharField(required=False, allow_blank=True)
+    club_latitude = serializers.FloatField(required=False, allow_null=True)
+    club_longitude = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -50,6 +53,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'username', 'email', 'password', 'first_name', 'last_name',
             'rotary_id', 'user_type', 'club_name', 'club_president', 'club_city', 'club_country',
             'club_district',
+            'location', 'club_latitude', 'club_longitude',
             'club'
         ]
         extra_kwargs = {
@@ -59,12 +63,35 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        if not data.get('first_name') or not data.get('last_name'):
-            raise serializers.ValidationError({"name": "First name and last name are required."})
-
         user_type = data.get('user_type', User.Types.NORMAL)
+        if user_type == User.Types.NORMAL and (not data.get('first_name') or not data.get('last_name')):
+            raise serializers.ValidationError({"name": "First name and last name are required."})
         if user_type == User.Types.NORMAL and not data.get('club'):
             raise serializers.ValidationError({"club": "Club is required for normal users."})
+        if user_type == User.Types.CLUB:
+            required_fields = {
+                "club_name": "Club name is required.",
+                "club_president": "Club president is required.",
+                "club_city": "Club city is required.",
+                "club_country": "Club country is required.",
+                "club_district": "Club district is required.",
+            }
+            errors = {}
+            for field, message in required_fields.items():
+                value = data.get(field)
+                if not value or (isinstance(value, str) and not value.strip()):
+                    errors[field] = message
+            if errors:
+                raise serializers.ValidationError(errors)
+
+            city = str(data.get("club_city", "")).strip()
+            country = str(data.get("club_country", "")).strip()
+            if city:
+                data["club_city"] = city
+            if country:
+                data["club_country"] = country
+            if city and country and not data.get("location"):
+                data["location"] = f"{city}, {country}"
         return data
 
     def validate_rotary_id(self, value):
