@@ -251,6 +251,13 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def translate(self, request, *args, **kwargs):
         message = self.get_object()
+
+        if message.sender_id == request.user.id:
+            return Response(
+                {"detail": "Non puoi tradurre i tuoi messaggi."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         target_language = request.data.get("target_language") or request.query_params.get(
             "target_language"
         )

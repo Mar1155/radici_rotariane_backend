@@ -405,6 +405,16 @@ class MessageTranslationAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     @patch('chat.views.translate_text')
+    def test_translate_own_message_forbidden(self, mock_translate):
+        refresh = RefreshToken.for_user(self.user1)
+        token_user1 = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token_user1}")
+
+        response = self.client.post(self.url, {'target_language': 'en'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        mock_translate.assert_not_called()
+
+    @patch('chat.views.translate_text')
     def test_translate_handles_missing_provider(self, mock_translate):
         mock_translate.side_effect = TranslationServiceNotConfigured('no provider')
         response = self.client.post(self.url, {'target_language': 'en'}, format='json')
