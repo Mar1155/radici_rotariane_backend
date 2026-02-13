@@ -182,6 +182,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     )
     club_members_count = serializers.SerializerMethodField()
     club_sister_clubs_count = serializers.SerializerMethodField()
+    club_affiliation_name = serializers.SerializerMethodField()
     languages = JSONField(required=False)
     rotary_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
@@ -199,7 +200,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'club_president', 'club_city', 'club_country', 'club_district',
             'club_latitude', 'club_longitude',
             'club_members_count', 'club_sister_clubs_count',
-            'club'
+            'club', 'club_affiliation_name'
         ]
         read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser', 'is_email_verified']
 
@@ -254,6 +255,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'gemellaggi_count'):
             return obj.gemellaggi_count or 0
         return obj.gemellaggi_chats.filter(chat_type='gemellaggio').count()
+
+    def get_club_affiliation_name(self, obj):
+        if obj.user_type == User.Types.CLUB:
+            return obj.club_name or obj.username
+        if obj.club_id and obj.club:
+            return obj.club.club_name or obj.club.username
+        return None
 
     def to_internal_value(self, data):
         # Handle JSON strings for ManyToMany fields when using FormData

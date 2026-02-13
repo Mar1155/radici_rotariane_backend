@@ -35,6 +35,10 @@ class RegisterView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = serializer.save()
+        if getattr(settings, "AUTO_VERIFY_EMAIL_ON_REGISTER", False):
+            user.email_verified_at = timezone.now()
+            user.save(update_fields=["email_verified_at"])
+            return
         if not user.is_email_verified:
             _send_email_verification(user, self.request, force_send=True)
 
