@@ -23,6 +23,7 @@ from .serializers import (
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer
 )
+from .services.geocoding import GeocodingError, search_locations
 
 logger = logging.getLogger('app.custom')
 
@@ -172,6 +173,26 @@ def platform_stats(request):
         'countries': countries_count,
         'projects': projects_count,
     })
+
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def geo_search(request):
+    query = (request.query_params.get('q') or '').strip()
+    if len(query) < 2:
+        return Response([])
+
+    try:
+        limit = int(request.query_params.get('limit', 8))
+    except (TypeError, ValueError):
+        limit = 8
+
+    try:
+        results = search_locations(query=query, limit=limit)
+    except GeocodingError as exc:
+        return Response({'detail': str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    return Response(results)
 
 
 def _get_client_ip(request):
