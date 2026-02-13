@@ -13,6 +13,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from datetime import timedelta
 import secrets
+import threading
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
 from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
@@ -235,21 +236,23 @@ def _send_email_verification(user, request, force_send: bool = False) -> bool:
     text_body = render_to_string('users/email_verification_code.txt', context).strip()
     html_body = render_to_string('users/email_verification_code.html', context).strip()
 
-    try:
-        email_message = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-            to=[user.email],
-        )
-        if html_body:
-            email_message.attach_alternative(html_body, 'text/html')
-        email_message.send(fail_silently=False)
-        return True
-    except Exception as exc:
-        logger.exception('Failed to send email verification: %s', exc)
-        EmailVerificationToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
-        return False
+    def _do_send():
+        try:
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                to=[user.email],
+            )
+            if html_body:
+                email_message.attach_alternative(html_body, 'text/html')
+            email_message.send(fail_silently=False)
+        except Exception as exc:
+            logger.exception('Failed to send email verification: %s', exc)
+            EmailVerificationToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
+
+    threading.Thread(target=_do_send, daemon=True).start()
+    return True
 
 
 @api_view(['POST'])
@@ -304,19 +307,22 @@ def password_reset_request(request):
     text_body = render_to_string('users/password_reset_code.txt', context).strip()
     html_body = render_to_string('users/password_reset_code.html', context).strip()
 
-    try:
-        email_message = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-            to=[user.email],
-        )
-        if html_body:
-            email_message.attach_alternative(html_body, 'text/html')
-        email_message.send(fail_silently=False)
-    except Exception as exc:
-        logger.exception('Failed to send password reset email: %s', exc)
-        PasswordResetToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
+    def _do_send():
+        try:
+            email_message = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                to=[user.email],
+            )
+            if html_body:
+                email_message.attach_alternative(html_body, 'text/html')
+            email_message.send(fail_silently=False)
+        except Exception as exc:
+            logger.exception('Failed to send password reset email: %s', exc)
+            PasswordResetToken.objects.filter(pk=token.pk).update(used_at=timezone.now())
+
+    threading.Thread(target=_do_send, daemon=True).start()
 
     return Response(response_payload)
 
