@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken, ClubPreRegistration
+from .models import Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
 
 User = get_user_model()
 
@@ -21,13 +21,6 @@ class FocusAreaAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
 
-
-@admin.register(ClubPreRegistration)
-class ClubPreRegistrationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_claimed', 'created_at')
-    list_filter = ('is_claimed',)
-    search_fields = ('name',)
-    readonly_fields = ('normalized_name', 'created_at')
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):

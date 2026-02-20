@@ -11,18 +11,19 @@ from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.text import slugify
 from datetime import timedelta
 import secrets
 import threading
+import uuid
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
-from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken, ClubPreRegistration
+from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
     SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
-    EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer,
-    ClubPreRegistrationSerializer
+    EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer
 )
 from .services.geocoding import GeocodingError, search_locations
 
@@ -120,29 +121,45 @@ class ClubListView(generics.ListAPIView):
         )
 
 
-class ClubPreRegistrationListCreateView(generics.ListCreateAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = ClubPreRegistrationSerializer
+@api_view(['POST'])
+@perm_classes([AllowAny])
+def create_club_stub(request):
+    raw_name = (request.data.get('club_name') or '').strip()
+    if not raw_name:
+        return Response({'club_name': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_queryset(self):
-        return ClubPreRegistration.objects.all().order_by('name')
+    normalized = ' '.join(raw_name.split()).strip().lower()
 
-    def create(self, request, *args, **kwargs):
-        raw_name = (request.data.get('name') or '').strip()
-        if not raw_name:
-            return Response({'name': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+    existing_club = None
+    for club in User.objects.filter(user_type=User.Types.CLUB).only('id', 'club_name'):
+        if ' '.join((club.club_name or '').split()).strip().lower() == normalized:
+            existing_club = club
+            break
 
-        normalized = ClubPreRegistration.normalize_name(raw_name)
-        existing = ClubPreRegistration.objects.filter(normalized_name=normalized).first()
-        if existing:
-            serializer = self.get_serializer(existing)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    if existing_club:
+        return Response({'id': existing_club.id, 'club_name': existing_club.club_name}, status=status.HTTP_200_OK)
 
-        serializer = self.get_serializer(data={'name': raw_name})
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        response_serializer = self.get_serializer(instance)
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+    club_name = ' '.join(raw_name.split()).strip()
+    base_slug = slugify(club_name) or 'club'
+
+    username = base_slug
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f'{base_slug}{counter}'
+        counter += 1
+
+    placeholder_email = f"prereg+{uuid.uuid4().hex[:16]}@club.local"
+
+    club_user = User.objects.create(
+        username=username,
+        email=placeholder_email,
+        user_type=User.Types.CLUB,
+        club_name=club_name,
+    )
+    club_user.set_unusable_password()
+    club_user.save(update_fields=['password'])
+
+    return Response({'id': club_user.id, 'club_name': club_user.club_name}, status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):

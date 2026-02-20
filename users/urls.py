@@ -5,7 +5,7 @@ from .views import (
     SkillListView, SoftSkillListView, FocusAreaListView,
     ClubListView, platform_stats, password_reset_request, password_reset_confirm,
     email_verification_request, email_verification_confirm, geo_search,
-    ClubPreRegistrationListCreateView
+    create_club_stub
 )
 
 router = DefaultRouter()
@@ -19,7 +19,7 @@ urlpatterns = [
     path('password-reset/confirm/', password_reset_confirm, name='password-reset-confirm'),
     path('me/', MeView.as_view(), name='me'),
     path('clubs/', ClubListView.as_view(), name='club-list'),
-    path('club-pre-registrations/', ClubPreRegistrationListCreateView.as_view(), name='club-pre-registrations'),
+    path('clubs/create-stub/', create_club_stub, name='club-create-stub'),
     path('skills/', SkillsSearchView.as_view(), name='skills-search'),
     path('skills-list/', SkillListView.as_view(), name='skills-list'),
     path('soft-skills-list/', SoftSkillListView.as_view(), name='soft-skills-list'),
