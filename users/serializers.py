@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User, Skill, SoftSkill, FocusArea
+from .models import User, Skill, SoftSkill, FocusArea, ClubPreRegistration
 from .services.geocoding import GeocodingError, geocode_city
 
 
@@ -33,6 +33,13 @@ class FocusAreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = FocusArea
         fields = ['id', 'name', 'translations']
+
+
+class ClubPreRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClubPreRegistration
+        fields = ['id', 'name', 'is_claimed', 'created_at']
+        read_only_fields = ['id', 'is_claimed', 'created_at']
 
 
 def _enrich_club_geodata(data: dict):
@@ -74,6 +81,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    club_pre_registration = serializers.PrimaryKeyRelatedField(
+        queryset=ClubPreRegistration.objects.all(),
+        required=False,
+        allow_null=True
+    )
     location = serializers.CharField(required=False, allow_blank=True)
     club_latitude = serializers.FloatField(required=False, allow_null=True)
     club_longitude = serializers.FloatField(required=False, allow_null=True)
@@ -85,7 +97,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'rotary_id', 'user_type', 'club_name', 'club_president', 'club_city', 'club_country',
             'club_district',
             'location', 'club_latitude', 'club_longitude',
-            'club'
+            'club', 'club_pre_registration'
         ]
         extra_kwargs = {
             'first_name': {'required': True},
@@ -95,11 +107,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         user_type = data.get('user_type', User.Types.NORMAL)
+        selected_pre_registration = data.get('club_pre_registration')
+
+        if selected_pre_registration:
+            data['club_name'] = selected_pre_registration.name
+
         if user_type == User.Types.NORMAL and (not data.get('first_name') or not data.get('last_name')):
             raise serializers.ValidationError({"name": "First name and last name are required."})
-        if user_type == User.Types.NORMAL and not data.get('club'):
-            raise serializers.ValidationError({"club": "Club is required for normal users."})
+        if user_type == User.Types.NORMAL and not data.get('club') and not selected_pre_registration:
+            raise serializers.ValidationError({"club": "Club is required for normal users (registered or pre-registered)."})
         if user_type == User.Types.CLUB:
+            if not selected_pre_registration:
+                raise serializers.ValidationError({"club_pre_registration": "Club pre-registration selection is required."})
             required_fields = {
                 "club_name": "Club name is required.",
                 "club_president": "Club president is required.",
@@ -127,6 +146,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        pre_registration = validated_data.pop('club_pre_registration', None)
         password = validated_data.pop('password')
         validated_data['username'] = self.generate_username(
             validated_data.get('first_name', ''),
@@ -137,6 +157,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=password,
             **validated_data
         )
+
+        if pre_registration and user.user_type == User.Types.CLUB and not pre_registration.is_claimed:
+            pre_registration.is_claimed = True
+            pre_registration.save(update_fields=['is_claimed'])
+
         return user
 
     def generate_username(self, first_name: str, last_name: str, email: str = "") -> str:

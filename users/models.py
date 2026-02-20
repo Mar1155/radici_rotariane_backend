@@ -26,6 +26,28 @@ class FocusArea(models.Model):
     def __str__(self):
         return self.name
 
+
+class ClubPreRegistration(models.Model):
+    name = models.CharField(max_length=200)
+    normalized_name = models.CharField(max_length=200, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_claimed = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['name']
+
+    @staticmethod
+    def normalize_name(value: str) -> str:
+        return ' '.join((value or '').split()).strip().lower()
+
+    def save(self, *args, **kwargs):
+        self.name = ' '.join((self.name or '').split()).strip()
+        self.normalized_name = self.normalize_name(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
 class User(AbstractUser):
     class Types(models.TextChoices):
         NORMAL = 'NORMAL', 'Normal User'

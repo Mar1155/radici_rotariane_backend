@@ -16,12 +16,13 @@ import secrets
 import threading
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
-from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
+from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken, ClubPreRegistration
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
     SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
-    EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer
+    EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer,
+    ClubPreRegistrationSerializer
 )
 from .services.geocoding import GeocodingError, search_locations
 
@@ -117,6 +118,31 @@ class ClubListView(generics.ListAPIView):
             members_count=Count('members', filter=Q(members__user_type=User.Types.NORMAL), distinct=True),
             gemellaggi_count=Count('gemellaggi_chats', filter=Q(gemellaggi_chats__chat_type='gemellaggio'), distinct=True),
         )
+
+
+class ClubPreRegistrationListCreateView(generics.ListCreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ClubPreRegistrationSerializer
+
+    def get_queryset(self):
+        return ClubPreRegistration.objects.all().order_by('name')
+
+    def create(self, request, *args, **kwargs):
+        raw_name = (request.data.get('name') or '').strip()
+        if not raw_name:
+            return Response({'name': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        normalized = ClubPreRegistration.normalize_name(raw_name)
+        existing = ClubPreRegistration.objects.filter(normalized_name=normalized).first()
+        if existing:
+            serializer = self.get_serializer(existing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(data={'name': raw_name})
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        response_serializer = self.get_serializer(instance)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
