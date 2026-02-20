@@ -116,6 +116,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             _enrich_club_geodata(data)
         return data
 
+    def validate_password(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        validate_password(value)
+        return value
+
     def validate_rotary_id(self, value):
         if value and User.objects.filter(rotary_id=value).exists():
             raise serializers.ValidationError("A user with this Rotarian ID already exists.")
