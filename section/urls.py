@@ -3,7 +3,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('cards/saved/', views.list_saved_cards, name='list-saved-cards'),
     path('cards/<slug:slug>', views.get_card, name='get-card'),
+    path('cards/<slug:slug>/save/', views.toggle_save_card, name='toggle-save-card'),
     path('cards/<slug:slug>/report/', views.report_card, name='report-card'),
     path('cards/<slug:slug>/translate/', views.translate_card, name='translate-card'),
     path('<section>/<tab>/cards', views.list_cards, name='list-cards'),

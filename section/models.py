@@ -350,3 +350,32 @@ class CardTranslation(models.Model):
 
     def __str__(self):
         return f"CardTranslation({self.card_id}, {self.target_language})"
+
+
+class SavedCard(models.Model):
+    """Modello per le card salvate/preferite dagli utenti"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='saved_cards',
+        verbose_name='Utente'
+    )
+    card = models.ForeignKey(
+        Card,
+        on_delete=models.CASCADE,
+        related_name='saved_by',
+        verbose_name='Card'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_column='saved_at', verbose_name='Data salvataggio')
+
+    class Meta:
+        verbose_name = 'Card Salvata'
+        verbose_name_plural = 'Card Salvate'
+        unique_together = ('user', 'card')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user} → {self.card}"

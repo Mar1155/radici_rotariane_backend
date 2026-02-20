@@ -29,7 +29,8 @@ FieldType = Literal[
     'location',
     'author',
     'infoElements',
-    'gallery'
+    'gallery',
+    'save'
 ]
 
 UserRole = Literal['user', 'club', 'admin']
@@ -68,7 +69,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                     'sviluppo', 'comunità', 'infrastrutture', 'urgente', 'internazionale'
                 ],
                 'fields': {
-                    'required': ['title', 'location', 'subtitle', 'content', 'infoElements', 'tags', 'author'],
+                    'required': ['title', 'location', 'subtitle', 'content', 'infoElements', 'tags', 'author', 'save'],
                     'hidden': ['coverImage', 'date', 'gallery'],
                 },
                 'infoElements': 3,
@@ -84,7 +85,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': [],
                 'fields': {
                     'required': ['title', 'subtitle', 'coverImage', 'content', 'author'],
-                    'hidden': ['location', 'tags', 'date', 'infoElements', 'gallery'],
+                    'hidden': ['location', 'tags', 'date', 'infoElements', 'gallery', 'save'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -93,7 +94,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': [],
                 'fields': {
                     'required': ['location', 'subtitle', 'content', 'author'],
-                    'hidden': ['title', 'tags', 'date', 'coverImage', 'infoElements', 'gallery'],
+                    'hidden': ['title', 'tags', 'date', 'coverImage', 'infoElements', 'gallery', 'save'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -105,7 +106,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 ],
                 'fields': {
                     'required': ['title', 'subtitle', 'coverImage', 'content', 'author'],
-                    'hidden': ['date', 'location', 'tags', 'infoElements', 'gallery'],
+                    'hidden': ['date', 'location', 'tags', 'infoElements', 'gallery', 'save'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -120,7 +121,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': ['sconto', 'gratis', 'cosenza', 'rende', 'crotone', 'catanzaro', 'vibo-valentia', 'reggio-calabria'],
                 'fields': {
                     'required': ['title', 'subtitle', 'tags', 'infoElements', 'location', 'coverImage'],
-                    'hidden': ['date', 'content', 'author', 'gallery'],
+                    'hidden': ['date', 'content', 'author', 'gallery', 'save'],
                 },
                 'infoElements': 2,
                 'canAddArticle': ['admin'],
@@ -134,7 +135,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
             'main': {
                 'tags': ['online', 'in-presenza'],
                 'fields': {
-                    'required': ['title', 'subtitle', 'tags', 'coverImage', 'content', 'author', 'date', 'location'],
+                    'required': ['title', 'subtitle', 'tags', 'coverImage', 'content', 'author', 'date', 'location', 'save'],
                     'hidden': ['infoElements', 'gallery'],
                 },
                 'infoElements': 0,
@@ -152,7 +153,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 ],
                 'fields': {
                     'required': ['title', 'location', 'tags', 'subtitle', 'coverImage', 'content', 'infoElements', 'author'],
-                    'hidden': ['date', 'gallery'],
+                    'hidden': ['date', 'gallery', 'save'],
                 },
                 'infoElements': 1,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -161,7 +162,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': ['enogastronomia', 'artigianato', 'natura'],
                 'fields': {
                     'required': ['title', 'location', 'tags', 'subtitle', 'coverImage', 'content', 'infoElements', 'author'],
-                    'hidden': ['date', 'gallery'],
+                    'hidden': ['date', 'gallery', 'save'],
                 },
                 'infoElements': 1,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -170,7 +171,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': [],
                 'fields': {
                     'required': ['title', 'subtitle'],
-                    'hidden': ['date', 'location', 'tags', 'infoElements', 'coverImage', 'content', 'author', 'gallery'],
+                    'hidden': ['date', 'location', 'tags', 'infoElements','coverImage', 'content', 'author', 'gallery', 'save'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['admin'],
@@ -185,7 +186,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': [],
                 'fields': {
                     'required': ['title', 'subtitle', 'location', 'infoElements', 'author'],
-                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery'],
+                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery', 'save'],
                 },
                 'infoElements': 2,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -194,7 +195,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': [],
                 'fields': {
                     'required': ['title', 'subtitle', 'location', 'infoElements', 'author'],
-                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery'],
+                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery', 'save'],
                 },
                 'infoElements': 2,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -209,7 +210,7 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                 'tags': ['testo', 'foto', 'video'],
                 'fields': {
                     'required': ['title', 'subtitle', 'content', 'tags', 'author', 'gallery'],
-                    'hidden': ['date', 'location', 'coverImage', 'infoElements'],
+                    'hidden': ['date', 'location', 'coverImage', 'infoElements', 'save'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
