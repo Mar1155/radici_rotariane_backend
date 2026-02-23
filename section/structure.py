@@ -185,8 +185,8 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
             'offri': {
                 'tags': [],
                 'fields': {
-                    'required': ['title', 'subtitle', 'location', 'infoElements', 'author'],
-                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery', 'save'],
+                    'required': ['title', 'subtitle', 'location', 'infoElements', 'author', 'save'],
+                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery'],
                 },
                 'infoElements': 2,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -194,8 +194,8 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
             'cerca': {
                 'tags': [],
                 'fields': {
-                    'required': ['title', 'subtitle', 'location', 'infoElements', 'author'],
-                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery', 'save'],
+                    'required': ['title', 'subtitle', 'location', 'infoElements', 'author', 'save'],
+                    'hidden': ['tags', 'date', 'coverImage', 'content', 'gallery'],
                 },
                 'infoElements': 2,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -209,8 +209,8 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
             'main': {
                 'tags': ['testo', 'foto', 'video'],
                 'fields': {
-                    'required': ['title', 'subtitle', 'content', 'tags', 'author', 'gallery'],
-                    'hidden': ['date', 'location', 'coverImage', 'infoElements', 'save'],
+                    'required': ['title', 'subtitle', 'content', 'tags', 'author', 'gallery', 'save'],
+                    'hidden': ['date', 'location', 'coverImage', 'infoElements'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],

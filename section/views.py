@@ -581,3 +581,41 @@ def list_saved_cards(request):
     
     serializer = CardSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def list_user_cards(request):
+    """
+    Lista le card pubblicate da un utente.
+    ?user_id=<id> per vedere le pubblicazioni di un utente specifico (pubblico).
+    ?section=<section> per filtrare per sezione.
+    Senza user_id, mostra le pubblicazioni dell'utente autenticato.
+    """
+    user_id = request.query_params.get('user_id')
+    section = request.query_params.get('section')
+
+    if user_id:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Utente non trovato'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    else:
+        if not request.user.is_authenticated:
+            return Response(
+                {'error': 'Utente non autenticato'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        target_user = request.user
+
+    cards_qs = Card.objects.filter(author=target_user, is_published=True).select_related('author')
+    if section:
+        cards_qs = cards_qs.filter(section=section)
+    cards_qs = cards_qs.order_by('-created_at')
+
+    serializer = CardSerializer(cards_qs, many=True, context={'request': request})
+    return Response(serializer.data)
