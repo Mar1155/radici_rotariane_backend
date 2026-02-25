@@ -53,7 +53,8 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Local template overrides (e.g. admin/Jazzmin fixes).
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -347,6 +348,12 @@ LOGGING = {
             'level': 'INFO',  # Cambia a DEBUG per vedere le query SQL
             'propagate': False,
         },
+        # Avoid verbose VariableDoesNotExist debug traces from normal template fallbacks.
+        'django.template': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'app.custom': {
             'handlers': ['file', 'console'],
             'level': config('LOG_LEVEL', default='DEBUG'),
@@ -389,7 +396,8 @@ JAZZMIN_SETTINGS = {
     "default_icon_children": "fas fa-circle",
     "related_modal_active": True,
     "custom_css": None,
-    "custom_js": None,
+    # Stabilizes change-form tabs when Bootstrap/jQuery handlers are not bound.
+    "custom_js": "custom/jazzmin-tabs-fix.js",
     "show_ui_builder": False,
 }
 

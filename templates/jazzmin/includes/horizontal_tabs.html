@@ -1,0 +1,44 @@
+{% load i18n jazzmin safe_admin %}
+{% trans "General" as general_tab %}
+{% get_sections adminform inline_admin_formsets as forms %}
+
+{% block tabs %}
+<ul class="nav nav-tabs mb-3" role="tablist" id="jazzy-tabs">
+    {% for section in forms %}
+        {% with section_name=section|get_attr:'name' %}
+        <li class="nav-item">
+            <a
+                class="nav-link{% if forloop.first %} active{% endif %}"
+                data-toggle="pill"
+                data-bs-toggle="pill"
+                role="tab"
+                aria-controls="{{ section_name|default:general_tab|unicode_slugify }}-tab"
+                aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                href="#{{ section_name|default:general_tab|unicode_slugify }}-tab"
+            >
+                {{ section_name|default:general_tab }}
+            </a>
+        </li>
+        {% endwith %}
+    {% endfor %}
+</ul>
+{% endblock tabs %}
+
+<div class="tab-content">
+    {% for section in forms %}
+        {% with section_name=section|get_attr:'name' is_inline=section|get_attr:'is_inline' %}
+        <div
+            id="{{ section_name|default:general_tab|unicode_slugify }}-tab"
+            class="tab-pane fade{% if forloop.first %} active show{% endif %} {{ section.classes }}"
+            role="tabpanel"
+            aria-labelledby="{{ section_name|default:general_tab|unicode_slugify }}-tab"
+        >
+            {% if is_inline %}
+                {% include section.opts.template with inline_admin_formset=section %}
+            {% else %}
+                {% include "admin/includes/fieldset.html" with fieldset=section card=True %}
+            {% endif %}
+        </div>
+        {% endwith %}
+    {% endfor %}
+</div>
