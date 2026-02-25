@@ -738,53 +738,10 @@ class Command(BaseCommand):
         elif tab == 'consigli':
             return [
                 {
-                    'title': 'Visita la Sila nei mesi di giugno e settembre per il clima ideale',
-                    'subtitle': 'Evita luglio e agosto quando è affollata di turisti',
+                    'title': 'Casa Calabria International è partner del Distretto Rotary 2102!',
+                    'subtitle': 'Pianifica il tuo viaggio in Calabria con l’aiuto di Casa Calabria international: l’associazione calabrese specializzata nell’organizzazione dei viaggi delle radici e nel turismo esperienziale. Grazie a questa partnership strategica, i rotariani in visita in Calabria potranno usufruire di sconti riservati sui pacchetti offerti da Casa Calabria International. Scopri di più!',
                     'location': None,
-                    'content': self._generate_rich_content(
-                        'Il momento migliore per la Sila',
-                        'Giugno e settembre offrono temperature moderate (18-24°C), meno pioggia e pienamente godibili per escursioni. '
-                        'Luglio e agosto sono affollati di turisti lombardi e romani. Maggio è fresco ma bellissimo per i fiori alpini. '
-                        'Novembre-marzo le strade si ghiacciano e molti rifugi chiudono.',
-                        include_list=False,
-                        include_link=False
-                    ),
-                    'cover_image': None,
-                    'tags': [],
-                    'date_type': 'none',
-                    'is_published': True,
-                    'infoElementValues': [],
-                },
-                {
-                    'title': 'I borghi arbëreshë della provincia di Cosenza meritano 2-3 giorni di visita dedicata',
-                    'subtitle': 'Cultura albanese, chiese bizantine e tradizioni uniche nel panorama italiano',
-                    'location': None,
-                    'content': self._generate_rich_content(
-                        'Borghi con storia mille anni di profondità',
-                        'Frascineto, San Demetrio Corone, Civita, Acri e Lungro conservano una cultura albanese (arbëreshë) arrivata nel 1600. '
-                        'Le chiese seguono il rito bizantino, la cucina è affascinante (fave e cicoria, çka e prasa), le tradizioni tessili sono uniche. '
-                        'Perfetto per chi vuole scoprire un "Italia nascosta".',
-                        include_list=False,
-                        include_link=False
-                    ),
-                    'cover_image': None,
-                    'tags': [],
-                    'date_type': 'none',
-                    'is_published': True,
-                    'infoElementValues': [],
-                },
-                {
-                    'title': 'Non perdere l\'Aspromonte: il "balcone della Sicilia"',
-                    'subtitle': 'Specialmente al tramonto, le viste sulla Sicilia e lo Stretto di Messina sono spettacolari',
-                    'location': None,
-                    'content': self._generate_rich_content(
-                        'Il punto di osservazione più sublime della Calabria',
-                        'Dall\'Aspromonte, a 1956 metri, puoi vedere il vulcano Etna in Sicilia e lo Stretto di Messina perfettamente disegnato. '
-                        'Il tramonto ricopre tutto di oro. Le strade verso la vetta sono panoramiche (SP502). Consigliati: Madonna di Polsi, '
-                        'Fiumara di Amendolea. Tempo meteo stabile: ottobre-aprile.',
-                        include_list=False,
-                        include_link=False
-                    ),
+                    'content': None,
                     'cover_image': None,
                     'tags': [],
                     'date_type': 'none',
