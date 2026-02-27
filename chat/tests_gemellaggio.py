@@ -95,10 +95,9 @@ class GemellaggioTest(TestCase):
         partner_participant = participants.get(user=self.club2)
         self.assertEqual(partner_participant.role, 'admin')
 
-        # user2_c1 (club1 member) should be member
+        # all normal members of club1 and club2 should be included
+        self.assertIn(self.user1_c1, participant_users)
         self.assertIn(self.user2_c1, participant_users)
-        
-        # user1_c2 (club2 member) should be member
         self.assertIn(self.user1_c2, participant_users)
 
         # user_no_club should NOT be member
@@ -181,4 +180,3 @@ class GemellaggioTest(TestCase):
         # 3. Verify user is added to chat via signal
         is_participant = ChatParticipant.objects.filter(chat=chat, user=new_user).exists()
         self.assertTrue(is_participant, "New club member should be auto-added to existing gemellaggio")
-

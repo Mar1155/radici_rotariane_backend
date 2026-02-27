@@ -43,8 +43,11 @@ def sync_club_gemellaggi(sender, instance, action, reverse, model, pk_set, **kwa
                     defaults={'role': 'admin'}
                 )
             
-            # Get all members of these clubs
-            members = User.objects.filter(club__in=clubs)
+            # Add only normal users subscribed to either club
+            members = User.objects.filter(
+                user_type=User.Types.NORMAL,
+                club__in=clubs
+            )
             
             for member in members:
                 ChatParticipant.objects.get_or_create(
