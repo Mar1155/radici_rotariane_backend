@@ -1,4 +1,5 @@
 import json
+import re
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
@@ -30,9 +31,42 @@ class SoftSkillSerializer(serializers.ModelSerializer):
 
 
 class FocusAreaSerializer(serializers.ModelSerializer):
+    code = serializers.SerializerMethodField()
+    macro_code = serializers.SerializerMethodField()
+    is_macro = serializers.SerializerMethodField()
+
+    CODE_PATTERN = re.compile(r'^\s*([A-Z])(\d*)\b')
+
+    def _extract_code(self, obj):
+        translations = obj.translations or {}
+        code = translations.get("code")
+        if isinstance(code, str) and code.strip():
+            return code.strip().upper()
+
+        source = (obj.name or '').strip()
+        match = self.CODE_PATTERN.match(source)
+        if not match:
+            return None
+        return f"{match.group(1)}{match.group(2)}"
+
+    def get_code(self, obj):
+        return self._extract_code(obj)
+
+    def get_macro_code(self, obj):
+        code = self._extract_code(obj)
+        if not code:
+            return None
+        return code[0]
+
+    def get_is_macro(self, obj):
+        code = self._extract_code(obj)
+        if not code:
+            return False
+        return len(code) == 1
+
     class Meta:
         model = FocusArea
-        fields = ['id', 'name', 'translations']
+        fields = ['id', 'name', 'translations', 'code', 'macro_code', 'is_macro']
 
 
 def _enrich_club_geodata(data: dict):

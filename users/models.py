@@ -20,7 +20,7 @@ class SoftSkill(models.Model):
 
 
 class FocusArea(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=600, unique=True)
     translations = models.JSONField(default=dict, blank=True)
 
     def __str__(self):

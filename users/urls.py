@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, RegisterView, MeView, SkillsSearchView,
-    SkillListView, SoftSkillListView, FocusAreaListView,
+    SkillListView, SoftSkillListView, FocusAreaListView, SkillsFilterOptionsView,
     ClubListView, platform_stats, password_reset_request, password_reset_confirm,
     email_verification_request, email_verification_confirm, geo_search,
     create_club_stub
@@ -21,6 +21,7 @@ urlpatterns = [
     path('clubs/', ClubListView.as_view(), name='club-list'),
     path('clubs/create-stub/', create_club_stub, name='club-create-stub'),
     path('skills/', SkillsSearchView.as_view(), name='skills-search'),
+    path('skills-filter-options/', SkillsFilterOptionsView.as_view(), name='skills-filter-options'),
     path('skills-list/', SkillListView.as_view(), name='skills-list'),
     path('soft-skills-list/', SoftSkillListView.as_view(), name='soft-skills-list'),
     path('focus-areas-list/', FocusAreaListView.as_view(), name='focus-areas-list'),

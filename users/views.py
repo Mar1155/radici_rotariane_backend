@@ -3,6 +3,7 @@ from rest_framework.decorators import action, api_view, permission_classes as pe
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q, Count
+from django.db.models.functions import Lower
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
@@ -13,6 +14,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
 from datetime import timedelta
+import re
 import secrets
 import threading
 import uuid
@@ -28,6 +30,32 @@ from .serializers import (
 from .services.geocoding import GeocodingError, search_locations
 
 logger = logging.getLogger('app.custom')
+FOCUS_AREA_CODE_PATTERN = re.compile(r'^\s*([A-Z])(\d*)\b')
+
+
+def _extract_focus_area_code(name: str, translations=None):
+    if isinstance(translations, dict):
+        code = translations.get("code")
+        if isinstance(code, str) and code.strip():
+            return code.strip().upper()
+
+    match = FOCUS_AREA_CODE_PATTERN.match((name or '').strip())
+    if not match:
+        return None
+    return f"{match.group(1)}{match.group(2)}"
+
+
+def _focus_area_sort_key(item):
+    code = (item.get('code') or '').upper()
+    if not code:
+        return ('Z', 9999, item.get('name') or '')
+    letter = code[0]
+    suffix = code[1:]
+    if not suffix:
+        return (letter, 0, item.get('name') or '')
+    if suffix.isdigit():
+        return (letter, int(suffix), item.get('name') or '')
+    return (letter, 9999, item.get('name') or '')
 
 
 class RegisterView(generics.CreateAPIView):
@@ -88,6 +116,10 @@ class SkillsSearchView(generics.ListAPIView):
         
         search = self.request.query_params.get('search', None)
         sector = self.request.query_params.get('sector', None)
+        focus_area = self.request.query_params.get('focus_area', None)
+        focus_area_id = self.request.query_params.get('focus_area_id', None)
+        macro_focus_area_id = self.request.query_params.get('macro_focus_area_id', None)
+        profession = self.request.query_params.get('profession', None)
         
         if search:
             queryset = queryset.filter(
@@ -104,9 +136,90 @@ class SkillsSearchView(generics.ListAPIView):
             
         if sector:
             queryset = queryset.filter(sector__icontains=sector)
+
+        if focus_area_id:
+            queryset = queryset.filter(focus_areas__id=focus_area_id)
+        elif macro_focus_area_id:
+            macro_obj = FocusArea.objects.filter(id=macro_focus_area_id).first()
+            if macro_obj:
+                macro_code = _extract_focus_area_code(macro_obj.name, macro_obj.translations)
+                if macro_code:
+                    valid_ids = [
+                        area.id
+                        for area in FocusArea.objects.all().only('id', 'name', 'translations')
+                        if (_extract_focus_area_code(area.name, area.translations) or '').startswith(macro_code)
+                    ]
+                    queryset = queryset.filter(focus_areas__id__in=valid_ids)
+                else:
+                    queryset = queryset.none()
+            else:
+                queryset = queryset.none()
+        elif focus_area:
+            queryset = queryset.filter(focus_areas__name__iexact=focus_area)
+
+        if profession:
+            queryset = queryset.filter(profession__iexact=profession)
             
         return queryset
 
+
+
+class SkillsFilterOptionsView(generics.GenericAPIView):
+    """Return filter options for the skills directory."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        macro_focus_area_id = self.request.query_params.get('macro_focus_area_id', None)
+        focus_area_id = self.request.query_params.get('focus_area_id', None)
+
+        base_queryset = User.objects.exclude(id=self.request.user.id).filter(skills__isnull=False).distinct()
+        focus_areas_queryset = FocusArea.objects.all().order_by(Lower('name'))
+        serialized_focus_areas = FocusAreaSerializer(focus_areas_queryset, many=True).data
+
+        macro_focus_areas = sorted(
+            [item for item in serialized_focus_areas if item.get('is_macro')],
+            key=_focus_area_sort_key
+        )
+
+        selected_macro_code = None
+        if macro_focus_area_id:
+            selected_macro = next(
+                (item for item in macro_focus_areas if str(item.get('id')) == str(macro_focus_area_id)),
+                None
+            )
+            if selected_macro:
+                selected_macro_code = selected_macro.get('code')
+
+        detail_focus_areas = []
+        if selected_macro_code:
+            detail_focus_areas = sorted(
+                [
+                    item for item in serialized_focus_areas
+                    if not item.get('is_macro') and (item.get('code') or '').startswith(selected_macro_code)
+                ],
+                key=_focus_area_sort_key
+            )
+
+        professions_queryset = base_queryset
+        if focus_area_id:
+            professions_queryset = professions_queryset.filter(focus_areas__id=focus_area_id)
+        else:
+            professions_queryset = professions_queryset.none()
+
+        professions = (
+            professions_queryset
+            .exclude(profession__isnull=True)
+            .exclude(profession__exact='')
+            .values_list('profession', flat=True)
+            .order_by(Lower('profession'))
+            .distinct()
+        )
+
+        return Response({
+            'macro_focus_areas': macro_focus_areas,
+            'focus_areas': detail_focus_areas,
+            'professions': list(professions),
+        })
 
 
 class ClubListView(generics.ListAPIView):
