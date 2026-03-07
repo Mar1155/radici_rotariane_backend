@@ -78,6 +78,13 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+    def save(self, *args, **kwargs):
+        # Store empty Rotary ID values as NULL to avoid unique conflicts on ''.
+        if self.rotary_id is not None:
+            cleaned_rotary_id = self.rotary_id.strip()
+            self.rotary_id = cleaned_rotary_id or None
+        super().save(*args, **kwargs)
+
     @property
     def has_skills_profile(self):
         """Check if user has completed their skills profile."""

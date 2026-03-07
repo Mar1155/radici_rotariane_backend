@@ -163,6 +163,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_rotary_id(self, value):
+        if value is None:
+            return None
+
+        value = value.strip()
+        if not value:
+            return None
+
         if value and User.objects.filter(rotary_id=value).exists():
             raise serializers.ValidationError("A user with this Rotarian ID already exists.")
         return value
@@ -285,8 +292,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser', 'is_email_verified']
 
     def validate_rotary_id(self, value):
+        if value is None:
+            return None
+
+        value = value.strip()
         if not value:
-            return value
+            return None
 
         queryset = User.objects.filter(rotary_id=value)
         if self.instance:
