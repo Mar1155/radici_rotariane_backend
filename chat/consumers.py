@@ -1,7 +1,9 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
+from asgiref.sync import sync_to_async
 from django.utils import timezone
 from .models import Chat, Message, ChatParticipant
+from .services.presence import mark_user_connected, mark_user_disconnected
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -30,6 +32,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+        self.presence_registered = True
+        await sync_to_async(mark_user_connected)(user.id)
 
         history = await self._get_message_history()
         await self.send_json({"type": "history", "data": history})
@@ -37,6 +41,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, code):
         if hasattr(self, 'group_name'):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if getattr(self, 'presence_registered', False):
+            await sync_to_async(mark_user_disconnected)(self.scope['user'].id)
+            self.presence_registered = False
 
     async def receive_json(self, content):
         if content.get("type") == "message.send":
@@ -153,10 +160,15 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         self.user_group = f"user_{user.id}"
         await self.channel_layer.group_add(self.user_group, self.channel_name)
         await self.accept()
+        self.presence_registered = True
+        await sync_to_async(mark_user_connected)(user.id)
 
     async def disconnect(self, code):
         if hasattr(self, "user_group"):
             await self.channel_layer.group_discard(self.user_group, self.channel_name)
+        if getattr(self, 'presence_registered', False):
+            await sync_to_async(mark_user_disconnected)(self.scope['user'].id)
+            self.presence_registered = False
 
     async def unread_update(self, event):
         """Inoltra l'evento di aggiornamento non-letti al client."""
@@ -220,6 +232,8 @@ class GlobalChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_add(group_name, self.channel_name)
 
         await self.accept()
+        self.presence_registered = True
+        await sync_to_async(mark_user_connected)(user.id)
 
         # Invia i conteggi non-letti iniziali
         unread_counts = await self._get_all_unread_counts()
@@ -234,6 +248,9 @@ class GlobalChatConsumer(AsyncJsonWebsocketConsumer):
         if hasattr(self, "chat_groups"):
             for group_name in self.chat_groups:
                 await self.channel_layer.group_discard(group_name, self.channel_name)
+        if getattr(self, 'presence_registered', False):
+            await sync_to_async(mark_user_disconnected)(self.scope['user'].id)
+            self.presence_registered = False
 
     async def receive_json(self, content):
         msg_type = content.get("type")

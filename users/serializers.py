@@ -99,6 +99,24 @@ def _enrich_club_geodata(data: dict):
         data["location"] = f"{data['club_city']}, {data['club_country']}"
 
 
+def _is_club_fully_registered(club: User) -> bool:
+    """
+    A club is considered fully registered only when it has a usable password
+    and a non-placeholder email.
+
+    This avoids false positives with preloaded clubs used as registration stubs.
+    """
+    if not club.has_usable_password():
+        return False
+
+    email = (club.email or "").strip().lower()
+    placeholder_domains = ("@club.local", "@demo.rotary")
+    if any(email.endswith(domain) for domain in placeholder_domains):
+        return False
+
+    return True
+
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     rotary_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -136,7 +154,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             selected_club = data.get('club')
             if not selected_club:
                 raise serializers.ValidationError({"club": "Select a club name from the list before completing registration."})
-            if selected_club.has_usable_password():
+            if _is_club_fully_registered(selected_club):
                 raise serializers.ValidationError({"club": "This club is already fully registered."})
 
             data['club_name'] = selected_club.club_name

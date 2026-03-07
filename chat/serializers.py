@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Chat, Message, ChatParticipant, MessageTranslation
+from .services.presence import is_user_online
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -18,10 +19,14 @@ class MessageSerializer(serializers.ModelSerializer):
 class ChatParticipantSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
+    is_online = serializers.SerializerMethodField()
+
+    def get_is_online(self, obj):
+        return is_user_online(obj.user_id)
     
     class Meta:
         model = ChatParticipant
-        fields = ['user_id', 'username', 'role', 'joined_at']
+        fields = ['user_id', 'username', 'role', 'joined_at', 'is_online']
 
 
 class ChatSerializer(serializers.ModelSerializer):
