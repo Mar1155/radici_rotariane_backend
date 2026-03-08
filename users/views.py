@@ -275,6 +275,87 @@ def create_club_stub(request):
     return Response({'id': club_user.id, 'club_name': club_user.club_name}, status=status.HTTP_201_CREATED)
 
 
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def club_members(request, club_id):
+    """Restituisce i membri di un club, ordinati alfabeticamente."""
+    try:
+        club = User.objects.get(id=club_id, user_type='CLUB')
+    except User.DoesNotExist:
+        return Response({'error': 'Club non trovato'}, status=status.HTTP_404_NOT_FOUND)
+
+    members = (
+        User.objects
+        .filter(club=club, user_type='NORMAL')
+        .order_by(Lower('first_name'), Lower('last_name'))
+        .values('id', 'first_name', 'last_name', 'username', 'avatar', 'profession')
+    )
+
+    results = []
+    for m in members:
+        avatar_url = None
+        if m['avatar']:
+            avatar_url = request.build_absolute_uri(f"/media/{m['avatar']}")
+        results.append({
+            'id': m['id'],
+            'first_name': m['first_name'] or '',
+            'last_name': m['last_name'] or '',
+            'username': m['username'] or '',
+            'avatar': avatar_url,
+            'profession': m['profession'] or '',
+        })
+
+    return Response(results)
+
+
+@api_view(['GET'])
+@perm_classes([AllowAny])
+def club_sister_clubs(request, club_id):
+    """Restituisce i club gemellati tramite chat di tipo gemellaggio."""
+    from chat.models import Chat
+
+    try:
+        club = User.objects.get(id=club_id, user_type='CLUB')
+    except User.DoesNotExist:
+        return Response({'error': 'Club non trovato'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Trova tutte le chat gemellaggio che coinvolgono questo club
+    gemellaggio_chats = Chat.objects.filter(
+        chat_type='gemellaggio',
+        related_clubs=club
+    ).prefetch_related('related_clubs')
+
+    # Raccogli tutti i club gemellati (escluso il club stesso)
+    sister_club_ids = set()
+    for chat in gemellaggio_chats:
+        for related_club in chat.related_clubs.all():
+            if related_club.id != club.id:
+                sister_club_ids.add(related_club.id)
+
+    sister_clubs = (
+        User.objects
+        .filter(id__in=sister_club_ids, user_type='CLUB')
+        .order_by(Lower('club_name'))
+    )
+
+    results = []
+    for sc in sister_clubs:
+        avatar_url = None
+        if sc.avatar:
+            avatar_url = request.build_absolute_uri(sc.avatar.url)
+        results.append({
+            'id': sc.id,
+            'club_name': sc.club_name or sc.username,
+            'club_city': sc.club_city or '',
+            'club_country': sc.club_country or '',
+            'club_district': sc.club_district or '',
+            'avatar': avatar_url,
+            'club_members_count': sc.members.filter(user_type='NORMAL').count(),
+        })
+
+    return Response(results)
+
+
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for searching users."""
     
