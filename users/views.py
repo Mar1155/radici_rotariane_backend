@@ -110,9 +110,12 @@ class SkillsSearchView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = User.objects.exclude(id=self.request.user.id)
-        
-        # Filter users who have completed their profile (must have at least one skill)
-        queryset = queryset.filter(skills__isnull=False).distinct()
+
+        # Include users that have at least one focus area OR a non-empty profession.
+        queryset = queryset.filter(
+            Q(focus_areas__isnull=False) |
+            (Q(profession__isnull=False) & ~Q(profession__exact=''))
+        ).distinct()
         
         search = self.request.query_params.get('search', None)
         sector = self.request.query_params.get('sector', None)
@@ -170,9 +173,11 @@ class SkillsFilterOptionsView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         macro_focus_area_id = self.request.query_params.get('macro_focus_area_id', None)
-        focus_area_id = self.request.query_params.get('focus_area_id', None)
 
-        base_queryset = User.objects.exclude(id=self.request.user.id).filter(skills__isnull=False).distinct()
+        base_queryset = User.objects.exclude(id=self.request.user.id).filter(
+            Q(focus_areas__isnull=False) |
+            (Q(profession__isnull=False) & ~Q(profession__exact=''))
+        ).distinct()
         focus_areas_queryset = FocusArea.objects.all().order_by(Lower('name'))
         serialized_focus_areas = FocusAreaSerializer(focus_areas_queryset, many=True).data
 
@@ -200,14 +205,8 @@ class SkillsFilterOptionsView(generics.GenericAPIView):
                 key=_focus_area_sort_key
             )
 
-        professions_queryset = base_queryset
-        if focus_area_id:
-            professions_queryset = professions_queryset.filter(focus_areas__id=focus_area_id)
-        else:
-            professions_queryset = professions_queryset.none()
-
         professions = (
-            professions_queryset
+            base_queryset
             .exclude(profession__isnull=True)
             .exclude(profession__exact='')
             .values_list('profession', flat=True)

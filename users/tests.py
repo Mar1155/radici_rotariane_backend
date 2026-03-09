@@ -89,6 +89,25 @@ class SkillsSearchFiltersTests(TestCase):
         self.lawyer_user.skills.add(self.skill)
         self.lawyer_user.focus_areas.add(self.focus_detail_b1)
 
+        self.focus_only_user = User.objects.create_user(
+            username='focusonly',
+            email='focusonly@example.com',
+            password='testpassword',
+            first_name='Focus',
+            last_name='Only',
+            profession=''
+        )
+        self.focus_only_user.focus_areas.add(self.focus_detail_a1)
+
+        self.profession_only_user = User.objects.create_user(
+            username='professiononly',
+            email='professiononly@example.com',
+            password='testpassword',
+            first_name='Profession',
+            last_name='Only',
+            profession='Architect'
+        )
+
     def test_skills_filter_options_returns_hierarchical_focus_areas_and_professions(self):
         response = self.client.get(
             f'/api/users/skills-filter-options/?macro_focus_area_id={self.focus_macro_a.id}&focus_area_id={self.focus_detail_a1.id}'
@@ -96,7 +115,9 @@ class SkillsSearchFiltersTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(any(item['id'] == self.focus_macro_a.id for item in response.data['macro_focus_areas']))
         self.assertTrue(any(item['id'] == self.focus_detail_a1.id for item in response.data['focus_areas']))
-        self.assertEqual(response.data['professions'], ['Engineer'])
+        self.assertIn('Engineer', response.data['professions'])
+        self.assertIn('Lawyer', response.data['professions'])
+        self.assertIn('Architect', response.data['professions'])
 
     def test_skills_search_filters_by_focus_area_id_and_profession(self):
         response = self.client.get(f'/api/users/skills/?focus_area_id={self.focus_detail_a1.id}&profession=Engineer')
@@ -104,8 +125,30 @@ class SkillsSearchFiltersTests(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.engineer_user.id)
 
+    def test_skills_search_filters_by_profession_without_focus_area(self):
+        response = self.client.get('/api/users/skills/?profession=Architect')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['id'], self.profession_only_user.id)
+
     def test_skills_search_filters_by_macro_focus_area_id(self):
         response = self.client.get(f'/api/users/skills/?macro_focus_area_id={self.focus_macro_a.id}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['id'], self.engineer_user.id)
+        ids = {item['id'] for item in response.data}
+        self.assertIn(self.engineer_user.id, ids)
+        self.assertIn(self.focus_only_user.id, ids)
+
+    def test_skills_search_includes_users_with_focus_area_or_profession(self):
+        response = self.client.get('/api/users/skills/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        ids = {item['id'] for item in response.data}
+        self.assertIn(self.engineer_user.id, ids)
+        self.assertIn(self.lawyer_user.id, ids)
+        self.assertIn(self.focus_only_user.id, ids)
+        self.assertIn(self.profession_only_user.id, ids)
+
+    def test_skills_filter_options_professions_include_profession_only_users(self):
+        response = self.client.get('/api/users/skills-filter-options/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('Architect', response.data['professions'])
