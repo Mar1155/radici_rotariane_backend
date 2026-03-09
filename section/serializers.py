@@ -3,6 +3,14 @@ from rest_framework import serializers
 from .models import Card, CardAttachment, CardTranslation
 
 
+class SavedByUserSerializer(serializers.Serializer):
+    """Serializer leggero per gli utenti che hanno salvato una card"""
+    id = serializers.IntegerField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    avatar = serializers.ImageField(allow_null=True)
+
+
 class CardAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CardAttachment
@@ -35,6 +43,7 @@ class CardSerializer(serializers.ModelSerializer):
     club_id = serializers.IntegerField(source='author.club.id', read_only=True, allow_null=True)
     attachments = CardAttachmentSerializer(many=True, read_only=True)
     is_saved = serializers.SerializerMethodField(read_only=True)
+    saved_by_users = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -66,6 +75,7 @@ class CardSerializer(serializers.ModelSerializer):
             'tab',
             'infoElementValues',
             'is_saved',
+            'saved_by_users',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']
     
@@ -75,6 +85,23 @@ class CardSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user') and request.user.is_authenticated:
             return obj.saved_by.filter(user=request.user).exists()
         return False
+
+    def get_saved_by_users(self, obj):
+        """Restituisce la lista degli utenti che hanno salvato questa card"""
+        saved_entries = obj.saved_by.select_related('user').order_by('-created_at')
+        users = []
+        for entry in saved_entries:
+            user = entry.user
+            users.append({
+                'id': user.id,
+                'first_name': user.first_name or '',
+                'last_name': user.last_name or '',
+                'username': user.username or '',
+                'user_type': getattr(user, 'user_type', 'NORMAL'),
+                'club_name': getattr(user, 'club_name', '') or '',
+                'avatar': user.avatar.url if user.avatar else None,
+            })
+        return users
 
     def get_author_club(self, obj):
         """Estrai il club dall'autore"""

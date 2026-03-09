@@ -140,7 +140,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Seed focus areas completato: "
+                "Seed rotarian skills completato: "
                 f"create={created_count}, rinominate={renamed_count}, "
                 f"aggiornate={updated_count}, totale={len(FOCUS_AREAS)}."
             )

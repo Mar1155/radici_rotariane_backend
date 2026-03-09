@@ -5,7 +5,7 @@ from .views import (
     SkillListView, SoftSkillListView, FocusAreaListView, SkillsFilterOptionsView,
     ClubListView, platform_stats, password_reset_request, password_reset_confirm,
     email_verification_request, email_verification_confirm, geo_search,
-    create_club_stub
+    create_club_stub, club_members, club_sister_clubs
 )
 
 router = DefaultRouter()
@@ -27,5 +27,7 @@ urlpatterns = [
     path('focus-areas-list/', FocusAreaListView.as_view(), name='focus-areas-list'),
     path('stats/', platform_stats, name='platform-stats'),
     path('geo/search/', geo_search, name='geo-search'),
+    path('<int:club_id>/members/', club_members, name='club-members'),
+    path('<int:club_id>/sister-clubs/', club_sister_clubs, name='club-sister-clubs'),
     path('', include(router.urls)),
 ]
