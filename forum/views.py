@@ -48,6 +48,12 @@ class PostViewSet(viewsets.ModelViewSet):
             comment_count=Count('comments', distinct=True)
         ).select_related('author').order_by('-created_at')
 
+        scope = self.request.query_params.get('scope')
+        if scope == 'mine':
+            queryset = queryset.filter(author=self.request.user)
+        elif scope == 'others':
+            queryset = queryset.exclude(author=self.request.user)
+
         if getattr(self, 'action', None) == 'retrieve':
             reply_prefetch = Prefetch(
                 'comments',
