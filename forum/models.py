@@ -14,6 +14,7 @@ class Post(models.Model):
         on_delete=models.CASCADE,
         related_name='forum_posts'
     )
+    comments_read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

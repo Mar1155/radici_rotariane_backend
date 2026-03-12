@@ -83,11 +83,22 @@ class PostListSerializer(serializers.ModelSerializer):
     """Serializer for listing posts (without full description)."""
     author = AuthorSerializer(read_only=True)
     comment_count = serializers.IntegerField(read_only=True)
+    unread_comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'author', 'comment_count', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'author', 'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
+
+    def get_unread_comment_count(self, obj):
+        request = self.context.get('request')
+        if not request or request.user != obj.author:
+            return 0
+
+        comments_qs = obj.comments.exclude(author=request.user)
+        if obj.comments_read_at:
+            comments_qs = comments_qs.filter(created_at__gt=obj.comments_read_at)
+        return comments_qs.count()
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -95,11 +106,12 @@ class PostDetailSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(read_only=True)
     comments = serializers.SerializerMethodField()
     comment_count = serializers.IntegerField(read_only=True)
+    unread_comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'comments', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'author', 'comment_count', 'comments', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'unread_comment_count', 'comments', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'author', 'comment_count', 'unread_comment_count', 'comments', 'created_at', 'updated_at']
 
     def get_comments(self, obj):
         top_level = getattr(obj, 'prefetched_comments', None)
@@ -110,18 +122,32 @@ class PostDetailSerializer(serializers.ModelSerializer):
         serializer = CommentSerializer(top_level, many=True, context=self.context)
         return serializer.data
 
+    def get_unread_comment_count(self, obj):
+        request = self.context.get('request')
+        if not request or request.user != obj.author:
+            return 0
+
+        comments_qs = obj.comments.exclude(author=request.user)
+        if obj.comments_read_at:
+            comments_qs = comments_qs.filter(created_at__gt=obj.comments_read_at)
+        return comments_qs.count()
+
 
 class PostCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating posts."""
     author = AuthorSerializer(read_only=True)
     comment_count = serializers.SerializerMethodField()
+    unread_comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
         read_only_fields = ['id', 'author', 'created_at', 'updated_at']
 
     def get_comment_count(self, obj):
+        return 0
+
+    def get_unread_comment_count(self, obj):
         return 0
 
     def validate(self, attrs):

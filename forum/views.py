@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
 from django.db.models import Count, Prefetch
+from django.utils import timezone
 from .models import Post, Comment, PostTranslation
 from .serializers import (
     PostListSerializer,
@@ -188,6 +189,17 @@ class PostViewSet(viewsets.ModelViewSet):
         
         serializer = CommentSerializer(comments, many=True, context=self.get_serializer_context())
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def mark_comments_read(self, request, pk=None):
+        """Marks all comments on a post as read for the post owner."""
+        post = self.get_object()
+        if post.author != request.user:
+            return Response({'status': 'ignored'})
+
+        post.comments_read_at = timezone.now()
+        post.save(update_fields=['comments_read_at'])
+        return Response({'status': 'ok'})
 
     @comments.mapping.post
     def add_comment(self, request, pk=None):
