@@ -531,6 +531,13 @@ def toggle_save_card(request, slug):
             status=status.HTTP_404_NOT_FOUND
         )
 
+    required_fields = get_required_fields(card.section, card.tab)
+    if 'save' not in required_fields:
+        return Response(
+            {'error': 'Salvataggio non consentito per questa card'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
     saved, created = SavedCard.objects.get_or_create(user=request.user, card=card)
     if not created:
         # Già salvata, la rimuoviamo

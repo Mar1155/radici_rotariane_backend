@@ -84,8 +84,8 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
             'storie': {
                 'tags': [],
                 'fields': {
-                    'required': ['title', 'subtitle', 'coverImage', 'content', 'author'],
-                    'hidden': ['location', 'tags', 'date', 'infoElements', 'gallery', 'save'],
+                    'required': ['title', 'subtitle', 'coverImage', 'content', 'author', 'save'],
+                    'hidden': ['location', 'tags', 'date', 'infoElements', 'gallery'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
@@ -105,8 +105,8 @@ STRUCTURE_CONFIG: Dict[str, SectionConfig] = {
                     'folklore', 'saggezza', 'eredità-culturale', 'mito'
                 ],
                 'fields': {
-                    'required': ['title', 'subtitle', 'coverImage', 'content', 'author'],
-                    'hidden': ['date', 'location', 'tags', 'infoElements', 'gallery', 'save'],
+                    'required': ['title', 'subtitle', 'coverImage', 'content', 'author', 'save'],
+                    'hidden': ['date', 'location', 'tags', 'infoElements', 'gallery'],
                 },
                 'infoElements': 0,
                 'canAddArticle': ['user', 'club', 'admin'],
