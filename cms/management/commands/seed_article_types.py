@@ -91,6 +91,11 @@ class Command(BaseCommand):
                 attivi = [f for f in vocab.FIELD_KEYS if f not in nascosti]
                 obbligatori = [f for f in tdata['fields'].get('required') or []
                                if f in attivi]
+                # `gallery` stava fra i required solo per renderla visibile: il
+                # vecchio modello non sapeva dire "attivo ma facoltativo", e la
+                # validazione la saltava con un commento che lo ammetteva. Ora
+                # quello stato esiste, quindi la si modella per quello che e'.
+                obbligatori = [f for f in obbligatori if f != 'gallery']
 
                 ha_corpo = 'content' in attivi
                 blocchi = vocab.BODY_BLOCK_KEYS if ha_corpo else []

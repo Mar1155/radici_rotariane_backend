@@ -45,9 +45,15 @@ class ArticleTypeCoverageTest(TestCase):
                 self.assertEqual(sorted(t.active_fields), sorted(attesi))
                 # nessun campo nascosto e' rimasto attivo
                 self.assertFalse(set(t.active_fields) & nascosti)
-                # gli obbligatori della vecchia config sono tutti obbligatori qui
+                # gli obbligatori della vecchia config restano obbligatori,
+                # tranne `gallery`: la' era fra i required solo per renderla
+                # visibile, e la validazione la saltava esplicitamente.
                 for f in cfg['fields'].get('required') or []:
-                    self.assertTrue(t.field_is_required(f))
+                    if f == 'gallery':
+                        self.assertTrue(t.field_is_active(f))
+                        self.assertFalse(t.field_is_required(f))
+                    else:
+                        self.assertTrue(t.field_is_required(f))
 
     def test_obbligatorio_implica_attivo(self):
         """Il vincolo che rende impossibile ricreare il vecchio bug."""
