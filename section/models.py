@@ -203,6 +203,18 @@ class Card(models.Model):
         verbose_name='valori informativi',
         help_text='Mappa chiave -> valore degli elementi informativi.',
     )
+
+    # Area geografica strutturata. Sostituisce `location`, che e' testo libero:
+    # con 107 province il testo libero non e' filtrabile ne' aggregabile.
+    # `location` resta finche' il form non passa al nuovo campo.
+    geo_area = models.ForeignKey(
+        'cms.GeoArea',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cards',
+        verbose_name='area geografica',
+    )
     
     class Meta:
         verbose_name = "Card"

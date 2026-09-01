@@ -14,7 +14,7 @@ dedicato per decidere chi puo' entrarci.
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
-from cms.models import ArticleType
+from cms.models import ArticleType, GeoArea
 
 
 class ArticleTypeViewSet(SnippetViewSet):
@@ -28,8 +28,20 @@ class ArticleTypeViewSet(SnippetViewSet):
     add_to_admin_menu = False   # sta dentro il gruppo, non da solo
 
 
+class GeoAreaViewSet(SnippetViewSet):
+    model = GeoArea
+    icon = 'site'
+    menu_label = 'Aree geografiche'
+    menu_name = 'geo-areas'
+    list_display = ['name', 'level', 'code', 'path']
+    list_filter = ['level', 'is_active']
+    search_fields = ['name', 'key', 'code']
+    ordering = ['path']
+    add_to_admin_menu = False
+
+
 class StrutturaGroup(SnippetViewSetGroup):
-    items = (ArticleTypeViewSet,)
+    items = (ArticleTypeViewSet, GeoAreaViewSet)
     menu_icon = 'cogs'
     menu_label = 'Struttura'
     menu_name = 'struttura'

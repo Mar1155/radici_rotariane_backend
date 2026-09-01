@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
 from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
 from .sanitizers import sanitize_article_html
+from cms.models import GeoArea
 from .structure import (
     get_required_fields,
     get_expected_info_elements_count,
@@ -266,8 +267,21 @@ def list_cards(request, section, tab):
     Lista tutte le cards pubblicate per una specifica section e tab
     """
     filters = {'is_published': True, 'section': section, 'tab': tab}
-    
-    cards = Card.objects.filter(**filters)
+
+    cards = Card.objects.filter(**filters).select_related('geo_area')
+
+    # Filtro geografico GERARCHICO: `?geo=puglia` restituisce anche gli articoli
+    # delle sue province. E' il motivo per cui la geografia e' un albero e non
+    # una lista piatta di tag - con i tag "Puglia" e "Bari" sarebbero due
+    # etichette scollegate.
+    geo = request.GET.get('geo')
+    if geo:
+        area = GeoArea.objects.filter(key=geo, is_active=True).first()
+        if area:
+            cards = cards.filter(geo_area__path__startswith=area.path)
+        else:
+            cards = cards.none()
+
     serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 

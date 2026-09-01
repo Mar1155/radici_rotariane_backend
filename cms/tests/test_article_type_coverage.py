@@ -22,6 +22,7 @@ class ArticleTypeCoverageTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         from django.core.management import call_command
+        call_command('seed_geo', verbosity=0)
         call_command('seed_article_types', verbosity=0)
         cls.cfg = legacy_config()
 
@@ -77,9 +78,18 @@ class ArticleTypeCoverageTest(TestCase):
         for (sezione, tab) in NOMI:
             with self.subTest(f'{sezione}/{tab}'):
                 t, cfg = self._tipo(sezione, tab), self._tab(sezione, tab)
+                # I tag geografici sono passati alla tassonomia: restano nel
+                # tipo solo quelli tematici.
+                from cms.models import GeoArea
+                attesi = cfg.get('tags') or []
+                geo = set(GeoArea.objects.filter(key__in=attesi)
+                          .values_list('key', flat=True))
                 self.assertEqual(
                     sorted(x.key for x in t.allowed_tags.all()),
-                    sorted(cfg.get('tags') or []))
+                    sorted(x for x in attesi if x not in geo))
+                if geo:
+                    self.assertTrue(t.uses_geo,
+                                    'un tipo che aveva tag geografici deve usare la geografia')
                 self.assertEqual(sorted(t.buttons), sorted(cfg.get('buttons') or []))
                 self.assertEqual(t.default_columns, cfg.get('colonne') or 3)
                 self.assertEqual(sorted(t.can_publish),

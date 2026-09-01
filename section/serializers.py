@@ -44,6 +44,7 @@ class CardSerializer(serializers.ModelSerializer):
     attachments = CardAttachmentSerializer(many=True, read_only=True)
     is_saved = serializers.SerializerMethodField(read_only=True)
     saved_by_users = serializers.SerializerMethodField(read_only=True)
+    geo_area = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -76,9 +77,26 @@ class CardSerializer(serializers.ModelSerializer):
             'infoElementValues',
             'is_saved',
             'saved_by_users',
+            'geo_area',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at', 'views_count']
     
+    def get_geo_area(self, obj):
+        """Area geografica dell'articolo, con il percorso completo.
+
+        Il percorso serve al frontend per capire se un articolo ricade sotto
+        l'area filtrata senza dover conoscere l'albero.
+        """
+        area = obj.geo_area
+        if not area:
+            return None
+        return {
+            'key': area.key,
+            'name': area.name,
+            'level': area.level,
+            'path': area.path,
+        }
+
     def get_is_saved(self, obj):
         """Controlla se l'utente corrente ha salvato questa card"""
         request = self.context.get('request')

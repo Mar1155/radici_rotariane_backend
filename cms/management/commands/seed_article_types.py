@@ -13,7 +13,7 @@ from django.db import transaction
 from wagtail.models import Locale
 
 from cms import vocabularies as vocab
-from cms.models import ArticleType, ArticleTypeInfoElement, ArticleTypeTag
+from cms.models import ArticleType, ArticleTypeInfoElement, ArticleTypeTag, GeoArea
 from section.legacy import legacy_config
 
 # (sezione, tab) -> (chiave, nome singolare, nome plurale, descrizione)
@@ -136,8 +136,22 @@ class Command(BaseCommand):
                         label=etichette_info.get(k, {}).get('it', k.replace('_', ' ').title()),
                         locale=locale)
 
+                # I tag che sono in realta' luoghi non diventano tag: li assorbe
+                # la tassonomia geografica. Riconosciuti confrontandoli con
+                # l'albero invece che con un elenco scritto a mano, cosi' la
+                # regola resta vera anche per sezioni future.
+                chiavi_geo = set(
+                    GeoArea.objects.filter(key__in=tdata.get('tags') or [])
+                    .values_list('key', flat=True)
+                )
+                if chiavi_geo:
+                    valori['uses_geo'] = True
+                    tipo.uses_geo = True
+                    tipo.save(update_fields=['uses_geo'])
+
                 tipo.allowed_tags.all().delete()
-                for i, t in enumerate(tdata.get('tags') or []):
+                for i, t in enumerate(
+                        [x for x in (tdata.get('tags') or []) if x not in chiavi_geo]):
                     ArticleTypeTag.objects.create(
                         article_type=tipo, sort_order=i, key=t,
                         label=etichette_tag.get(t, {}).get('it', t.replace('-', ' ').capitalize()),

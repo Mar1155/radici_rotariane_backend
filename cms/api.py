@@ -12,6 +12,7 @@ accesso, quindi il frontend deve poter disegnare le card senza autenticazione.
 import hashlib
 import json
 
+from django.conf import settings
 from django.utils.translation import get_language
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -19,7 +20,23 @@ from rest_framework.response import Response
 from wagtail.models import Locale
 
 from cms import vocabularies as vocab
-from cms.models import ArticleType
+from cms.models import ArticleType, GeoArea
+
+
+def _codice_lingua(request) -> str:
+    """Codice della lingua richiesta, validato sulle lingue configurate.
+
+    Diverso da `_risolvi_locale`: quello serve ai contenuti legati a una riga
+    Locale di Wagtail (che esiste solo dopo che la lingua e' stata aggiunta in
+    admin). Le traduzioni della tassonomia geografica stanno invece in un
+    JSONField, quindi basta il codice — e funzionano appena la lingua e'
+    configurata, senza aspettare che qualcuno crei il Locale.
+    """
+    ammesse = {c for c, _ in settings.WAGTAIL_CONTENT_LANGUAGES}
+    richiesta = (request.GET.get('locale') or get_language() or '').split('-')[0]
+    if richiesta in ammesse:
+        return richiesta
+    return settings.LANGUAGE_CODE.split('-')[0]
 
 
 def _risolvi_locale(request):
@@ -94,4 +111,45 @@ def article_types(request):
     resp = Response(payload)
     resp['ETag'] = f'"{payload["version"]}"'
     resp['Cache-Control'] = 'public, max-age=60'
+    return resp
+
+
+def _albero(nodi, per_parent, locale_code):
+    return [
+        {
+            'key': n.key,
+            'name': n.label(locale_code),
+            'level': n.level,
+            'code': n.code or None,
+            'path': n.path,
+            'children': _albero(per_parent.get(n.pk, []), per_parent, locale_code),
+        }
+        for n in nodi
+    ]
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def geo_areas(request):
+    """L'albero geografico completo.
+
+    Una sola query: l'albero si costruisce in memoria. Sono ~130 nodi, e
+    servirli tutti insieme evita al frontend una chiamata per ogni livello
+    mentre l'utente naviga il selettore.
+    """
+    codice = _codice_lingua(request)
+
+    tutti = list(GeoArea.objects.filter(is_active=True).order_by('sort_order', 'name'))
+    per_parent: dict = {}
+    radici = []
+    for n in tutti:
+        (radici if n.parent_id is None else per_parent.setdefault(n.parent_id, [])).append(n)
+
+    payload = {'locale': codice, 'areas': _albero(radici, per_parent, codice)}
+    grezzo = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode('utf-8')
+    payload['version'] = hashlib.sha256(grezzo).hexdigest()[:16]
+
+    resp = Response(payload)
+    resp['ETag'] = f'"{payload["version"]}"'
+    resp['Cache-Control'] = 'public, max-age=300'
     return resp
