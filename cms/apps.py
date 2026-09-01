@@ -5,3 +5,6 @@ class CmsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'cms'
     verbose_name = 'CMS'
+
+    def ready(self):
+        from cms import signals  # noqa: F401

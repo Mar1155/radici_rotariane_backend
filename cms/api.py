@@ -21,6 +21,7 @@ from wagtail.models import Locale
 
 from cms import vocabularies as vocab
 from cms.models import ArticleType, GeoArea, Menu
+from cms.blocks import percorso_pagina
 
 
 def _codice_lingua(request) -> str:
@@ -209,3 +210,102 @@ def navigation(request):
     resp['ETag'] = f'"{payload["version"]}"'
     resp['Cache-Control'] = 'public, max-age=60'
     return resp
+
+
+def serializza_pagina(pagina, anteprima=False) -> dict:
+    """Una pagina nella forma che il frontend sa disegnare.
+
+    Il corpo e' una lista di blocchi {type, id, value}: il renderer React
+    smista per `type` e passa `value` al componente corrispondente. Non viene
+    mai generato HTML di impaginazione — solo dati — ed e' questo che tiene il
+    design system fuori dalla portata di chi compone le pagine.
+    """
+    corpo = pagina.body
+    return {
+        'id': pagina.id,
+        'title': pagina.title,
+        'slug': pagina.slug,
+        'path': percorso_pagina(pagina),
+        'locale': pagina.locale.language_code,
+        'type': pagina.__class__.__name__,
+        'seo': {
+            'title': pagina.seo_title or pagina.title,
+            'description': pagina.search_description or '',
+        },
+        # La rappresentazione API la produce il BLOCCO, non il valore: e' il
+        # blocco a sapere come si traduce ogni suo figlio.
+        'body': corpo.stream_block.get_api_representation(corpo) if corpo else [],
+        'preview': anteprima,
+    }
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def page_by_path(request):
+    """Risolve una pagina dal suo percorso: ?path=/partner
+
+    E' la chiamata che fa la rotta catch-all di Next: un solo file di pagina
+    serve tutte le pagine del CMS, comprese quelle create dopo l'ultimo deploy.
+    """
+    from wagtail.models import Page, Site
+
+    percorso = (request.GET.get('path') or '/').strip()
+    if not percorso.startswith('/'):
+        percorso = '/' + percorso
+    locale = _risolvi_locale(request)
+
+    sito = Site.objects.filter(is_default_site=True).first()
+    if not sito:
+        return Response({'detail': 'Nessun sito configurato.'}, status=500)
+
+    radice = sito.root_page.localized if hasattr(sito.root_page, 'localized') else sito.root_page
+    if percorso == '/':
+        pagina = radice
+    else:
+        url_path = radice.url_path.rstrip('/') + percorso + '/'
+        pagina = Page.objects.filter(url_path=url_path, locale=locale).first()
+        if pagina is None:
+            pagina = Page.objects.filter(url_path=url_path).first()
+
+    if pagina is None or not pagina.live:
+        return Response({'detail': 'Pagina non trovata.'}, status=404)
+
+    return Response(serializza_pagina(pagina.specific))
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def page_paths(request):
+    """Tutti i percorsi pubblicati.
+
+    Serve a generateStaticParams quando si accendera' la generazione statica:
+    esporlo ora non costa nulla ed evita di doverci tornare.
+    """
+    from wagtail.models import Page, Site
+
+    sito = Site.objects.filter(is_default_site=True).first()
+    if not sito:
+        return Response({'paths': []})
+    pagine = (Page.objects.live().descendant_of(sito.root_page, inclusive=True)
+              .order_by('path'))
+    return Response({'paths': [percorso_pagina(p) for p in pagine]})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def preview(request):
+    """Contenuto di una bozza, per l'anteprima headless.
+
+    Il token e' quello che Wagtail genera aprendo l'anteprima: identifica la
+    revisione non pubblicata e scade da solo. Non e' un accesso ai contenuti
+    riservati — e' un collegamento monouso a una bozza specifica.
+    """
+    from wagtail_headless_preview.models import PagePreview
+
+    token = request.GET.get('token')
+    if not token:
+        return Response({'detail': 'Token mancante.'}, status=400)
+    anteprima = PagePreview.objects.filter(token=token).first()
+    if anteprima is None:
+        return Response({'detail': 'Anteprima scaduta o inesistente.'}, status=404)
+    return Response(serializza_pagina(anteprima.as_page(), anteprima=True))

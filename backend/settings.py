@@ -272,9 +272,19 @@ GEOCODING_USER_AGENT = config('GEOCODING_USER_AGENT', default='radici-rotariane/
 # S3 media storage (toggle with USE_S3=true)
 # Auto-enable S3 if keys are provided and not default
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default=None)
-USE_S3 = config('USE_S3', default=False, cast=bool)
+# Una scelta esplicita vince sempre sul rilevamento automatico: con la logica
+# precedente la presenza delle chiavi AWS riaccendeva S3 anche con USE_S3=False,
+# rendendo impossibile lavorare in locale su file su disco senza cancellare le
+# credenziali dall'ambiente.
+_USE_S3_ESPLICITO = config('USE_S3', default=None)
+USE_S3 = (
+    str(_USE_S3_ESPLICITO).strip().lower() in ('1', 'true', 'yes', 'on')
+    if _USE_S3_ESPLICITO not in (None, '')
+    else False
+)
 
-if AWS_ACCESS_KEY_ID and 'fake' not in AWS_ACCESS_KEY_ID and not USE_S3:
+if (_USE_S3_ESPLICITO in (None, '') and AWS_ACCESS_KEY_ID
+        and 'fake' not in AWS_ACCESS_KEY_ID):
     print("--> AWS keys detected. Enabling S3 storage automatically.")
     USE_S3 = True
 
@@ -490,3 +500,11 @@ WAGTAIL_HEADLESS_PREVIEW = {
     'REDIRECT_ON_PREVIEW': False,
     'ENFORCE_TRAILING_SLASH': False,
 }
+
+# Invalidazione della cache del frontend alla pubblicazione.
+FRONTEND_BASE_URL = config('FRONTEND_BASE_URL', default='http://localhost:3000')
+REVALIDATE_SECRET = config('REVALIDATE_SECRET', default='')
+
+# Base per gli URL dei media serviti alle API. Con S3 gli URL sono gia'
+# assoluti e questa non si applica.
+MEDIA_BASE_URL = config('MEDIA_BASE_URL', default=WAGTAILADMIN_BASE_URL)

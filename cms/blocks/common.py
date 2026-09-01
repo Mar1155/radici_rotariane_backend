@@ -1,0 +1,115 @@
+"""Mattoni condivisi fra i blocchi."""
+
+from django.conf import settings
+from wagtail import blocks
+from wagtail.images.blocks import ImageChooserBlock
+from wagtail.snippets.blocks import SnippetChooserBlock
+
+# Superfici ammesse per lo sfondo di una sezione. Sono token, non colori:
+# il frontend li traduce in classi Tailwind gia' definite nel design system,
+# cosi' non esistono pagine con un blu leggermente diverso dagli altri.
+SURFACE_CHOICES = [
+    ('white', 'Bianco'),
+    ('light', 'Grigio chiaro'),
+    ('brand-primary', 'Blu istituzionale'),
+    ('brand-gradient', 'Sfumatura istituzionale'),
+    ('section', 'Colore della sezione'),
+]
+
+# Accenti per icone e bordi.
+ACCENT_CHOICES = [
+    ('brand-primary', 'Blu istituzionale'),
+    ('brand-secondary', 'Giallo'),
+    ('emerald', 'Verde'),
+    ('amber', 'Ambra'),
+    ('rose', 'Rosa'),
+    ('sky', 'Azzurro'),
+    ('slate', 'Grigio'),
+]
+
+
+class LinkBlock(blocks.StructBlock):
+    """Un collegamento: a una pagina del sito, a una rotta o all'esterno."""
+
+    label = blocks.CharBlock(label='etichetta')
+    page = blocks.PageChooserBlock(required=False, label='pagina del sito')
+    route = blocks.CharBlock(required=False, label='percorso interno',
+                             help_text='Es. /rota-space')
+    external_url = blocks.URLBlock(required=False, label='indirizzo esterno')
+
+    def get_api_representation(self, value, context=None):
+        if not value:
+            return None
+        pagina = value.get('page')
+        href = (value.get('external_url') or value.get('route')
+                or (percorso_pagina(pagina) if pagina else None))
+        return {
+            'label': value.get('label'),
+            'href': href,
+            'newTab': bool(value.get('external_url')),
+        }
+
+    class Meta:
+        icon = 'link'
+        label = 'collegamento'
+
+
+def percorso_pagina(page) -> str:
+    """Percorso di una pagina nel frontend.
+
+    Il sito e' headless: Wagtail non serve HTML, quindi si usa la posizione
+    nell'albero togliendo il prefisso della radice.
+    """
+    if not page:
+        return '/'
+    percorso = page.url_path or '/'
+    sito = page.get_site()
+    if sito and sito.root_page:
+        prefisso = sito.root_page.url_path
+        if percorso.startswith(prefisso):
+            percorso = '/' + percorso[len(prefisso):]
+    return percorso.rstrip('/') or '/'
+
+
+def url_assoluto(url: str) -> str:
+    """Rende assoluto un URL di media.
+
+    Con S3 gli URL sono gia' assoluti; con lo storage su disco sono relativi
+    (`/media/...`), e il frontend gira su un'altra porta: un URL relativo
+    verrebbe cercato sul server Next, dove non c'e' nulla.
+    """
+    if not url or url.startswith(('http://', 'https://', '//')):
+        return url
+    base = (getattr(settings, 'MEDIA_BASE_URL', '')
+            or getattr(settings, 'WAGTAILADMIN_BASE_URL', '') or '')
+    return f'{base.rstrip("/")}{url}' if base else url
+
+
+class ImmagineBlock(ImageChooserBlock):
+    """Immagine con gia' dentro quello che serve a disegnarla."""
+
+    def get_api_representation(self, value, context=None):
+        if not value:
+            return None
+        try:
+            resa = value.get_rendition('width-1600')
+            url, larghezza, altezza = resa.url, resa.width, resa.height
+        except Exception:
+            # Se la rendition non si genera (storage lento o file mancante) si
+            # ripiega sull'originale invece di far fallire l'intera pagina.
+            url, larghezza, altezza = value.file.url, value.width, value.height
+        return {
+            'url': url_assoluto(url), 'width': larghezza, 'height': altezza,
+            'alt': value.title,
+            'credit': getattr(value, 'credit', '') or None,
+        }
+
+
+class TipoArticoloBlock(SnippetChooserBlock):
+    """Riferimento a un tipo di articolo: al frontend basta la chiave."""
+
+    def __init__(self, **kwargs):
+        super().__init__('cms.ArticleType', **kwargs)
+
+    def get_api_representation(self, value, context=None):
+        return value.key if value else None
