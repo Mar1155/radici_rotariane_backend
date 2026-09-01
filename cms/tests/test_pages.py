@@ -72,3 +72,34 @@ class PreviewApiTest(TestCase):
 
     def test_token_mancante(self):
         self.assertEqual(self.client.get('/api/cms/v1/preview/').status_code, 400)
+
+
+class LinkBlockTest(TestCase):
+    """Un collegamento facoltativo lasciato vuoto non deve bloccare il salvataggio."""
+
+    def setUp(self):
+        from cms.blocks import LinkBlock
+        self.blocco = LinkBlock(required=False)
+
+    def test_vuoto_e_ammesso(self):
+        pulito = self.blocco.clean(self.blocco.to_python(
+            {'label': '', 'route': '', 'external_url': '', 'page': None}))
+        self.assertEqual(pulito['label'], '')
+
+    def test_vuoto_non_finisce_nella_risposta(self):
+        valore = self.blocco.to_python(
+            {'label': '', 'route': '', 'external_url': '', 'page': None})
+        self.assertIsNone(self.blocco.get_api_representation(valore))
+
+    def test_destinazione_senza_etichetta_e_rifiutata(self):
+        from django.core.exceptions import ValidationError
+        valore = self.blocco.to_python(
+            {'label': '', 'route': '/rota-space', 'external_url': '', 'page': None})
+        with self.assertRaises(ValidationError):
+            self.blocco.clean(valore)
+
+    def test_collegamento_completo(self):
+        valore = self.blocco.to_python(
+            {'label': 'Contattaci', 'route': '/rota-space', 'external_url': '', 'page': None})
+        self.assertEqual(self.blocco.get_api_representation(self.blocco.clean(valore)),
+                         {'label': 'Contattaci', 'href': '/rota-space', 'newTab': False})

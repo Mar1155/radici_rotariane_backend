@@ -1,6 +1,7 @@
 """Mattoni condivisi fra i blocchi."""
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.snippets.blocks import SnippetChooserBlock
@@ -29,16 +30,38 @@ ACCENT_CHOICES = [
 
 
 class LinkBlock(blocks.StructBlock):
-    """Un collegamento: a una pagina del sito, a una rotta o all'esterno."""
+    """Un collegamento: a una pagina del sito, a una rotta o all'esterno.
 
-    label = blocks.CharBlock(label='etichetta')
+    `required=False` su uno StructBlock **non** rende opzionali i suoi figli:
+    con l'etichetta obbligatoria, un collegamento facoltativo lasciato vuoto
+    bloccava comunque il salvataggio della pagina. Qui nessun campo e'
+    obbligatorio di per se': e' `clean()` a chiedere l'etichetta soltanto quando
+    una destinazione c'e' davvero.
+    """
+
+    label = blocks.CharBlock(required=False, label='etichetta')
     page = blocks.PageChooserBlock(required=False, label='pagina del sito')
     route = blocks.CharBlock(required=False, label='percorso interno',
                              help_text='Es. /rota-space')
     external_url = blocks.URLBlock(required=False, label='indirizzo esterno')
 
+    def clean(self, value):
+        risultato = super().clean(value)
+        destinazione = (risultato.get('route') or risultato.get('external_url')
+                        or risultato.get('page'))
+        if destinazione and not risultato.get('label'):
+            raise blocks.StructBlockValidationError(
+                block_errors={'label': ValidationError(
+                    "Indica l'etichetta del pulsante: senza, il collegamento "
+                    'sarebbe invisibile.')})
+        return risultato
+
     def get_api_representation(self, value, context=None):
         if not value:
+            return None
+        # Un collegamento senza destinazione non e' un collegamento: e' un campo
+        # facoltativo lasciato vuoto.
+        if not (value.get('route') or value.get('external_url') or value.get('page')):
             return None
         pagina = value.get('page')
         href = (value.get('external_url') or value.get('route')
