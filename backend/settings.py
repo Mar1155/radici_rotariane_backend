@@ -27,6 +27,28 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section', 'forum', 'storages']
+
+# --- CMS (Wagtail) -----------------------------------------------------------
+# wagtail_localize.locales sostituisce wagtail.locales: non vanno messi entrambi.
+INSTALLED_APPS += [
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail',
+    'wagtail_localize',
+    'wagtail_localize.locales',
+    'wagtail_headless_preview',
+    'modelcluster',
+    'taggit',
+    'cms',
+]
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
@@ -38,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'wagtail.contrib.redirects.middleware.RedirectMiddleware',
 ]
 
 # CORS Settings
@@ -156,9 +179,26 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,
 }
 
-LANGUAGE_CODE = 'en-us'
+# Italiano: è la lingua sorgente dei contenuti e dell'interfaccia di
+# amministrazione. Va impostato PRIMA della prima migrate di Wagtail, altrimenti
+# Wagtail crea un Locale e un albero pagine 'en-us' scomodo da annullare.
+LANGUAGE_CODE = 'it'
 
-TIME_ZONE = 'UTC'
+# Le lingue in cui il contenuto può essere pubblicato. Aggiungerne una è una
+# voce in più in questa variabile d'ambiente (più la stessa lista lato frontend
+# in intlayer.config.ts): nessuna migrazione, perché ogni contenuto tradotto è
+# una riga per locale, non una colonna per locale.
+CONTENT_LANGUAGES = config('CONTENT_LANGUAGES', default='it,en', cast=Csv())
+
+_LANGUAGE_LABELS = {
+    'it': 'Italiano', 'en': 'English', 'es': 'Español',
+    'fr': 'Français', 'de': 'Deutsch', 'pt': 'Português',
+}
+LANGUAGES = [(c, _LANGUAGE_LABELS.get(c, c)) for c in CONTENT_LANGUAGES]
+WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
+WAGTAIL_I18N_ENABLED = True
+
+TIME_ZONE = 'Europe/Rome'
 
 USE_I18N = True
 
@@ -419,4 +459,34 @@ JAZZMIN_UI_TWEAKS = {
         "danger": "btn-danger",
         "success": "btn-success"
     }
+}
+
+
+# =============================================================================
+# Wagtail
+# =============================================================================
+WAGTAIL_SITE_NAME = 'Radici Rotariane'
+WAGTAILADMIN_BASE_URL = config('WAGTAILADMIN_BASE_URL', default='http://127.0.0.1:8000')
+
+# Modelli custom fin dal primo giorno: sostituirli dopo che esistono contenuti
+# è una migrazione lunga.
+WAGTAILIMAGES_IMAGE_MODEL = 'cms.CMSImage'
+WAGTAILDOCS_DOCUMENT_MODEL = 'cms.CMSDocument'
+
+WAGTAILIMAGES_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg']
+WAGTAILDOCS_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt']
+
+WAGTAILSEARCH_BACKENDS = {
+    'default': {'BACKEND': 'wagtail.search.backends.database'},
+}
+
+# Anteprima headless: l'admin apre la pagina renderizzata dal frontend Next.js
+# invece di un template Django. Senza questo l'editor compone alla cieca.
+WAGTAIL_HEADLESS_PREVIEW = {
+    'CLIENT_URLS': {
+        'default': config('FRONTEND_BASE_URL', default='http://localhost:3000') + '/cms-preview',
+    },
+    'SERVE_BASE_URL': config('FRONTEND_BASE_URL', default='http://localhost:3000'),
+    'REDIRECT_ON_PREVIEW': False,
+    'ENFORCE_TRAILING_SLASH': False,
 }
