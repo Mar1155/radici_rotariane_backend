@@ -334,7 +334,10 @@ class CardTranslation(models.Model):
 
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='translations')
     target_language = models.CharField(max_length=10)
-    translated_title = models.CharField(max_length=255)
+    # TextField, non CharField(255): una traduzione IT→DE si espande del 10-30%
+    # e update_or_create non chiama full_clean(), quindi l'eccesso arriverebbe
+    # a Postgres come errore 'value too long' invece che come ValidationError.
+    translated_title = models.TextField()
     translated_subtitle = models.TextField(blank=True)
     translated_content = models.TextField(blank=True)
     provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)

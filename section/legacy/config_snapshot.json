@@ -1,0 +1,1246 @@
+{
+  "structureConfig": {
+    "adotta-un-progetto": {
+      "tabs": {
+        "main": {
+          "tags": [
+            "attivo",
+            "completato",
+            "educazione",
+            "sanità",
+            "ambiente",
+            "sviluppo",
+            "comunità",
+            "infrastrutture",
+            "urgente",
+            "internazionale"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "location",
+              "subtitle",
+              "content",
+              "infoElements",
+              "tags",
+              "author",
+              "save"
+            ],
+            "hidden": [
+              "coverImage",
+              "date",
+              "gallery"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "DollarSign",
+              "title": "importo"
+            },
+            {
+              "icon": "TrendingUp",
+              "title": "impatto"
+            },
+            {
+              "icon": "Calendar",
+              "title": "scadenza"
+            }
+          ],
+          "buttons": [
+            "contatta",
+            "approfondisci",
+            "salva"
+          ],
+          "colonne": 2,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Proponi progetto",
+            "en": "Propose project"
+          }
+        }
+      }
+    },
+    "storie-e-radici": {
+      "tabs": {
+        "storie": {
+          "tags": [],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "coverImage",
+              "content",
+              "author",
+              "save"
+            ],
+            "hidden": [
+              "location",
+              "tags",
+              "date",
+              "infoElements",
+              "gallery"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "leggi-articolo",
+            "condividi",
+            "salva"
+          ],
+          "colonne": 2,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuovo articolo",
+            "en": "New article"
+          }
+        },
+        "tradizioni": {
+          "tags": [
+            "tradizione",
+            "festa",
+            "artigianato",
+            "gastronomia",
+            "leggenda",
+            "folklore",
+            "saggezza",
+            "eredità-culturale",
+            "mito"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "coverImage",
+              "content",
+              "author",
+              "save"
+            ],
+            "hidden": [
+              "date",
+              "location",
+              "tags",
+              "infoElements",
+              "gallery"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "leggi-articolo",
+            "condividi",
+            "salva"
+          ],
+          "colonne": 2,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuovo articolo",
+            "en": "New article"
+          }
+        },
+        "testimonianze": {
+          "tags": [],
+          "fields": {
+            "required": [
+              "location",
+              "subtitle",
+              "content",
+              "author"
+            ],
+            "hidden": [
+              "title",
+              "tags",
+              "date",
+              "coverImage",
+              "infoElements",
+              "gallery",
+              "save"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "leggi-articolo"
+          ],
+          "colonne": 1,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuova testimonianza",
+            "en": "New testimonial"
+          }
+        }
+      }
+    },
+    "eccellenze-calabresi": {
+      "tabs": {
+        "main": {
+          "tags": [
+            "sconto",
+            "gratis",
+            "cosenza",
+            "rende",
+            "crotone",
+            "catanzaro",
+            "vibo-valentia",
+            "reggio-calabria"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "tags",
+              "infoElements",
+              "location",
+              "coverImage"
+            ],
+            "hidden": [
+              "date",
+              "content",
+              "author",
+              "gallery",
+              "save"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "Tag",
+              "title": "sconto"
+            },
+            {
+              "icon": "Mail",
+              "title": "contattaci"
+            }
+          ],
+          "buttons": [],
+          "colonne": 2,
+          "canAddArticle": [
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuova convenzione",
+            "en": "New convention"
+          }
+        }
+      }
+    },
+    "calendario-delle-radici": {
+      "tabs": {
+        "main": {
+          "tags": [
+            "online",
+            "in-presenza"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "coverImage",
+              "content",
+              "author",
+              "date",
+              "location",
+              "tags",
+              "save"
+            ],
+            "hidden": [
+              "infoElements",
+              "gallery"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "approfondisci",
+            "condividi",
+            "salva"
+          ],
+          "colonne": 1,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuovo evento",
+            "en": "New event"
+          }
+        }
+      }
+    },
+    "scopri-la-calabria": {
+      "tabs": {
+        "itinerari": {
+          "tags": [
+            "cosenza",
+            "rende",
+            "crotone",
+            "catanzaro",
+            "vibo-valentia",
+            "reggio-calabria"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "location",
+              "tags",
+              "subtitle",
+              "coverImage",
+              "content",
+              "infoElements",
+              "author"
+            ],
+            "hidden": [
+              "date",
+              "gallery",
+              "save"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "Clock",
+              "title": "giorni"
+            }
+          ],
+          "buttons": [
+            "leggi-articolo",
+            "condividi"
+          ],
+          "colonne": 2,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuovo itinerario",
+            "en": "New itinerary"
+          }
+        },
+        "esperienze": {
+          "tags": [
+            "enogastronomia",
+            "artigianato",
+            "natura"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "location",
+              "tags",
+              "subtitle",
+              "coverImage",
+              "content",
+              "infoElements",
+              "author"
+            ],
+            "hidden": [
+              "date",
+              "gallery",
+              "save"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "DollarSign",
+              "title": "prezzo"
+            }
+          ],
+          "buttons": [
+            "leggi-articolo",
+            "condividi"
+          ],
+          "colonne": 3,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuova esperienza",
+            "en": "New experience"
+          }
+        },
+        "consigli": {
+          "tags": [],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle"
+            ],
+            "hidden": [
+              "date",
+              "location",
+              "tags",
+              "infoElements",
+              "coverImage",
+              "content",
+              "author",
+              "gallery",
+              "save"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "scopri-di-piu",
+            "email",
+            "whatsapp"
+          ],
+          "colonne": 1,
+          "canAddArticle": [],
+          "newArticleButtonLabel": {
+            "it": "Nuovo consiglio",
+            "en": "New advice"
+          },
+          "externalUrl": "https://www.casacalabriainternational.com/",
+          "externalEmail": "casacalabriainternational@gmail.com",
+          "externalPhone": "393334080457"
+        }
+      }
+    },
+    "scambi-e-mobilita": {
+      "tabs": {
+        "offri": {
+          "tags": [],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "location",
+              "infoElements",
+              "author",
+              "save"
+            ],
+            "hidden": [
+              "tags",
+              "date",
+              "coverImage",
+              "content",
+              "gallery"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "Users",
+              "title": "posti_disponibili"
+            },
+            {
+              "icon": "Calendar",
+              "title": "periodo_anno"
+            }
+          ],
+          "buttons": [
+            "contatta",
+            "salva"
+          ],
+          "colonne": 3,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuova offerta",
+            "en": "New offer"
+          }
+        },
+        "cerca": {
+          "tags": [],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "location",
+              "infoElements",
+              "author",
+              "save"
+            ],
+            "hidden": [
+              "tags",
+              "date",
+              "coverImage",
+              "content",
+              "gallery"
+            ]
+          },
+          "infoElements": [
+            {
+              "icon": "Users",
+              "title": "posti_disponibili"
+            },
+            {
+              "icon": "Calendar",
+              "title": "periodo_anno"
+            }
+          ],
+          "buttons": [
+            "contatta",
+            "salva"
+          ],
+          "colonne": 3,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuova richiesta",
+            "en": "New request"
+          }
+        }
+      }
+    },
+    "archivio": {
+      "tabs": {
+        "main": {
+          "tags": [
+            "testo",
+            "foto",
+            "video"
+          ],
+          "fields": {
+            "required": [
+              "title",
+              "subtitle",
+              "content",
+              "tags",
+              "author",
+              "gallery",
+              "save"
+            ],
+            "hidden": [
+              "date",
+              "location",
+              "coverImage",
+              "infoElements"
+            ]
+          },
+          "infoElements": [],
+          "buttons": [
+            "approfondisci",
+            "salva"
+          ],
+          "colonne": 3,
+          "canAddArticle": [
+            "user",
+            "club",
+            "admin"
+          ],
+          "newArticleButtonLabel": {
+            "it": "Nuovo articolo",
+            "en": "New article"
+          }
+        }
+      }
+    }
+  },
+  "sectionsMetadata": {
+    "adotta-un-progetto": {
+      "description": {
+        "it": "La vetrina digitale dove i Club possono condividere progetti da finanziare\no sostenere operativamente.",
+        "en": "The digital showcase where Clubs can share projects to fund\nor support operationally."
+      },
+      "heroGradient": "from-emerald-600 to-emerald-700",
+      "heroTag": {
+        "it": "fiera digitale",
+        "en": "digital fair"
+      },
+      "primaryColor": "#009739",
+      "contentItemName": {
+        "it": "progetti",
+        "en": "projects"
+      },
+      "contentItemNameSingular": {
+        "it": "progetto",
+        "en": "project"
+      },
+      "explained": true,
+      "explanation_title": {
+        "it": "Come funziona",
+        "en": "How it works"
+      },
+      "explanation_description": {
+        "it": "Scopri e sostieni i progetti degli utenti di Radici Rotariane nel mondo. Contribuisci anche tu a fare la differenza",
+        "en": "Discover and support projects from Radici Rotariane users around the world. Contribute to making a difference."
+      },
+      "explanation": [
+        {
+          "icon": "Compass",
+          "title": {
+            "it": "Esplora",
+            "en": "Explore"
+          },
+          "description": {
+            "it": "Scopri i progetti che chiedono il tuo aiuto",
+            "en": "Discover the projects that need your help"
+          }
+        },
+        {
+          "icon": "Target",
+          "title": {
+            "it": "Scegli",
+            "en": "Choose"
+          },
+          "description": {
+            "it": "Seleziona il progetto che più ti sta a cuore",
+            "en": "Select the project closest to your heart"
+          }
+        },
+        {
+          "icon": "Heart",
+          "title": {
+            "it": "Sostieni",
+            "en": "Support"
+          },
+          "description": {
+            "it": "Contribuisci con una donazione o supporto operativo",
+            "en": "Contribute with a donation or operational support"
+          }
+        },
+        {
+          "icon": "Bookmark",
+          "title": {
+            "it": "Salva",
+            "en": "Save"
+          },
+          "description": {
+            "it": "Salva il progetto nel tuo profilo per mostrare il tuo interesse",
+            "en": "Add the project to your profile to show your interest"
+          }
+        }
+      ]
+    },
+    "storie-e-radici": {
+      "description": {
+        "it": "L'archivio multimediale dedicato alla cultura calabrese: racconti autentici che intrecciano memoria, identità e appartenenza.",
+        "en": "The multimedia archive dedicated to Calabrian culture: authentic stories that weave together memory, identity and belonging."
+      },
+      "heroGradient": "from-blue-500 to-blue-600",
+      "heroTag": {
+        "it": "Identità Calabrese",
+        "en": "Calabrian Identity"
+      },
+      "primaryColor": "#00a2e0",
+      "explained": true,
+      "explanation_title": {
+        "it": "Condividi la tua storia",
+        "en": "Share your story"
+      },
+      "explanation_description": {
+        "it": "Condividi foto, video e documenti relativi ad esperienze personali, viaggi alle origini, storie di rotariani nel mondo e tradizioni calabresi.",
+        "en": "Share photos, videos and documents related to personal experiences, journeys to your roots, stories of Rotarians around the world and Calabrian traditions."
+      },
+      "explanation": [
+        {
+          "icon": "Globe",
+          "title": {
+            "it": "Foto e Video",
+            "en": "Photos and Videos"
+          },
+          "description": {
+            "it": "Condividi foto e video di esperienze autentiche",
+            "en": "Share photos and videos of authentic experiences"
+          }
+        },
+        {
+          "icon": "Flag",
+          "title": {
+            "it": "Racconti",
+            "en": "Stories"
+          },
+          "description": {
+            "it": "Racconta storie di rotariani di successo nel mondo",
+            "en": "Tell stories of successful Rotarians around the world"
+          }
+        },
+        {
+          "icon": "Award",
+          "title": {
+            "it": "Tradizioni",
+            "en": "Traditions"
+          },
+          "description": {
+            "it": "Condividi aneddoti, ricette, tradizioni calabresi",
+            "en": "Share anecdotes, recipes, Calabrian traditions"
+          }
+        }
+      ]
+    },
+    "eccellenze-calabresi": {
+      "description": {
+        "it": "Scopri le migliori attività calabresi a prezzi agevolati: Ristoranti, hotel, aziende e professionisti di qualità, con sconti dedicati ai Rotariani in visita in Calabria.",
+        "en": "Discover the best Calabrian businesses at reduced prices: Restaurants, hotels, companies and quality professionals, with discounts dedicated to Rotarians visiting Calabria."
+      },
+      "heroGradient": "from-[#f7a81b] to-[#e59710]",
+      "heroTag": {
+        "it": "Convenzioni e sconti",
+        "en": "Benefits and Discounts"
+      },
+      "primaryColor": "#00adbb",
+      "explained": true,
+      "explanation_title": {
+        "it": "Vuoi aderire?",
+        "en": "Want to join?"
+      },
+      "explanation_description": {
+        "it": "Hai un'attività o conosci un'attività che vorrebbe aderire al progetto offrendo sconti esclusivi ai rotariani in visita in Calabria? Contattaci",
+        "en": "Do you have a business or know a business that would like to join the project by offering exclusive discounts to Rotarians visiting Calabria? Contact us"
+      },
+      "explanation": [],
+      "explanation_contactEmail": "info@rotary2102.org"
+    },
+    "calendario-delle-radici": {
+      "description": {
+        "it": "Lo spazio dove puoi tenerti aggiornato e promuovere gli incontri rotariani di Club, Distrettuali ed internazionali (meeting, conferenze, service).",
+        "en": "The space where you can stay updated and promote Rotary meetings at Club, District and international levels (meetings, conferences, service)."
+      },
+      "heroGradient": "from-blue-500 to-blue-600",
+      "heroTag": {
+        "it": "eventi",
+        "en": "events"
+      },
+      "primaryColor": "#ff7600",
+      "contentItemName": {
+        "it": "eventi",
+        "en": "events"
+      },
+      "contentItemNameSingular": {
+        "it": "evento",
+        "en": "event"
+      }
+    },
+    "scopri-la-calabria": {
+      "description": {
+        "it": "La guida completa alla scoperta delle meraviglie del territorio calabrese: Mare cristallino, montagne maestose, storia millenaria e sapori autentici.",
+        "en": "The complete guide to discovering the wonders of Calabrian territory: Crystal clear sea, majestic mountains, millenary history and authentic flavors."
+      },
+      "heroGradient": "from-rose-600 to-rose-700",
+      "heroTag": {
+        "it": "Turismo delle Radici",
+        "en": "Heritage Tourism"
+      },
+      "primaryColor": "#d41367"
+    },
+    "scambi-e-mobilita": {
+      "description": {
+        "it": "La rete di ospitalità rotariana: una bacheca dove offrire o ricercare ospitalità, favorendo incontri, soggiorni, e visite tra Club nel segno dello Scambio d'amicizia Rotariana",
+        "en": "The Rotary hospitality network: a bulletin board to offer or search for hospitality, promoting meetings, stays, and visits between Clubs in the spirit of the Rotary Friendship Exchange"
+      },
+      "heroGradient": "from-emerald-600 to-emerald-700",
+      "heroTag": {
+        "it": "Scambio d'Amicizia Rotariana",
+        "en": "Rotary Friendship Exchange"
+      },
+      "primaryColor": "#7a6e66"
+    },
+    "archivio": {
+      "description": {
+        "it": "Un tuffo nel passato: documenti, testimonianze e immagini di eventi, scambi d'amicizia, gemellaggi e progetti già conclusi, per conservare e condividere i ricordi dei momenti più significativi.",
+        "en": "A dive into the past: documents, testimonies and images of past events, friendship exchanges, twinning and completed projects, to preserve and share the memories of the most significant moments."
+      },
+      "heroGradient": "from-slate-600 to-slate-700",
+      "heroTag": {
+        "it": "Database Rotariano",
+        "en": "Rotary Database"
+      },
+      "primaryColor": "#657f99"
+    }
+  },
+  "tabsMetadata": {
+    "storie": {
+      "title": {
+        "it": "Storie dal Mondo",
+        "en": "Stories from the World"
+      },
+      "description": {
+        "it": "Esperienze, Racconti e storie di successo di calabresi all'estero",
+        "en": "Experiences, stories and success stories of Calabrians abroad"
+      }
+    },
+    "testimonianze": {
+      "title": {
+        "it": "Testimonianze",
+        "en": "Testimonies"
+      },
+      "description": {
+        "it": "Interviste e testimonianze personali di Rotariani di origini Calabresi",
+        "en": "Interviews and personal testimonials from Rotarians of Calabrian origins"
+      }
+    },
+    "tradizioni": {
+      "title": {
+        "it": "Tradizioni Calabresi",
+        "en": "Calabrian Traditions"
+      },
+      "description": {
+        "it": "Curiosità, tradizioni, proverbi, miti e leggende della nostra terra.",
+        "en": "Curiosities, traditions, proverbs, myths, and legends of our land."
+      }
+    },
+    "eccellenze-tradizioni": {
+      "title": {
+        "it": "Tradizioni",
+        "en": "Traditions"
+      },
+      "description": {
+        "it": "Antiche arti, mestieri e ricette trasformate in eccellenze internazionali riconosciute nel mondo.",
+        "en": "Ancient arts, crafts, and recipes transformed into internationally recognized excellences."
+      }
+    },
+    "imprenditori": {
+      "title": {
+        "it": "Imprenditori",
+        "en": "Entrepreneurs"
+      },
+      "description": {
+        "it": "Visionari calabresi che hanno creato aziende di successo e innovato i loro settori.",
+        "en": "Calabrian visionaries who have built successful companies and innovated their industries."
+      }
+    },
+    "innovazione": {
+      "title": {
+        "it": "Innovazione",
+        "en": "Innovation"
+      },
+      "description": {
+        "it": "Soluzioni sostenibili e tecnologie sviluppate in Calabria con impatto globale.",
+        "en": "Sustainable solutions and technologies developed in Calabria with global impact."
+      }
+    },
+    "eventi": {
+      "title": {
+        "it": "Eventi",
+        "en": "Events"
+      },
+      "description": {
+        "it": "Manifestazioni, festival e appuntamenti che celebrano la cultura e l'identità calabrese.",
+        "en": "Festivals, celebrations, and events that showcase Calabrian culture and identity."
+      }
+    },
+    "ricorrenze": {
+      "title": {
+        "it": "Ricorrenze",
+        "en": "Commemorations"
+      },
+      "description": {
+        "it": "Anniversari e commemorazioni che preservano la memoria dei momenti significativi calabresi.",
+        "en": "Anniversaries and commemorations that preserve the memory of significant Calabrian moments."
+      }
+    },
+    "festivita": {
+      "title": {
+        "it": "Festività",
+        "en": "Holidays"
+      },
+      "description": {
+        "it": "Festività religiose, civili e tradizionali che caratterizzano il calendario calabrese.",
+        "en": "Religious, civil, and traditional holidays that characterize the Calabrian calendar."
+      }
+    },
+    "itinerari": {
+      "title": {
+        "it": "Itinerari",
+        "en": "Itineraries"
+      },
+      "description": {
+        "it": "Percorsi affascinanti alla scoperta dei paesaggi, dei tesori naturali e dei siti storici calabresi.",
+        "en": "Fascinating routes to discover Calabrian landscapes, natural treasures, and historic sites."
+      }
+    },
+    "esperienze": {
+      "title": {
+        "it": "Esperienze",
+        "en": "Experiences"
+      },
+      "description": {
+        "it": "Attività immersive e avventure per vivere la Calabria in modo autentico e indimenticabile.",
+        "en": "Immersive activities and adventures to experience Calabria authentically and unforgettably."
+      }
+    },
+    "consigli": {
+      "title": {
+        "it": "Casa Calabria International",
+        "en": "Casa Calabria International"
+      },
+      "description": {
+        "it": "Raccomandazioni pratiche, guide locali e informazioni utili per visitare la Calabria.",
+        "en": "Practical recommendations, local guides, and useful information for visiting Calabria."
+      }
+    },
+    "offri": {
+      "title": {
+        "it": "Offri",
+        "en": "Offer"
+      },
+      "description": {
+        "it": "Chiedi adesioni a degli Scambi d'amicizia Rotariana, metti a disposizione alloggi e accoglienze per rotariani in visita da tutto il mondo e offri la possibilità di stage a giovani professionisti.",
+        "en": "Request participation in Rotary Friendship Exchanges, offer accommodation and hospitality for visiting Rotarians from around the world, and provide internship opportunities for young professionals."
+      }
+    },
+    "cerca": {
+      "title": {
+        "it": "Cerca",
+        "en": "Search"
+      },
+      "description": {
+        "it": "Scopri possibili adesioni a degli Scambi d'Amicizia Rotariana, disponibilità di soggiorni, ospitalità e stage offerti da Rotariani in tutto il mondo.",
+        "en": "Discover available Rotary Friendship Exchanges, stays, hospitality, and internships offered by Rotarians around the world."
+      }
+    },
+    "programmi": {
+      "title": {
+        "it": "Programmi",
+        "en": "Programs"
+      },
+      "description": {
+        "it": "Opportunità di scambio internazionale e mobilità per conoscere la Calabria nel mondo.",
+        "en": "International exchange opportunities and mobility programs to discover Calabria worldwide."
+      }
+    },
+    "partnership": {
+      "title": {
+        "it": "Partnership",
+        "en": "Partnerships"
+      },
+      "description": {
+        "it": "Collaborazioni strategiche tra enti calabresi e organizzazioni internazionali Rotariane.",
+        "en": "Strategic collaborations between Calabrian entities and international Rotary organizations."
+      }
+    },
+    "scambi-testimonianze": {
+      "title": {
+        "it": "Testimonianze",
+        "en": "Testimonies"
+      },
+      "description": {
+        "it": "Esperienze di partecipanti che hanno vissuto scambi e mobilità internazionali dal nostro territorio.",
+        "en": "Experiences of participants who have experienced international exchanges and mobility from our region."
+      }
+    },
+    "documenti": {
+      "title": {
+        "it": "Documenti",
+        "en": "Documents"
+      },
+      "description": {
+        "it": "Archivio di documenti storici, report e fascicoli che preservano il patrimonio documentale calabrese.",
+        "en": "Archive of historical documents, reports, and files that preserve Calabrian documentary heritage."
+      }
+    },
+    "articoli": {
+      "title": {
+        "it": "Articoli",
+        "en": "Articles"
+      },
+      "description": {
+        "it": "Pubblicazioni, scritti editoriali e analisi sulla storia, cultura e società calabrese.",
+        "en": "Publications, editorial writings, and analyses on Calabrian history, culture, and society."
+      }
+    },
+    "media": {
+      "title": {
+        "it": "Media",
+        "en": "Media"
+      },
+      "description": {
+        "it": "Archivio multimediale con foto, video e audio che documentano la Calabria nel tempo.",
+        "en": "Multimedia archive with photos, videos, and audio documenting Calabria over time."
+      }
+    },
+    "main": {
+      "title": {
+        "it": "Progetti",
+        "en": "Projects"
+      },
+      "description": {
+        "it": "Progetti Rotariani che cambiano la vita delle comunità calabresi e del mondo intero.",
+        "en": "Rotary projects that change the lives of Calabrian communities and the entire world."
+      }
+    }
+  },
+  "sectionTranslations": {
+    "adotta-un-progetto": {
+      "it": "Adotta un Progetto",
+      "en": "Adopt a Project"
+    },
+    "storie-e-radici": {
+      "it": "Storie e Radici",
+      "en": "Stories and Roots"
+    },
+    "eccellenze-calabresi": {
+      "it": "Eccellenze Calabresi",
+      "en": "Calabrian Excellences"
+    },
+    "calendario-delle-radici": {
+      "it": "Calendario ed Eventi",
+      "en": "Calendar and Events"
+    },
+    "scopri-la-calabria": {
+      "it": "Scopri la Calabria",
+      "en": "Discover Calabria"
+    },
+    "scambi-e-mobilita": {
+      "it": "Scambi e Mobilità",
+      "en": "Exchanges and Mobility"
+    },
+    "archivio": {
+      "it": "Archivio",
+      "en": "Archive"
+    }
+  },
+  "tabTranslations": {
+    "storie": {
+      "it": "Storie",
+      "en": "Stories"
+    },
+    "tradizioni": {
+      "it": "Tradizioni",
+      "en": "Traditions"
+    },
+    "testimonianze": {
+      "it": "Testimonianze",
+      "en": "Testimonies"
+    },
+    "itinerari": {
+      "it": "Itinerari",
+      "en": "Itineraries"
+    },
+    "esperienze": {
+      "it": "Esperienze",
+      "en": "Experiences"
+    },
+    "consigli": {
+      "it": "Casa Calabria International",
+      "en": "Casa Calabria International"
+    },
+    "offri": {
+      "it": "Offri",
+      "en": "Offer"
+    },
+    "cerca": {
+      "it": "Cerca",
+      "en": "Search"
+    }
+  },
+  "tagTranslations": {
+    "attivo": {
+      "it": "Attivo",
+      "en": "Active"
+    },
+    "completato": {
+      "it": "Completato",
+      "en": "Completed"
+    },
+    "educazione": {
+      "it": "Educazione",
+      "en": "Education"
+    },
+    "sanità": {
+      "it": "Sanità",
+      "en": "Healthcare"
+    },
+    "ambiente": {
+      "it": "Ambiente",
+      "en": "Environment"
+    },
+    "sviluppo": {
+      "it": "Sviluppo",
+      "en": "Development"
+    },
+    "comunità": {
+      "it": "Comunità",
+      "en": "Community"
+    },
+    "infrastrutture": {
+      "it": "Infrastrutture",
+      "en": "Infrastructure"
+    },
+    "urgente": {
+      "it": "Urgente",
+      "en": "Urgent"
+    },
+    "internazionale": {
+      "it": "Internazionale",
+      "en": "International"
+    },
+    "tradizione": {
+      "it": "Tradizione",
+      "en": "Tradition"
+    },
+    "festa": {
+      "it": "Festa",
+      "en": "Festival"
+    },
+    "artigianato": {
+      "it": "Artigianato",
+      "en": "Craftsmanship"
+    },
+    "gastronomia": {
+      "it": "Gastronomia",
+      "en": "Gastronomy"
+    },
+    "leggenda": {
+      "it": "Leggenda",
+      "en": "Legend"
+    },
+    "folklore": {
+      "it": "Folklore",
+      "en": "Folklore"
+    },
+    "saggezza": {
+      "it": "Saggezza",
+      "en": "Wisdom"
+    },
+    "eredità-culturale": {
+      "it": "Eredità Culturale",
+      "en": "Cultural Heritage"
+    },
+    "mito": {
+      "it": "Mito",
+      "en": "Myth"
+    },
+    "sconto": {
+      "it": "Sconto",
+      "en": "Discount"
+    },
+    "gratis": {
+      "it": "Gratis",
+      "en": "Free"
+    },
+    "cosenza": {
+      "it": "Cosenza",
+      "en": "Cosenza"
+    },
+    "rende": {
+      "it": "Rende",
+      "en": "Rende"
+    },
+    "crotone": {
+      "it": "Crotone",
+      "en": "Crotone"
+    },
+    "catanzaro": {
+      "it": "Catanzaro",
+      "en": "Catanzaro"
+    },
+    "vibo-valentia": {
+      "it": "Vibo Valentia",
+      "en": "Vibo Valentia"
+    },
+    "reggio-calabria": {
+      "it": "Reggio Calabria",
+      "en": "Reggio Calabria"
+    },
+    "enogastronomia": {
+      "it": "Enogastronomia",
+      "en": "Gastronomy & Wine"
+    },
+    "natura": {
+      "it": "Natura",
+      "en": "Nature"
+    },
+    "testo": {
+      "it": "Testo",
+      "en": "Text"
+    },
+    "foto": {
+      "it": "Foto",
+      "en": "Photo"
+    },
+    "video": {
+      "it": "Video",
+      "en": "Video"
+    },
+    "online": {
+      "it": "Online",
+      "en": "Online"
+    },
+    "in-presenza": {
+      "it": "In Presenza",
+      "en": "In Person"
+    }
+  },
+  "infoElementTranslations": {
+    "importo": {
+      "it": "Importo da Raccogliere",
+      "en": "Target Amount"
+    },
+    "impatto": {
+      "it": "Impatto",
+      "en": "Impact"
+    },
+    "scadenza": {
+      "it": "Scadenza",
+      "en": "Deadline"
+    },
+    "sconto": {
+      "it": "Sconto",
+      "en": "Discount"
+    },
+    "giorni": {
+      "it": "Giorni",
+      "en": "Days"
+    },
+    "prezzo": {
+      "it": "Prezzo",
+      "en": "Price"
+    },
+    "posti_disponibili": {
+      "it": "Posti Disponibili",
+      "en": "Available Spots"
+    },
+    "periodo_anno": {
+      "it": "Periodo dell'Anno",
+      "en": "Period of Year"
+    },
+    "contattaci": {
+      "it": "Contattaci",
+      "en": "Contact Us"
+    }
+  },
+  "buttonTranslations": {
+    "leggi-articolo": {
+      "it": "Leggi articolo",
+      "en": "Read Article"
+    },
+    "approfondisci": {
+      "it": "Approfondisci",
+      "en": "Learn More"
+    },
+    "contatta": {
+      "it": "Contatta",
+      "en": "Contact"
+    },
+    "condividi": {
+      "it": "Condividi",
+      "en": "Share"
+    },
+    "scopri-di-piu": {
+      "it": "Scopri di più!",
+      "en": "Learn more!"
+    },
+    "salva": {
+      "it": "Salva",
+      "en": "Save"
+    },
+    "email": {
+      "it": "Email",
+      "en": "Email"
+    },
+    "whatsapp": {
+      "it": "WhatsApp",
+      "en": "WhatsApp"
+    }
+  }
+}

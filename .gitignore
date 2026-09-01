@@ -49,6 +49,8 @@ db.sqlite3-journal
 .env.local
 .env.*.local
 *.env
+# Copie e backup dell'env (es. .env.backup-*): contengono credenziali.
+.env.*
 
 # Keep the example file
 !.env.example

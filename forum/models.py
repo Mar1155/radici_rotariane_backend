@@ -67,7 +67,9 @@ class PostTranslation(models.Model):
     id = models.BigAutoField(primary_key=True)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='translations')
     target_language = models.CharField(max_length=10)
-    translated_title = models.CharField(max_length=255)
+    # TextField per lo stesso motivo di CardTranslation: le traduzioni si
+    # espandono e update_or_create non valida la lunghezza.
+    translated_title = models.TextField()
     translated_description = models.TextField()
     provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
     detected_source_language = models.CharField(max_length=10, blank=True, null=True)

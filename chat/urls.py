@@ -28,9 +28,6 @@ chat_leave_group = ChatViewSet.as_view({
 chat_mark_read = ChatViewSet.as_view({
     "post": "mark_read",
 })
-chat_forum = ChatViewSet.as_view({
-    "get": "forum",
-})
 
 message_list = MessageViewSet.as_view({
     "get": "list",
@@ -51,7 +48,6 @@ urlpatterns = [
     # crea o recupera chat diretta
     path("direct/", chat_direct, name="chat-direct"),
     # recupera forum globale
-    path("forum/", chat_forum, name="chat-forum"),
     # crea gruppo
     path("create_group/", chat_create_group, name="chat-create-group"),
     # dettaglio chat

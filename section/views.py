@@ -4,7 +4,8 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
-from .serializers import CardSerializer, CardTranslationSerializer
+from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
+from .sanitizers import sanitize_article_html
 from .structure import (
     get_required_fields,
     get_expected_info_elements_count,
@@ -138,7 +139,7 @@ def create_card(request, section, tab):
         subtitle = request.data.get('subtitle')
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
-        content = request.data.get('content')
+        content = sanitize_article_html(request.data.get('content'))
         date_type = request.data.get('dateType', 'none')
         location = request.data.get('location')
         info_element_values_json = request.data.get('infoElementValues')
@@ -267,7 +268,7 @@ def list_cards(request, section, tab):
     filters = {'is_published': True, 'section': section, 'tab': tab}
     
     cards = Card.objects.filter(**filters)
-    serializer = CardSerializer(cards, many=True, context={'request': request})
+    serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -329,7 +330,7 @@ def get_card(request, slug):
     # Prepara i dati per la validazione (usa valori attuali se non forniti)
     title = data.get('title') if 'title' in data else card.title
     subtitle = data.get('subtitle') if 'subtitle' in data else card.subtitle
-    content = data.get('content') if 'content' in data else card.content
+    content = sanitize_article_html(data.get('content')) if 'content' in data else card.content
     cover_image = request.FILES.get('coverImage') if 'coverImage' in request.FILES else card.cover_image
     tags = parse_json_field(data.get('tags'), None) if 'tags' in data else card.tags
     location = data.get('location') if 'location' in data else card.location
@@ -366,7 +367,7 @@ def get_card(request, slug):
     if 'subtitle' in data:
         card.subtitle = data.get('subtitle') or None
     if 'content' in data:
-        card.content = data.get('content') or None
+        card.content = sanitize_article_html(data.get('content')) or None
     if 'location' in data:
         card.location = data.get('location') or None
 
@@ -494,7 +495,9 @@ def translate_card(request, slug):
     except TranslationProviderError as exc:
         return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
-    safe_content = sanitize_rich_text(content_result.text) if content_result.text else ''
+    # sanitize_article_html (non quello del forum): conserva le immagini,
+    # che l'allowlist del forum eliminerebbe dalla versione tradotta.
+    safe_content = sanitize_article_html(content_result.text) if content_result.text else ''
 
     with transaction.atomic():
         translation, created = CardTranslation.objects.update_or_create(
@@ -586,7 +589,7 @@ def list_saved_cards(request):
     saved_qs = saved_qs.filter(card__is_published=True).order_by('-created_at')
     cards = [saved.card for saved in saved_qs]
     
-    serializer = CardSerializer(cards, many=True, context={'request': request})
+    serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 
 
@@ -624,5 +627,5 @@ def list_user_cards(request):
         cards_qs = cards_qs.filter(section=section)
     cards_qs = cards_qs.order_by('-created_at')
 
-    serializer = CardSerializer(cards_qs, many=True, context={'request': request})
+    serializer = CardListSerializer(cards_qs, many=True, context={'request': request})
     return Response(serializer.data)

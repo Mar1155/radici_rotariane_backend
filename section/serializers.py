@@ -114,3 +114,16 @@ class CardSerializer(serializers.ModelSerializer):
                 # Dipende dalla struttura - usa quello che è disponibile
                 return getattr(club, 'id', None) or getattr(club, 'name', None)
         return None
+
+
+class CardListSerializer(CardSerializer):
+    """Serializer per gli ENDPOINT DI LISTA.
+
+    Identico a CardSerializer ma senza `content`: il corpo di un articolo non
+    serve per disegnare una card in griglia, e includerlo rende ogni risposta
+    di lista pesante quanto la somma di tutti gli articoli della sezione.
+    Il corpo resta disponibile sul dettaglio (GET /api/section/cards/<slug>).
+    """
+
+    class Meta(CardSerializer.Meta):
+        fields = [f for f in CardSerializer.Meta.fields if f != 'content']
