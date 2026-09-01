@@ -175,12 +175,113 @@ class TabbedArticleListBlock(blocks.StructBlock):
         label = 'elenco articoli a tab'
 
 
+class TextBandBlock(blocks.StructBlock):
+    """Fascia di testo centrata — app/cip/components/WhatIsCIP.tsx"""
+
+    title = blocks.CharBlock(label='titolo')
+    body = blocks.TextBlock(label='testo')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='light', label='sfondo')
+
+    class Meta:
+        icon = 'doc-full'
+        label = 'fascia di testo'
+
+
+class TaskBlock(blocks.StructBlock):
+    title = blocks.CharBlock(label='voce')
+    link = LinkBlock(required=False, label='approfondimento')
+
+    class Meta:
+        icon = 'tick'
+        label = 'voce'
+
+
+class TaskListBlock(blocks.StructBlock):
+    """Elenco puntato di compiti — i compiti dei CIP in app/cip/page.tsx"""
+
+    title = blocks.CharBlock(label='titolo')
+    subtitle = blocks.TextBlock(required=False, label='sottotitolo')
+    items = blocks.ListBlock(TaskBlock(), label='voci')
+    note = blocks.TextBlock(required=False, label='nota finale')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
+
+    class Meta:
+        icon = 'list-ol'
+        label = 'elenco di voci'
+
+
+class PersonBlock(blocks.StructBlock):
+    name = blocks.CharBlock(label='nome')
+    role = blocks.CharBlock(required=False, label='ruolo')
+    email = blocks.EmailBlock(required=False, label='email')
+    photo = ImmagineBlock(required=False, label='foto')
+    areas = blocks.ListBlock(blocks.CharBlock(label='area'), required=False,
+                             label='aree di competenza',
+                             help_text='Es. i paesi seguiti da un referente.')
+
+    class Meta:
+        icon = 'user'
+        label = 'persona'
+
+
+class PeopleGridBlock(blocks.StructBlock):
+    """Elenco di referenti — app/cip/components/ReferentiCIP.tsx
+
+    Oggi i referenti sono scritti dentro il componente con un commento che dice
+    "Mock data - sostituire con dati reali": qui diventano contenuto, e il
+    cliente puo' aggiornarli quando cambiano gli incarichi.
+    """
+
+    title = blocks.CharBlock(label='titolo')
+    description = blocks.TextBlock(required=False, label='descrizione')
+    columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3)],
+                                 default='2', label='colonne')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
+    items = blocks.ListBlock(PersonBlock(), label='persone')
+
+    class Meta:
+        icon = 'group'
+        label = 'elenco persone'
+
+
+class TierCardBlock(blocks.StructBlock):
+    tier = blocks.ChoiceBlock(
+        choices=[('bronze', 'Bronzo'), ('silver', 'Argento'), ('gold', 'Oro')],
+        label='livello')
+    title = blocks.CharBlock(label='titolo')
+    description = blocks.TextBlock(label='descrizione')
+
+    class Meta:
+        icon = 'pick'
+        label = 'livello'
+
+
+class TierCardsBlock(blocks.StructBlock):
+    """Livelli di gemellaggio — i badge di app/progetto/page.tsx.
+
+    Lo stile di ciascun livello resta in lib/badgeConfig.ts: il CMS sceglie il
+    livello, non i suoi colori.
+    """
+
+    title = blocks.CharBlock(required=False, label='titolo')
+    subtitle = blocks.TextBlock(required=False, label='sottotitolo')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
+    items = blocks.ListBlock(TierCardBlock(), label='livelli')
+
+    class Meta:
+        icon = 'pick'
+        label = 'livelli'
+
 class PageBodyBlock(blocks.StreamBlock):
     hero = HeroBlock()
     rich_text = blocks.RichTextBlock(features=RICH_TEXT_FEATURES, label='testo')
     icon_card_grid = IconCardGridBlock()
     partner_grid = PartnerGridBlock()
     quote = QuoteBlock()
+    text_band = TextBandBlock()
+    task_list = TaskListBlock()
+    people_grid = PeopleGridBlock()
+    tier_cards = TierCardsBlock()
     cta_banner = CtaBannerBlock()
     article_list = ArticleListBlock()
     tabbed_article_list = TabbedArticleListBlock()
