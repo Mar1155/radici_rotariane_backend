@@ -20,7 +20,7 @@ from rest_framework.response import Response
 from wagtail.models import Locale
 
 from cms import vocabularies as vocab
-from cms.models import ArticleType, GeoArea
+from cms.models import ArticleType, GeoArea, Menu
 
 
 def _codice_lingua(request) -> str:
@@ -152,4 +152,60 @@ def geo_areas(request):
     resp = Response(payload)
     resp['ETag'] = f'"{payload["version"]}"'
     resp['Cache-Control'] = 'public, max-age=300'
+    return resp
+
+
+def _serializza_voce(voce, menu_per_id, profondita=0):
+    dati = {
+        'label': voce.label,
+        'href': voce.href,
+        'icon': voce.icon or None,
+        'visibility': voce.visibility,
+        'roles': list(voce.roles or []),
+        'newTab': voce.open_in_new_tab,
+        'children': [],
+    }
+    # Un solo livello di annidamento: la tendina "Esplora" e' un menu, non un
+    # albero. Piu' livelli in una barra di navigazione sono difficili da usare e
+    # impossibili su mobile.
+    if voce.submenu_id and profondita == 0:
+        figlio = menu_per_id.get(voce.submenu_id)
+        if figlio:
+            dati['children'] = [
+                _serializza_voce(v, menu_per_id, profondita + 1)
+                for v in figlio.items.all()
+            ]
+    return dati
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def navigation(request):
+    """Tutti i menu, con i sottomenu gia' espansi.
+
+    Il frontend riceve una struttura pronta da disegnare: non deve sapere che
+    "Esplora" e' un menu a se' referenziato da un altro, ne' fare una seconda
+    chiamata per averlo.
+    """
+    locale = _risolvi_locale(request)
+    menus = (Menu.objects.filter(locale=locale)
+             .prefetch_related('items', 'items__page'))
+    per_id = {m.pk: m for m in menus}
+
+    payload = {
+        'locale': locale.language_code,
+        'menus': {
+            m.key: {
+                'name': m.name,
+                'items': [_serializza_voce(v, per_id) for v in m.items.all()],
+            }
+            for m in menus
+        },
+    }
+    grezzo = json.dumps(payload, sort_keys=True, ensure_ascii=False).encode('utf-8')
+    payload['version'] = hashlib.sha256(grezzo).hexdigest()[:16]
+
+    resp = Response(payload)
+    resp['ETag'] = f'"{payload["version"]}"'
+    resp['Cache-Control'] = 'public, max-age=60'
     return resp

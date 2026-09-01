@@ -7,4 +7,5 @@ app_name = 'cms'
 urlpatterns = [
     path('article-types/', api.article_types, name='article-types'),
     path('geo/', api.geo_areas, name='geo-areas'),
+    path('navigation/', api.navigation, name='navigation'),
 ]

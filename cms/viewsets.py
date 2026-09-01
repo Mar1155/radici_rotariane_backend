@@ -14,7 +14,7 @@ dedicato per decidere chi puo' entrarci.
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
-from cms.models import ArticleType, GeoArea
+from cms.models import ArticleType, GeoArea, Menu
 
 
 class ArticleTypeViewSet(SnippetViewSet):
@@ -40,6 +40,19 @@ class GeoAreaViewSet(SnippetViewSet):
     add_to_admin_menu = False
 
 
+class MenuViewSet(SnippetViewSet):
+    model = Menu
+    icon = 'list-ul'
+    menu_label = 'Menu'
+    menu_name = 'menus'
+    list_display = ['name', 'key']
+    search_fields = ['name', 'key']
+    # Il menu, a differenza dei tipi di articolo, e' roba che il cliente tocca:
+    # sta nel menu principale dell'admin, non dentro "Struttura".
+    add_to_admin_menu = True
+    menu_order = 300
+
+
 class StrutturaGroup(SnippetViewSetGroup):
     items = (ArticleTypeViewSet, GeoAreaViewSet)
     menu_icon = 'cogs'
@@ -48,4 +61,5 @@ class StrutturaGroup(SnippetViewSetGroup):
     menu_order = 900   # in fondo: non e' roba di uso quotidiano
 
 
+register_snippet(MenuViewSet)
 register_snippet(StrutturaGroup)
