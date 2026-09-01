@@ -179,6 +179,30 @@ class Card(models.Model):
         verbose_name="Info Element Values",
         help_text="Array di valori per gli elementi info (uno per ogni tupla della sezione/tab)"
     )
+
+    # --- Nuovo modello: il tipo di articolo ---------------------------------
+    # Sostituisce la coppia (section, tab), che resta finche' il frontend non
+    # passa al nuovo modello. PROTECT perche' cancellare un tipo che ha
+    # articoli e' quasi sempre un errore: prima si spostano gli articoli.
+    article_type = models.ForeignKey(
+        'cms.ArticleType',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='cards',
+        verbose_name='tipo di articolo',
+    )
+
+    # Valori degli elementi informativi indicizzati per CHIAVE.
+    # `infoElementValues` qui sopra e' un array posizionale allineato all'ordine
+    # della configurazione: riordinare gli elementi corrompe in silenzio tutti
+    # gli articoli gia' scritti. Con la chiave questo non puo' succedere.
+    info_values = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='valori informativi',
+        help_text='Mappa chiave -> valore degli elementi informativi.',
+    )
     
     class Meta:
         verbose_name = "Card"

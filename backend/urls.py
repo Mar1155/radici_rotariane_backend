@@ -39,6 +39,7 @@ urlpatterns = [
     # per la gestione di utenti, club e moderazione articoli.
     # NOTA: non si monta wagtail.urls (il serve view di Wagtail): il frontend è
     # Next.js e legge le pagine via API, quindi Wagtail non serve HTML.
+    path('api/cms/v1/', include('cms.urls')),
     path('cms/', include(wagtailadmin_urls)),
     path('documents/', include(wagtaildocs_urls)),
 ]

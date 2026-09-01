@@ -21,6 +21,9 @@ qui, la strada è WAGTAIL_USER_CREATION_FORM / _EDIT_FORM che valorizzino
 
 from wagtail import hooks
 
+# L'import registra i viewset degli snippet (tipi di articolo).
+from cms import viewsets  # noqa: F401
+
 # Rotte gestite da Jazzmin: nasconderle a tutti, superuser inclusi.
 _SEMPRE_NASCOSTE = {'users', 'groups'}
 
