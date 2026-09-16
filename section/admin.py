@@ -4,8 +4,8 @@ from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
 
 @admin.register(Card)
 class CardAdmin(admin.ModelAdmin):
-	list_display = ('title', 'section', 'tab', 'is_published', 'created_at')
-	list_filter = ('section', 'tab', 'is_published')
+	list_display = ('title', 'article_type', 'is_published', 'created_at')
+	list_filter = ('article_type', 'is_published')
 	search_fields = ('title', 'subtitle', 'slug')
 	ordering = ('-created_at',)
 

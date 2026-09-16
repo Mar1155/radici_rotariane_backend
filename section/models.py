@@ -13,32 +13,9 @@ class Card(models.Model):
         ('none', 'Nessuna Data'),
     ]
 
-    SECTION_CHOICES = [
-        ("storie-e-radici", "Storie e Radici"),
-        ("scopri-la-calabria", "Scopri la Calabria"),
-        ("scambi-e-mobilita", "Scambi e Mobilità"),
-        ("adotta-un-progetto", "Adotta un Progetto"),
-        ("eccellenze-calabresi", "Eccellenze Calabresi"),
-        ("calendario-delle-radici", "Calendario delle Radici"),
-        ("archivio", "Archivio")
-    ]
     
     # Campi base
-    section = models.CharField(
-        max_length=30,
-        choices=SECTION_CHOICES,
-        null=True,
-        blank=True,
-        verbose_name="Sezione",
-    )
 
-    tab = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        verbose_name="Tab",
-        help_text="Tab specifica all'interno della sezione"
-    )
 
     title = models.CharField(
         max_length=255,
@@ -172,13 +149,6 @@ class Card(models.Model):
     
     # Array di valori per gli elementi info
     from django.db.models import JSONField
-    infoElementValues = JSONField(
-        default=list,
-        null=True,
-        blank=True,
-        verbose_name="Info Element Values",
-        help_text="Array di valori per gli elementi info (uno per ogni tupla della sezione/tab)"
-    )
 
     # --- Nuovo modello: il tipo di articolo ---------------------------------
     # Sostituisce la coppia (section, tab), che resta finche' il frontend non
@@ -280,32 +250,36 @@ class Card(models.Model):
         return False
 
     def validate_consistency(self) -> None:
-        """
-        Validate card consistency with the structure configuration.
-        
-        Ensures:
-        - Section and tab are valid
-        - All tags belong to the allowed set for this section-tab
-        - Info elements count matches expected count
-        
-        Raises:
-            ValidationError: If any consistency check fails
-        """
-        from section.structure import validate_card_consistency
+        """Verifica che l'articolo sia coerente con il suo tipo.
 
-        tags = self.tags if isinstance(self.tags, list) else []
-        info_elements_count = len(self.infoElementValues) if self.infoElementValues else 0
+        Il tipo dice quali tag sono ammessi e quali elementi informativi
+        esistono: qui si controlla che l'articolo non ne usi altri.
+        """
+        tipo = self.article_type
+        if tipo is None:
+            raise ValidationError({'article_type': 'Indica il tipo di articolo.'})
 
-        # Solo consistenza dati (section, tab, tags, info elements).
-        # I permessi utente sono già verificati nella view.
-        is_valid, errors = validate_card_consistency(
-            section=self.section,
-            tab=self.tab,
-            tags=tags,
-            info_elements_count=info_elements_count,
-        )
-        if not is_valid:
-            raise ValidationError(errors)
+        errori = {}
+
+        tag = self.tags if isinstance(self.tags, list) else []
+        ammessi = set(tipo.allowed_tags.values_list('key', flat=True))
+        non_ammessi = [t for t in tag if t not in ammessi]
+        if non_ammessi:
+            errori['tags'] = (
+                f"Tag non previsti dal tipo «{tipo.name}»: {sorted(non_ammessi)}."
+            )
+
+        valori = self.info_values if isinstance(self.info_values, dict) else {}
+        chiavi = set(tipo.info_elements.values_list('key', flat=True))
+        sconosciute = [k for k in valori if k not in chiavi]
+        if sconosciute:
+            errori['info_values'] = (
+                f"Elementi informativi non previsti dal tipo «{tipo.name}»: "
+                f"{sorted(sconosciute)}."
+            )
+
+        if errori:
+            raise ValidationError(errori)
 
     def clean(self) -> None:
         """

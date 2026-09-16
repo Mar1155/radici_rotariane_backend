@@ -7,17 +7,12 @@ from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
 from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
 from .sanitizers import sanitize_article_html
 from cms.models import GeoArea
-from .structure import (
-    get_required_fields,
-    get_expected_info_elements_count,
-    can_user_add_article,
-    validate_card_consistency,
-    get_tab_fields_config,
-)
+from cms.models import ArticleType
 import json
 from datetime import datetime
 import traceback
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.db import transaction
 from forum.utils import sanitize_rich_text
 from chat.services.translation import (
@@ -29,112 +24,101 @@ from chat.services.translation import (
 )
 
 
-def validate_card_fields(section, tab, title, subtitle, content, cover_image, tags, 
-                        location, info_element_values, gallery_files, author=None, date_value=None):
-    """
-    Centralizzata validazione di tutti i campi richiesti per una card.
-    Usa la configurazione da structure.py per determinare quali campi sono required/hidden.
-    
-    Ritorna: (is_valid, error_message)
-    """
-    # 1. Ottieni configurazione dalla struttura
-    fields_config = get_tab_fields_config(section, tab)
-    required_fields = fields_config['required']
-    hidden_fields = fields_config['hidden']
-    expected_info_elements = get_expected_info_elements_count(section, tab)
-    
-    # 2. Mappa dei campi con i loro valori
-    field_values = {
-        'title': title,
-        'subtitle': subtitle,
-        'content': content,
-        'coverImage': cover_image,
-        'tags': tags,
-        'location': location,
-        'author': author,
-        'gallery': gallery_files,
-        'date': date_value,
-        # infoElements gestito separatamente
-    }
-    
-    # 3. Valida campi obbligatori (devono avere un valore)
-    missing_fields = []
-    for field in required_fields:
-        if field == 'infoElements':
-            continue  # Validato separatamente
-        
-        value = field_values.get(field)
-        if not value:
-            missing_fields.append(field)
-    
-    if missing_fields:
-        return False, f'Campi obbligatori mancanti: {", ".join(missing_fields)}'
-    
-    # 4. Valida campi hidden (NON devono avere un valore)
-    # 'author' è escluso: anche se hidden nel frontend, deve sempre essere presente per l'autenticazione
-    forbidden_fields = []
-    for field in hidden_fields:
-        if field in ('infoElements', 'author'):
-            continue  # infoElements validato separatamente, author sempre richiesto
+def ruolo_applicativo(user) -> str:
+    """Ruolo dell'utente ai fini della pubblicazione.
 
-        value = field_values.get(field)
-        if value:
-            forbidden_fields.append(field)
-    
-    if forbidden_fields:
-        return False, f'Campi non consentiti per questa sezione: {", ".join(forbidden_fields)}'
-    
-    # 5. Validazione infoElements count
-    if len(info_element_values) != expected_info_elements:
-        return False, f'Info elements count non valido. Atteso {expected_info_elements}, ricevuto {len(info_element_values)}'
-    
-    # 6. Validazione consistenza (tags, section/tab)
-    is_valid, errors = validate_card_consistency(section, tab, tags, len(info_element_values))
-    if not is_valid:
-        return False, f'Validazione della card fallita: {", ".join(errors)}'
-    
+    La derivazione precedente era invertita: guardava `user.club`, che su un
+    account CLUB e' vuoto (sono i soci a puntare al club, non il contrario).
+    Un club veniva quindi classificato 'user', e un socio con club 'club'.
+    """
+    if not getattr(user, 'is_authenticated', False):
+        return 'anonymous'
+    if user.is_staff or user.is_superuser:
+        return 'admin'
+    if getattr(user, 'user_type', None) == 'CLUB':
+        return 'club'
+    return 'user'
+
+
+def validate_article_fields(tipo, valori, info_values=None):
+    """Controlla i campi di un articolo contro il suo tipo.
+
+    `valori` e' una mappa campo -> valore. Due regole sole:
+    un campo **obbligatorio** deve avere un valore, un campo **non attivo** non
+    deve averlo. Non esiste piu' un terzo stato: attivo-ma-facoltativo e'
+    semplicemente un campo attivo che non e' fra gli obbligatori.
+
+    Ritorna: (valido, messaggio_errore)
+    """
+    attivi = set(tipo.active_fields or [])
+    obbligatori = set(tipo.required_fields or [])
+
+    # `author` lo compila il backend dall'utente autenticato, non il form.
+    # `infoElements` e `save` non sono campi con un valore proprio.
+    esclusi = {'author', 'infoElements', 'save'}
+
+    mancanti = [c for c in sorted(obbligatori - esclusi) if not valori.get(c)]
+    if mancanti:
+        return False, f'Campi obbligatori mancanti: {", ".join(mancanti)}'
+
+    non_previsti = [c for c in sorted(set(valori) - attivi - esclusi) if valori.get(c)]
+    if non_previsti:
+        return False, (f'Campi non previsti dal tipo «{tipo.name}»: '
+                       f'{", ".join(non_previsti)}')
+
+    if info_values:
+        chiavi = set(tipo.info_elements.values_list('key', flat=True))
+        sconosciute = sorted(set(info_values) - chiavi)
+        if sconosciute:
+            return False, (f'Elementi informativi non previsti dal tipo '
+                           f'«{tipo.name}»: {", ".join(sconosciute)}')
+        if 'infoElements' in obbligatori:
+            vuoti = [k for k in chiavi if not str(info_values.get(k, '')).strip()]
+            if vuoti:
+                return False, (f'Elementi informativi da compilare: '
+                               f'{", ".join(sorted(vuoti))}')
+    elif 'infoElements' in obbligatori and tipo.info_elements.exists():
+        return False, 'Elementi informativi da compilare.'
+
+    tag = valori.get('tags') or []
+    ammessi = set(tipo.allowed_tags.values_list('key', flat=True))
+    estranei = sorted(set(tag) - ammessi)
+    if estranei:
+        return False, f'Tag non previsti dal tipo «{tipo.name}»: {", ".join(estranei)}'
+
     return True, None
 
 
-@api_view(['POST'])
-@parser_classes([MultiPartParser, FormParser])
-def create_card(request, section, tab):
-    """
-    Crea una nuova card dal form Next.js
-    
-    Validazioni:
-    - section e tab devono essere validi e non null
-    - Solo i campi 'required' della struttura devono avere valori
-    - I campi 'hidden' devono essere null
-    - Tags devono appartenere alla lista consentita per section/tab
-    - infoElementValues deve avere esattamente il numero di elementi atteso
-    - L'utente deve avere il ruolo corretto per creare un articolo in questa sezione
+def create_article(request, type_key):
+    """Crea un articolo del tipo indicato.
+
+    Il tipo dice tutto: quali campi esistono, quali tag sono ammessi, quali
+    elementi informativi, e chi puo' pubblicare. Prima la stessa informazione
+    era spalmata su due stringhe libere (section, tab) validate contro una
+    configurazione scritta nel codice e duplicata nel frontend.
     """
     try:
-        # 1. Validazione section/tab - non possono essere null
-        if not section or not tab:
+        tipo = ArticleType.objects.filter(key=type_key).first()
+        if tipo is None:
             return Response(
-                {'error': 'Section e tab sono obbligatori'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': f'Tipo di articolo «{type_key}» inesistente'},
+                status=status.HTTP_404_NOT_FOUND
             )
-        
-        # 2. Validazione utente autenticato e ruolo
+
         if not request.user.is_authenticated:
             return Response(
                 {'error': 'Utente non autenticato'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
-        # Determina il ruolo dell'utente
-        user_role = 'admin' if request.user.is_staff else 'club' if hasattr(request.user, 'club') and request.user.club else 'user'
-        
-        # Controlla se l'utente può aggiungere articoli in questa sezione/tab
-        if not can_user_add_article(section, tab, user_role):
+
+        user_role = ruolo_applicativo(request.user)
+        if user_role not in (tipo.can_publish or []):
             return Response(
-                {'error': f'Utente con ruolo "{user_role}" non può aggiungere articoli in questa sezione'},
+                {'error': f'Un utente «{user_role}» non puo pubblicare articoli '
+                          f'di tipo «{tipo.name}»'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         # 3. Estrai i dati dal FormData
         title = request.data.get('title')
         subtitle = request.data.get('subtitle')
@@ -143,7 +127,7 @@ def create_card(request, section, tab):
         content = sanitize_article_html(request.data.get('content'))
         date_type = request.data.get('dateType', 'none')
         location = request.data.get('location')
-        info_element_values_json = request.data.get('infoElementValues')
+        info_values_json = request.data.get('infoValues')
         gallery_files = request.FILES.getlist('galleryFiles')
         
         # Estrai date
@@ -157,24 +141,17 @@ def create_card(request, section, tab):
         # Parse tags da JSON string
         tags = json.loads(tags_json) if tags_json else []
         
-        # Parse infoElementValues da JSON string
-        info_element_values = json.loads(info_element_values_json) if info_element_values_json else []
+        # Valori informativi indicizzati per CHIAVE: prima erano un array
+        # posizionale allineato all'ordine della configurazione, e riordinare
+        # gli elementi corrompeva in silenzio gli articoli gia' scritti.
+        info_values = json.loads(info_values_json) if info_values_json else {}
         
         # 4. Validazione centralizzata di tutti i campi richiesti
-        is_valid, error_msg = validate_card_fields(
-            section=section,
-            tab=tab,
-            title=title,
-            subtitle=subtitle,
-            content=content,
-            cover_image=cover_image,
-            tags=tags,
-            location=location,
-            info_element_values=info_element_values,
-            gallery_files=gallery_files,
-            author=request.user,
-            date_value=has_date
-        )
+        is_valid, error_msg = validate_article_fields(tipo, {
+            'title': title, 'subtitle': subtitle, 'content': content,
+            'coverImage': cover_image, 'tags': tags, 'location': location,
+            'gallery': gallery_files, 'date': has_date,
+        }, info_values)
         
         if not is_valid:
             return Response(
@@ -184,8 +161,7 @@ def create_card(request, section, tab):
         
         # 5. Prepara i dati per il modello
         card_data = {
-            'section': section,
-            'tab': tab,
+            'article_type': tipo,
             'title': title,
             'subtitle': subtitle,
             'cover_image': cover_image,
@@ -194,7 +170,7 @@ def create_card(request, section, tab):
             'date_type': date_type,
             'location': location,
             'author': request.user,
-            'infoElementValues': info_element_values,
+            'info_values': info_values,
             'is_published': True,
         }
         
@@ -240,7 +216,7 @@ def create_card(request, section, tab):
         
     except json.JSONDecodeError:
         return Response(
-            {'error': 'Formato JSON non valido per tags o infoElementValues'},
+            {'error': 'Formato JSON non valido per tags o infoValues'},
             status=status.HTTP_400_BAD_REQUEST
         )
     except ValueError as e:
@@ -262,13 +238,29 @@ def create_card(request, section, tab):
 
 
 @api_view(['GET'])
-def list_cards(request, section, tab):
-    """
-    Lista tutte le cards pubblicate per una specifica section e tab
-    """
-    filters = {'is_published': True, 'section': section, 'tab': tab}
+def list_articles(request):
+    """Articoli pubblicati, filtrati per tipo.
 
-    cards = Card.objects.filter(**filters).select_related('geo_area')
+    `?type=<chiave>` e' il filtro principale: e' il tipo a dire a quale elenco
+    appartiene un articolo. Si aggiungono `?geo=` (gerarchico), `?tag=` e
+    `?search=`, tutti facoltativi.
+    """
+    cards = (Card.objects.filter(is_published=True)
+             .select_related('geo_area', 'article_type', 'author'))
+
+    tipo_key = request.GET.get('type')
+    if tipo_key:
+        cards = cards.filter(article_type__key=tipo_key)
+
+    tag = request.GET.get('tag')
+    if tag:
+        cards = cards.filter(tags__contains=[tag])
+
+    ricerca = request.GET.get('search')
+    if ricerca:
+        cards = cards.filter(
+            Q(title__icontains=ricerca) | Q(subtitle__icontains=ricerca)
+        )
 
     # Filtro geografico GERARCHICO: `?geo=puglia` restituisce anche gli articoli
     # delle sue province. E' il motivo per cui la geografia e' un albero e non
@@ -281,6 +273,10 @@ def list_cards(request, section, tab):
             cards = cards.filter(geo_area__path__startswith=area.path)
         else:
             cards = cards.none()
+
+    limite = request.GET.get('limit')
+    if limite and limite.isdigit():
+        cards = cards[:int(limite)]
 
     serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
@@ -348,26 +344,17 @@ def get_card(request, slug):
     cover_image = request.FILES.get('coverImage') if 'coverImage' in request.FILES else card.cover_image
     tags = parse_json_field(data.get('tags'), None) if 'tags' in data else card.tags
     location = data.get('location') if 'location' in data else card.location
-    info_element_values = parse_json_field(data.get('infoElementValues'), None) if 'infoElementValues' in data else card.infoElementValues
+    info_values = parse_json_field(data.get('infoValues'), None) if 'infoValues' in data else card.info_values
     
     # Determina se c'è una data valida (per validazione)
     has_date = card.date or card.date_start  # Controlla se la card ha già date
     
     # Validazione centralizzata
-    is_valid, error_msg = validate_card_fields(
-        section=card.section,
-        tab=card.tab,
-        title=title,
-        subtitle=subtitle,
-        content=content,
-        cover_image=cover_image,
-        tags=tags,
-        location=location,
-        info_element_values=info_element_values,
-        gallery_files=gallery_files,
-        author=card.author,
-        date_value=has_date
-    )
+    is_valid, error_msg = validate_article_fields(card.article_type, {
+        'title': title, 'subtitle': subtitle, 'content': content,
+        'coverImage': cover_image, 'tags': tags, 'location': location,
+        'gallery': gallery_files, 'date': has_date,
+    }, info_values)
     
     if not is_valid:
         return Response(
@@ -406,8 +393,8 @@ def get_card(request, slug):
     if 'tags' in data:
         card.tags = parse_json_field(data.get('tags'), [])
 
-    if 'infoElementValues' in data:
-        card.infoElementValues = parse_json_field(data.get('infoElementValues'), [])
+    if 'infoValues' in data:
+        card.info_values = parse_json_field(data.get('infoValues'), {})
 
     if 'coverImage' in request.FILES:
         card.cover_image = request.FILES.get('coverImage')
@@ -548,8 +535,7 @@ def toggle_save_card(request, slug):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    required_fields = get_required_fields(card.section, card.tab)
-    if 'save' not in required_fields:
+    if 'save' not in (card.article_type.active_fields or []):
         return Response(
             {'error': 'Salvataggio non consentito per questa card'},
             status=status.HTTP_403_FORBIDDEN
@@ -569,11 +555,11 @@ def list_saved_cards(request):
     """
     Lista le card salvate.
     ?user_id=<id> per vedere i salvati di un altro utente (pubblico).
-    ?section=<section> per filtrare per sezione.
+    ?type=<chiave> per filtrare per tipo di articolo.
     Senza user_id, mostra i salvati dell'utente autenticato.
     """
     user_id = request.query_params.get('user_id')
-    section = request.query_params.get('section')
+    tipo_key = request.query_params.get('type')
 
     if user_id:
         # Salvati pubblici di un utente specifico
@@ -596,8 +582,8 @@ def list_saved_cards(request):
         target_user = request.user
 
     saved_qs = SavedCard.objects.filter(user=target_user).select_related('card', 'card__author')
-    if section:
-        saved_qs = saved_qs.filter(card__section=section)
+    if tipo_key:
+        saved_qs = saved_qs.filter(card__article_type__key=tipo_key)
     
     # Estrai solo le card pubblicate, ordinate per data di salvataggio
     saved_qs = saved_qs.filter(card__is_published=True).order_by('-created_at')
@@ -612,11 +598,11 @@ def list_user_cards(request):
     """
     Lista le card pubblicate da un utente.
     ?user_id=<id> per vedere le pubblicazioni di un utente specifico (pubblico).
-    ?section=<section> per filtrare per sezione.
+    ?type=<chiave> per filtrare per tipo di articolo.
     Senza user_id, mostra le pubblicazioni dell'utente autenticato.
     """
     user_id = request.query_params.get('user_id')
-    section = request.query_params.get('section')
+    tipo_key = request.query_params.get('type')
 
     if user_id:
         from django.contrib.auth import get_user_model
@@ -637,8 +623,8 @@ def list_user_cards(request):
         target_user = request.user
 
     cards_qs = Card.objects.filter(author=target_user, is_published=True).select_related('author')
-    if section:
-        cards_qs = cards_qs.filter(section=section)
+    if tipo_key:
+        cards_qs = cards_qs.filter(article_type__key=tipo_key)
     cards_qs = cards_qs.order_by('-created_at')
 
     serializer = CardListSerializer(cards_qs, many=True, context={'request': request})

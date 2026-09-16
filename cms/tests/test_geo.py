@@ -52,19 +52,22 @@ class GeoFilterTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('seed_geo', verbosity=0)
+        call_command('seed_article_types', verbosity=0)
+        from cms.models import ArticleType
+        cls.tipo = ArticleType.objects.get(key='storia')
         cls.bari = GeoArea.objects.get(key='bari')
         cls.lecce = GeoArea.objects.get(key='lecce')
         cls.milano = GeoArea.objects.get(key='milano')
-        comune = dict(section='storie-e-radici', tab='storie', is_published=True)
+        comune = dict(article_type=cls.tipo, is_published=True)
         cls.c_bari = Card.objects.create(title='A Bari', geo_area=cls.bari, **comune)
         cls.c_lecce = Card.objects.create(title='A Lecce', geo_area=cls.lecce, **comune)
         cls.c_milano = Card.objects.create(title='A Milano', geo_area=cls.milano, **comune)
         cls.c_nessuna = Card.objects.create(title='Senza luogo', **comune)
 
     def _titoli(self, geo=None):
-        url = '/api/section/storie-e-radici/storie/cards'
+        url = '/api/section/articles/?type=storia'
         if geo:
-            url += f'?geo={geo}'
+            url += f'&geo={geo}'
         return sorted(c['title'] for c in self.client.get(url).json())
 
     def test_senza_filtro_tutti(self):
@@ -86,5 +89,5 @@ class GeoFilterTest(TestCase):
 
     def test_serializer_espone_il_percorso(self):
         dati = self.client.get(
-            '/api/section/storie-e-radici/storie/cards?geo=bari').json()
+            '/api/section/articles/?type=storia&geo=bari').json()
         self.assertEqual(dati[0]['geo_area']['path'], 'it/puglia/bari')

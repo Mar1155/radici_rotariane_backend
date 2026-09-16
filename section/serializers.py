@@ -45,6 +45,7 @@ class CardSerializer(serializers.ModelSerializer):
     is_saved = serializers.SerializerMethodField(read_only=True)
     saved_by_users = serializers.SerializerMethodField(read_only=True)
     geo_area = serializers.SerializerMethodField(read_only=True)
+    article_type = serializers.SlugRelatedField(slug_field='key', read_only=True)
     
     class Meta:
         model = Card
@@ -72,9 +73,8 @@ class CardSerializer(serializers.ModelSerializer):
             'author_club',
             'club_name',
             'club_id',
-            'section',
-            'tab',
-            'infoElementValues',
+            'article_type',
+            'info_values',
             'is_saved',
             'saved_by_users',
             'geo_area',

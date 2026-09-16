@@ -9,11 +9,7 @@ from users.models import User, Skill, SoftSkill
 from forum.models import Post, Comment
 from chat.models import Chat, Message
 from section.models import Card
-from section.structure import (
-    get_tab_keys_for_section,
-    get_tags_for_tab,
-    get_expected_info_elements_count,
-)
+
 
 
 class Command(BaseCommand):
@@ -515,39 +511,40 @@ class Command(BaseCommand):
         return members
 
     def _create_cards(self, clubs, members):
-        sections = [
-            ("storie-e-radici", "Racconti di ritorno alle origini"),
-            ("scopri-la-calabria", "Itinerari autentici in Calabria"),
-            ("scambi-e-mobilita", "Programmi di scambio e mobilità"),
-            ("adotta-un-progetto", "Progetti da sostenere"),
-            ("eccellenze-calabresi", "Eccellenze imprenditoriali"),
-            ("calendario-delle-radici", "Eventi e calendario"),
-        ]
+        """Articoli di prova, uno per tipo.
 
-        for idx, (section, title_seed) in enumerate(sections, start=1):
-            author = random.choice(members)
-            title = f"{title_seed} #{idx}"
-            tabs = get_tab_keys_for_section(section)
-            tab = tabs[0] if tabs else "main"
-            allowed_tags = get_tags_for_tab(section, tab)
-            tags = random.sample(allowed_tags, k=min(len(allowed_tags), 2)) if allowed_tags else []
-            info_count = get_expected_info_elements_count(section, tab)
-            info_values = [f"Demo {i + 1}" for i in range(info_count)]
+        Il tipo dice quali campi esistono, quali tag sono ammessi e quali
+        elementi informativi vanno compilati: il seed li legge da li' invece di
+        ripetere la stessa configurazione.
+        """
+        from cms.models import ArticleType, GeoArea
 
-            Card.objects.create(
-                section=section,
-                tab=tab,
-                title=title,
-                subtitle="Sintesi per presentazione con focus sui valori Rotary.",
-                location=random.choice(["Cosenza", "Catanzaro", "Reggio Calabria", "Crotone"]),
-                tags=tags,
-                content="<p>Contenuto demo con dettagli sull'iniziativa e invito alla partecipazione.</p>",
-                date_type="single",
-                date=timezone.now().date() + timedelta(days=idx * 3),
-                author=author,
+        tipi = list(ArticleType.objects.prefetch_related('allowed_tags', 'info_elements'))
+        if not tipi:
+            self.stdout.write('  (nessun tipo di articolo: esegui prima seed_article_types)')
+            return
+
+        aree = list(GeoArea.objects.filter(level='province')[:12])
+
+        for idx, tipo in enumerate(tipi, start=1):
+            attivi = set(tipo.active_fields or [])
+            ammessi = [t.key for t in tipo.allowed_tags.all()]
+            card = Card(
+                article_type=tipo,
+                title=f'{tipo.name} di prova #{idx}' if 'title' in attivi else None,
+                subtitle=('Sintesi di prova con i valori del Rotary.'
+                          if 'subtitle' in attivi else None),
+                content=('<p>Contenuto di prova.</p>' if 'content' in attivi else None),
+                location=None,
+                geo_area=(random.choice(aree) if aree and 'location' in attivi else None),
+                tags=(random.sample(ammessi, k=min(len(ammessi), 2)) if ammessi and 'tags' in attivi else []),
+                info_values={e.key: f'{e.label} di prova' for e in tipo.info_elements.all()},
+                date_type='single' if 'date' in attivi else 'none',
+                date=(timezone.now().date() + timedelta(days=idx * 3)) if 'date' in attivi else None,
+                author=random.choice(members),
                 is_published=True,
-                infoElementValues=info_values,
             )
+            card.save()
 
     def _create_forum_posts(self, members):
         topics = [
