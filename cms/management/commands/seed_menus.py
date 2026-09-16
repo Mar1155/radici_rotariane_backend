@@ -16,27 +16,32 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from wagtail.models import Locale
 
-from cms.models import Menu, MenuItem
+from cms.models import Menu, MenuItem, StandardPage
 
-# (etichetta, percorso, icona, visibilita')
+# (etichetta, destinazione, icona[, visibilita'])
+#
+# Una destinazione che inizia con '/' e' una rotta dell'applicazione (pagine
+# fisse: autenticazione, profilo, Rota-Space). Le altre sono slug di pagine
+# CMS, e il collegamento punta alla PAGINA, non al suo indirizzo: se il cliente
+# la rinomina o la sposta, il menu la segue da solo.
 ESPLORA = [
     ('Homepage', '/', 'Compass'),
-    ('Chi siamo', '/progetto', 'Info'),
+    ('Chi siamo', 'progetto', 'Info'),
     ('Skills Network', '/skills', 'Users'),
-    ('Scambi e Mobilità', '/scopri/scambi-e-mobilita', 'Globe'),
-    ('Calendario delle Radici', '/scopri/calendario-delle-radici', 'Calendar'),
-    ('Comitati Inter-Paese', '/cip', 'Handshake'),
-    ('Storie e Radici', '/scopri/storie-e-radici', 'BookOpen'),
-    ('Scopri la Calabria', '/scopri/scopri-la-calabria', 'MapPin'),
-    ('Eccellenze Calabresi', '/scopri/eccellenze-calabresi', 'Award'),
-    ('Archivio', '/scopri/archivio', 'Bookmark'),
-    ('Partner', '/partner', 'Handshake'),
+    ('Scambi e Mobilità', 'scambi-e-mobilita', 'Globe'),
+    ('Calendario delle Radici', 'calendario-delle-radici', 'Calendar'),
+    ('Comitati Inter-Paese', 'cip', 'Handshake'),
+    ('Storie e Radici', 'storie-e-radici', 'BookOpen'),
+    ('Scopri la Calabria', 'scopri-la-calabria', 'MapPin'),
+    ('Eccellenze Calabresi', 'eccellenze-calabresi', 'Award'),
+    ('Archivio', 'archivio', 'Bookmark'),
+    ('Partner', 'partner', 'Handshake'),
 ]
 
 SERVIZI = [
     ('Rota-Space', '/rota-space', 'Users', MenuItem.Visibilita.SEMPRE),
     ('Rotariani nel Mondo', '/rotariani-nel-mondo', 'Globe', MenuItem.Visibilita.SEMPRE),
-    ('Adotta un Progetto', '/scopri/adotta-un-progetto', 'Heart', MenuItem.Visibilita.SEMPRE),
+    ('Adotta un Progetto', 'adotta-un-progetto', 'Heart', MenuItem.Visibilita.SEMPRE),
     ('Accedi', '/login', None, MenuItem.Visibilita.ANONIMI),
 ]
 
@@ -47,6 +52,19 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         locale = Locale.get_default()
+
+        pagine = {p.slug: p for p in StandardPage.objects.filter(locale=locale)}
+
+        def destinazione(valore):
+            """Rotta dell'app se inizia con '/', altrimenti pagina CMS per slug."""
+            if valore.startswith('/'):
+                return {'route': valore}
+            pagina = pagine.get(valore)
+            if pagina is None:
+                raise ValueError(
+                    f'Il menu rimanda alla pagina "{valore}", che non esiste nel '
+                    f'CMS. Esegui prima i comandi build_page_*.')
+            return {'page': pagina}
 
         def menu(key, nome, descrizione):
             m, _ = Menu.objects.update_or_create(
@@ -60,15 +78,16 @@ class Command(BaseCommand):
                        'una volta sola.')
         for i, (etichetta, percorso, icona) in enumerate(ESPLORA):
             MenuItem.objects.create(menu=esplora, sort_order=i, label=etichetta,
-                                    route=percorso, icon=icona or '', locale=locale)
+                                    icon=icona or '', locale=locale,
+                                    **destinazione(percorso))
 
         servizi = menu('servizi', 'Servizi',
                        'I collegamenti rapidi: barra di navigazione e prima '
                        'colonna del footer.')
         for i, (etichetta, percorso, icona, vis) in enumerate(SERVIZI):
             MenuItem.objects.create(menu=servizi, sort_order=i, label=etichetta,
-                                    route=percorso, icon=icona or '',
-                                    visibility=vis, locale=locale)
+                                    icon=icona or '', visibility=vis, locale=locale,
+                                    **destinazione(percorso))
 
         for m in (esplora, servizi):
             self.stdout.write(f'  {m.key:12} {m.items.count()} voci')

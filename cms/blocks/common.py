@@ -25,6 +25,8 @@ ACCENT_CHOICES = [
     ('amber', 'Ambra'),
     ('rose', 'Rosa'),
     ('sky', 'Azzurro'),
+    ('teal', 'Turchese'),
+    ('stone', 'Marrone'),
     ('slate', 'Grigio'),
 ]
 

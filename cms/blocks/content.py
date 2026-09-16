@@ -22,6 +22,10 @@ class HeroBlock(blocks.StructBlock):
                            help_text='La pillola sopra il titolo.')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='brand-gradient',
                                  label='sfondo')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
+                                label='colore della sezione',
+                                help_text="Usato solo se lo sfondo e' "
+                                          "'Colore della sezione'.")
     scroll_to_id = blocks.CharBlock(
         required=False, label='scorri fino a',
         help_text="Identificativo del blocco a cui portare l'utente. Lascia vuoto "
@@ -121,6 +125,35 @@ class QuoteBlock(blocks.StructBlock):
         label = 'citazione'
 
 
+class ExplanationStepBlock(blocks.StructBlock):
+    icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')
+    title = blocks.CharBlock(label='titolo')
+    description = blocks.TextBlock(label='descrizione')
+
+    class Meta:
+        icon = 'tick'
+        label = 'passo'
+
+
+class ExplanationStepsBlock(blocks.StructBlock):
+    """Passi numerati che spiegano una sezione — SectionExplanation.tsx.
+
+    Distinto da `icon_card_grid` perche' i passi sono numerati e ordinati: sono
+    una procedura, non un elenco di caratteristiche.
+    """
+
+    title = blocks.CharBlock(label='titolo')
+    description = blocks.TextBlock(required=False, label='descrizione')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
+                                label='colore')
+    contact_email = blocks.EmailBlock(required=False, label='email di contatto')
+    steps = blocks.ListBlock(ExplanationStepBlock(), label='passi')
+
+    class Meta:
+        icon = 'list-ol'
+        label = 'passi esplicativi'
+
+
 class ArticleListBlock(blocks.StructBlock):
     """Elenco di articoli di un tipo — la griglia di CardItem.
 
@@ -131,6 +164,8 @@ class ArticleListBlock(blocks.StructBlock):
 
     heading = blocks.CharBlock(required=False, label='titolo')
     article_type = TipoArticoloBlock(label='tipo di articolo')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
+                                label='colore')
     layout = blocks.ChoiceBlock(choices=vocab.LAYOUT_CHOICES, default='grid',
                                 label='visualizzazione')
     columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3, 4)],
@@ -168,7 +203,13 @@ class TabbedArticleListBlock(blocks.StructBlock):
     `storie` ha titolo e copertina.
     """
 
+    heading = blocks.CharBlock(required=False, label='titolo')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
+                                label='colore')
     tabs = blocks.ListBlock(TabbedArticleListTabBlock(), label='tab')
+    show_search = blocks.BooleanBlock(required=False, default=True, label='campo di ricerca')
+    show_tag_filter = blocks.BooleanBlock(required=False, default=True, label='filtro per tag')
+    show_geo_filter = blocks.BooleanBlock(required=False, default=True, label='filtro geografico')
 
     class Meta:
         icon = 'list-ul'
@@ -276,6 +317,7 @@ class PageBodyBlock(blocks.StreamBlock):
     hero = HeroBlock()
     rich_text = blocks.RichTextBlock(features=RICH_TEXT_FEATURES, label='testo')
     icon_card_grid = IconCardGridBlock()
+    explanation_steps = ExplanationStepsBlock()
     partner_grid = PartnerGridBlock()
     quote = QuoteBlock()
     text_band = TextBandBlock()

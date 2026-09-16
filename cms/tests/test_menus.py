@@ -3,14 +3,36 @@
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import TestCase
-from wagtail.models import Locale
+from wagtail.models import Locale, Page, Site
 
-from cms.models import Menu, MenuItem
+from cms.models import HomePage, Menu, MenuItem, StandardPage
+from cms.management.commands.seed_menus import ESPLORA, SERVIZI
+
+
+def crea_pagine_del_menu():
+    """Le pagine a cui il menu rimanda.
+
+    Il menu punta alle pagine, non ai loro indirizzi: senza pagine non c'e'
+    menu. Qui bastano gusci vuoti, perche' cio' che si verifica e' il legame.
+    """
+    locale = Locale.get_default()
+    home = HomePage.objects.filter(locale=locale).first()
+    if home is None:
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+    slug = [d for _, d, *_ in ESPLORA + SERVIZI if not d.startswith('/')]
+    for s in slug:
+        if not StandardPage.objects.filter(slug=s, locale=locale).exists():
+            home.add_child(instance=StandardPage(title=s, slug=s, locale=locale))
 
 
 class MenuSeedTest(TestCase):
     @classmethod
     def setUpTestData(cls):
+        crea_pagine_del_menu()
         call_command('seed_menus', verbosity=0)
 
     def test_due_menu_ciascuno_definito_una_volta(self):
@@ -61,6 +83,7 @@ class MenuItemTest(TestCase):
 class NavigationApiTest(TestCase):
     @classmethod
     def setUpTestData(cls):
+        crea_pagine_del_menu()
         call_command('seed_menus', verbosity=0)
 
     def test_serve_entrambi_i_menu(self):
