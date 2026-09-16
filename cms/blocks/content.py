@@ -125,6 +125,125 @@ class QuoteBlock(blocks.StructBlock):
         label = 'citazione'
 
 
+class SplitHeroBlock(blocks.StructBlock):
+    """Intestazione su due colonne — l'apertura della homepage.
+
+    Distinta da `hero` perche' non e' una variante grafica: ha un testo di
+    benvenuto, due pulsanti e un riquadro video accanto, e nessuna pagina
+    interna ne ha bisogno. Tenerle separate evita un blocco con dieci campi
+    che restano vuoti nove volte su dieci.
+    """
+
+    pill = blocks.CharBlock(required=False, label='pillola',
+                            help_text='La targhetta sopra al titolo.')
+    title_top = blocks.CharBlock(label='titolo')
+    title_highlight = blocks.CharBlock(required=False, label='titolo evidenziato',
+                                       help_text='Seconda riga, in giallo.')
+    subtitle = blocks.TextBlock(required=False, label='sottotitolo')
+
+    note_title = blocks.CharBlock(required=False, label='titolo del riquadro')
+    note_body = blocks.TextBlock(required=False, label='testo del riquadro',
+                                 help_text='Righe vuote separano i paragrafi.')
+
+    primary_cta = LinkBlock(required=False, label='pulsante principale')
+    secondary_cta = LinkBlock(required=False, label='pulsante secondario')
+
+    video_url = blocks.URLBlock(required=False, label='video')
+    video_title = blocks.CharBlock(required=False, label='titolo del video')
+    video_subtitle = blocks.CharBlock(required=False, label='sottotitolo del video')
+
+    class Meta:
+        icon = 'title'
+        label = 'intestazione a due colonne'
+
+
+class NumberedStepBlock(blocks.StructBlock):
+    title = blocks.CharBlock(label='titolo')
+    description = blocks.TextBlock(label='descrizione')
+
+    class Meta:
+        icon = 'order'
+        label = 'passo'
+
+
+class NumberedStepsBlock(blocks.StructBlock):
+    """Passi numerati in cerchio — il "come partecipare" della homepage.
+
+    Diverso da `explanation_steps`: li' i passi hanno un'icona e descrivono
+    come funziona una sezione; qui sono un percorso di adesione, numerato e
+    senza icone, e si chiude con un invito all'azione.
+    """
+
+    title = blocks.CharBlock(label='titolo')
+    subtitle = blocks.TextBlock(required=False, label='sottotitolo')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='light', label='sfondo')
+    steps = blocks.ListBlock(NumberedStepBlock(), label='passi')
+    cta = LinkBlock(required=False, label='invito all azione')
+
+    class Meta:
+        icon = 'order'
+        label = 'passi numerati'
+
+
+class SectionTileBlock(blocks.StructBlock):
+    icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')
+    label = blocks.CharBlock(label='etichetta')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
+                                label='colore')
+    link = LinkBlock(label='destinazione')
+
+    class Meta:
+        icon = 'grip'
+        label = 'riquadro'
+
+
+class SectionTilesBlock(blocks.StructBlock):
+    """Griglia di riquadri che porta alle sezioni del sito.
+
+    Prima era un elenco scritto a mano nella homepage, con i colori copiati
+    dai metadati delle sezioni: due copie che potevano divergere. Ora e' una
+    scelta di chi compone la pagina, e i riquadri puntano alle pagine vere.
+    """
+
+    title = blocks.CharBlock(required=False, label='titolo')
+    subtitle = blocks.TextBlock(required=False, label='sottotitolo')
+    columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3, 4)],
+                                 default='4', label='colonne')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
+    tiles = blocks.ListBlock(SectionTileBlock(), label='riquadri')
+
+    class Meta:
+        icon = 'grip'
+        label = 'riquadri di sezione'
+
+
+class StatBlock(blocks.StructBlock):
+    source = blocks.ChoiceBlock(choices=vocab.STAT_CHOICES, label='dato')
+    label = blocks.CharBlock(label='etichetta')
+    fallback = blocks.CharBlock(required=False, label='valore di ripiego',
+                                help_text='Mostrato se il dato non arriva.')
+
+    class Meta:
+        icon = 'form'
+        label = 'numero'
+
+
+class StatsBarBlock(blocks.StructBlock):
+    """Fascia di numeri, letti dal vivo dal backend.
+
+    Il valore non si scrive: si sceglie **quale** dato mostrare. Un numero
+    scritto a mano invecchia in silenzio, e nessuno se ne accorge.
+    """
+
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='brand-primary',
+                                 label='sfondo')
+    items = blocks.ListBlock(StatBlock(), label='numeri')
+
+    class Meta:
+        icon = 'form'
+        label = 'fascia di numeri'
+
+
 class ExplanationStepBlock(blocks.StructBlock):
     icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')
     title = blocks.CharBlock(label='titolo')
@@ -315,9 +434,13 @@ class TierCardsBlock(blocks.StructBlock):
 
 class PageBodyBlock(blocks.StreamBlock):
     hero = HeroBlock()
+    split_hero = SplitHeroBlock()
     rich_text = blocks.RichTextBlock(features=RICH_TEXT_FEATURES, label='testo')
     icon_card_grid = IconCardGridBlock()
     explanation_steps = ExplanationStepsBlock()
+    numbered_steps = NumberedStepsBlock()
+    section_tiles = SectionTilesBlock()
+    stats_bar = StatsBarBlock()
     partner_grid = PartnerGridBlock()
     quote = QuoteBlock()
     text_band = TextBandBlock()

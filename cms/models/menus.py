@@ -51,6 +51,9 @@ class Menu(TranslatableMixin, ClusterableModel):
 
 class MenuItem(TranslatableMixin, Orderable):
     class Visibilita(models.TextChoices):
+        """Le stesse tre scelte di `vocab.VISIBILITY_CHOICES`, che valgono anche
+        per i pulsanti dentro le pagine."""
+
         SEMPRE = 'always', 'Sempre'
         AUTENTICATI = 'authenticated', 'Solo a chi ha fatto accesso'
         ANONIMI = 'anonymous', 'Solo a chi non ha fatto accesso'

@@ -47,7 +47,8 @@ class PageApiTest(TestCase):
     def test_il_collegamento_arriva_gia_risolto(self):
         d = self.client.get('/api/cms/v1/page/?path=/partner').json()
         cta = d['body'][1]['value']['primary_cta']
-        self.assertEqual(cta, {'label': 'Contattaci', 'href': '/rota-space', 'newTab': False})
+        self.assertEqual(cta, {'label': 'Contattaci', 'href': '/rota-space',
+                               'newTab': False, 'visibility': 'always'})
 
     def test_percorso_inesistente(self):
         self.assertEqual(self.client.get('/api/cms/v1/page/?path=/inventata').status_code, 404)
@@ -102,4 +103,5 @@ class LinkBlockTest(TestCase):
         valore = self.blocco.to_python(
             {'label': 'Contattaci', 'route': '/rota-space', 'external_url': '', 'page': None})
         self.assertEqual(self.blocco.get_api_representation(self.blocco.clean(valore)),
-                         {'label': 'Contattaci', 'href': '/rota-space', 'newTab': False})
+                         {'label': 'Contattaci', 'href': '/rota-space', 'newTab': False,
+                          'visibility': 'always'})

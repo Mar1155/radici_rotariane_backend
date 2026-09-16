@@ -2,9 +2,12 @@
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.snippets.blocks import SnippetChooserBlock
+
+from cms import vocabularies as vocab
 
 # Superfici ammesse per lo sfondo di una sezione. Sono token, non colori:
 # il frontend li traduce in classi Tailwind gia' definite nel design system,
@@ -13,6 +16,7 @@ SURFACE_CHOICES = [
     ('white', 'Bianco'),
     ('light', 'Grigio chiaro'),
     ('brand-primary', 'Blu istituzionale'),
+    ('brand-secondary', 'Giallo istituzionale'),
     ('brand-gradient', 'Sfumatura istituzionale'),
     ('section', 'Colore della sezione'),
 ]
@@ -46,6 +50,10 @@ class LinkBlock(blocks.StructBlock):
     route = blocks.CharBlock(required=False, label='percorso interno',
                              help_text='Es. /rota-space')
     external_url = blocks.URLBlock(required=False, label='indirizzo esterno')
+    visibility = blocks.ChoiceBlock(choices=vocab.VISIBILITY_CHOICES, default='always',
+                                    label='a chi si mostra',
+                                    help_text='Un "Iscriviti" non ha senso per chi '
+                                              'ha gia\' un account.')
 
     def clean(self, value):
         risultato = super().clean(value)
@@ -72,6 +80,7 @@ class LinkBlock(blocks.StructBlock):
             'label': value.get('label'),
             'href': href,
             'newTab': bool(value.get('external_url')),
+            'visibility': value.get('visibility') or 'always',
         }
 
     class Meta:

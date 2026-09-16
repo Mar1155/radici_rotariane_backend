@@ -9,6 +9,25 @@ Le etichette sono in italiano perche' e' la lingua sorgente: la traduzione
 delle etichette visibili all'utente avviene sui contenuti, non qui.
 """
 
+# --- A chi si mostra un collegamento -----------------------------------------
+# Stesso vocabolario per le voci di menu e per i pulsanti dentro le pagine:
+# e' la stessa domanda, e tenerne due elenchi li farebbe divergere.
+VISIBILITY_CHOICES = [
+    ('always', 'Sempre'),
+    ('authenticated', 'Solo a chi ha fatto accesso'),
+    ('anonymous', 'Solo a chi non ha fatto accesso'),
+]
+
+# --- Numeri della fascia statistiche -----------------------------------------
+# Le chiavi sono quelle di GET /api/users/stats/: chi compone sceglie quale
+# dato mostrare, non il suo valore.
+STAT_CHOICES = [
+    ('clubs', 'Club'),
+    ('rotarians', 'Rotariani'),
+    ('countries', 'Paesi'),
+    ('projects', 'Progetti'),
+]
+
 # --- Campi di un articolo ----------------------------------------------------
 # Corrispondono uno a uno ai campi di section.Card che l'autore compila.
 FIELD_CHOICES = [
