@@ -19,7 +19,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from wagtail.models import Locale, Page
 
-from cms.models import HomePage, StandardPage
+from cms.bootstrap import assicura_homepage
+from cms.models import StandardPage
 
 
 def pagina(slug):
@@ -74,11 +75,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         locale = Locale.get_default()
-        home = HomePage.objects.filter(locale=locale).first()
-        if home is None:
-            radice = Page.objects.get(depth=1)
-            home = HomePage(title='Radici Rotariane', slug='home', locale=locale)
-            radice.add_child(instance=home)
+        home = assicura_homepage()
 
         pagine = {p.slug: p for p in StandardPage.objects.filter(locale=locale)}
 

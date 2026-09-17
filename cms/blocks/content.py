@@ -244,6 +244,31 @@ class StatsBarBlock(blocks.StructBlock):
         label = 'fascia di numeri'
 
 
+class CreditBlock(blocks.StructBlock):
+    """Piccolo riquadro di attribuzione, centrato.
+
+    Nato dal credito allo sviluppo tecnico in fondo a /progetto: un riquadro
+    stretto, non una fascia a tutta larghezza. Il nome dell'azienda e quello
+    della persona restano due campi distinti, perche' nel testo originale sono
+    due righe diverse ("Tech Solutions by" / "Giuseppe Barbieri") e schiacciarle
+    in una sola ne cambierebbe il senso.
+    """
+
+    heading = blocks.CharBlock(required=False, label='titolo',
+                               help_text='Sopra al riquadro. Es. Sviluppo tecnico')
+    subheading = blocks.CharBlock(required=False, label='sottotitolo')
+    icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, default='Code', label='icona')
+    label = blocks.CharBlock(required=False, label='azienda',
+                             help_text='Es. Tech Solutions by')
+    name = blocks.CharBlock(label='nome')
+    link = LinkBlock(required=False, label='sito')
+    surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
+
+    class Meta:
+        icon = 'user'
+        label = 'credito'
+
+
 class ExplanationStepBlock(blocks.StructBlock):
     icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')
     title = blocks.CharBlock(label='titolo')
@@ -446,6 +471,7 @@ class PageBodyBlock(blocks.StreamBlock):
     text_band = TextBandBlock()
     task_list = TaskListBlock()
     people_grid = PeopleGridBlock()
+    credit = CreditBlock()
     tier_cards = TierCardsBlock()
     cta_banner = CtaBannerBlock()
     article_list = ArticleListBlock()

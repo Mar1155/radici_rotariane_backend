@@ -17,7 +17,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from wagtail.models import Locale
 
-from cms.models import ArticleType, HomePage, StandardPage
+from cms.bootstrap import assicura_homepage
+from cms.models import ArticleType, StandardPage
 
 
 def elenco(tipo, **extra):
@@ -170,11 +171,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         locale = Locale.get_default()
-        home = HomePage.objects.filter(locale=locale).first()
-        if home is None:
-            self.stderr.write(self.style.ERROR(
-                'Manca la HomePage: esegui prima le migrazioni e il seed del CMS.'))
-            return
+        home = assicura_homepage()
 
         # Il blocco riferisce l'istanza, non la chiave: la chiave la espone poi
         # l'API. Qui si risolve una volta sola.

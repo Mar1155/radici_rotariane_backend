@@ -17,7 +17,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from wagtail.models import Locale
 
-from cms.models import CMSImage, HomePage, StandardPage
+from cms.bootstrap import assicura_homepage
+from cms.models import CMSImage, StandardPage
 
 CONTENUTI = Path(__file__).resolve().parent.parent.parent / 'contenuti'
 
@@ -58,11 +59,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         locale = Locale.get_default()
-        home = HomePage.objects.filter(locale=locale).first()
-        if home is None:
-            self.stderr.write(self.style.ERROR(
-                'Manca la HomePage: esegui prima `build_page_home`.'))
-            return
+        home = assicura_homepage()
 
         immagini = {i.title: i.pk for i in CMSImage.objects.all()}
         mancanti = set()

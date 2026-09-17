@@ -8,26 +8,31 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 - `users/` — App utenti, modelli e logica di autenticazione.
 - `chat/` — App realtime/Channels per messaggistica.
 - `forum/` — App forum e contenuti.
-- `section/` — App per sezioni/moduli del progetto.
-- `scripts/` — Utility per dati demo.
+- `section/` — App articoli (i contenuti scritti da soci e club).
+- `cms/` — Wagtail: pagine, menu, tipi di articolo, geografia.
 - `manage.py` — Entry point Django.
 - `requirements.txt` — Dipendenze runtime.
 - `nixpacks.toml` — Build/deploy Railway (venv + pip).
 
-## Script demo
-
-Popola il database con dati di esempio:
+## Ripartire da zero
 
 ```bash
-python scripts/populate_demo.py
+python manage.py migrate
+python manage.py build_site     # pagine, menu, tipi di articolo, geografia
+python manage.py seed_demo      # account, articoli, forum, chat
 ```
 
-Opzioni:
+## Dati di prova
+
+Popola il database con account, articoli, forum e chat di esempio:
 
 ```bash
-python scripts/populate_demo.py clubs
-python scripts/populate_demo.py skills
+python manage.py seed_demo            # aggiunge cio' che manca
+python manage.py seed_demo --reset    # prima cancella (tiene i superuser)
 ```
+
+Le credenziali degli account generati sono in [ACCESSI-DEMO.md](ACCESSI-DEMO.md),
+insieme all'ordine dei comandi da eseguire su un database vuoto.
 
 ## Variabili d’ambiente (runtime)
 

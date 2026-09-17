@@ -75,7 +75,7 @@ ICON_CHOICES = [
         'Award', 'Bookmark', 'Calendar', 'Clock', 'Compass', 'DollarSign',
         'Flag', 'Globe', 'Heart', 'Mail', 'MapPin', 'Phone', 'Star', 'Tag',
         'Target', 'TrendingUp', 'Users', 'Utensils', 'Camera', 'BookOpen',
-        'Handshake', 'Lightbulb', 'Leaf', 'Music', 'Info',
+        'Handshake', 'Lightbulb', 'Leaf', 'Music', 'Info', 'Code',
     ]
 ]
 ICON_KEYS = [k for k, _ in ICON_CHOICES]

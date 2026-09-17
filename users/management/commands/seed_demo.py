@@ -30,15 +30,35 @@ class Command(BaseCommand):
             self._reset_data()
 
         self._ensure_skills()
+        admin = self._crea_admin()
         clubs = self._create_clubs()
         members = self._create_members(clubs)
-        self._verifica_email(clubs + members)
+        self._verifica_email(clubs + members + [admin])
         self._create_cards(clubs, members)
         posts = self._create_forum_posts(members)
         self._create_forum_comments(posts, members)
         self._create_chats(clubs, members)
 
         self._stampa_accessi(clubs, members)
+
+    def _crea_admin(self):
+        """Un amministratore di prova, distinto dal superuser gia' presente.
+
+        Serve perche' alcuni tipi di articolo si pubblicano solo da admin, e
+        perche' senza email verificata il login del frontend rifiuta anche un
+        superuser: il pannello Wagtail funziona, il sito no.
+        """
+        admin, _ = User.objects.get_or_create(
+            email="admin@demo.rotary",
+            defaults={"username": "admin_demo", "first_name": "Admin",
+                      "last_name": "Demo"},
+        )
+        admin.is_staff = True
+        admin.is_superuser = True
+        admin.is_active = True
+        admin.set_password(PASSWORD_DEMO)
+        admin.save()
+        return admin
 
     def _verifica_email(self, utenti):
         """Segna verificate le email di prova.
@@ -64,8 +84,10 @@ class Command(BaseCommand):
             righe.append(f"  socio  {socio.email}  ({socio.get_full_name()})")
         if club:
             righe.append(f"  club   {club.email}  ({club.club_name})")
+        righe.append("  admin  admin@demo.rotary")
         righe.append("")
         righe.append("Tutti gli altri account di prova usano la stessa password.")
+        righe.append("Gli stessi dati sono in ACCESSI-DEMO.md.")
         self.stdout.write(self.style.SUCCESS("\n".join(righe)))
 
     def _reset_data(self):
@@ -873,10 +895,14 @@ class Command(BaseCommand):
                 )
 
     def _create_chats(self, clubs, members):
-        random.shuffle(clubs)
+        # Su una copia: `shuffle` riordina sul posto, e la lista e' la stessa
+        # che il chiamante usa dopo per stampare le credenziali. Mescolarla qui
+        # faceva cambiare l'account documentato a ogni esecuzione.
+        sorteggiati = list(clubs)
+        random.shuffle(sorteggiati)
         gemellaggi = [
-            (clubs[0], clubs[1]),
-            (clubs[2], clubs[3]),
+            (sorteggiati[0], sorteggiati[1]),
+            (sorteggiati[2], sorteggiati[3]),
         ]
 
         for club_a, club_b in gemellaggi:

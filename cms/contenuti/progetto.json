@@ -306,27 +306,23 @@
   "id": "8e0ccd9e-fda8-4546-8c03-5046777a8793"
  },
  {
-  "type": "cta_banner",
+  "type": "credit",
   "value": {
-   "title": "Sviluppo Tecnico",
-   "description": "Giuseppe Barbieri — Tech Solutions",
-   "surface": "light",
-   "primary_cta": {
+   "heading": "Sviluppo Tecnico",
+   "subheading": "Esterno",
+   "icon": "Code",
+   "label": "Tech Solutions by",
+   "name": "Giuseppe Barbieri",
+   "link": {
     "label": "www.tech-solutions.me",
     "page": null,
     "route": "",
     "external_url": "https://tech-solutions.me",
     "visibility": "always"
    },
-   "secondary_cta": {
-    "label": "",
-    "page": null,
-    "route": "",
-    "external_url": "",
-    "visibility": "always"
-   }
+   "surface": "white"
   },
-  "id": "15b04a7e-470a-4faf-b0fd-6272661680a0"
+  "id": "4022cb3c-7c33-48cb-82ab-33fa0a764ac8"
  },
  {
   "id": "bc3f748e-f174-4afb-bf0e-8701354cb53e",
