@@ -31,9 +31,10 @@ class Command(BaseCommand):
 
         self._ensure_skills()
         admin = self._crea_admin()
+        redattore = self._crea_redattore()
         clubs = self._create_clubs()
         members = self._create_members(clubs)
-        self._verifica_email(clubs + members + [admin])
+        self._verifica_email(clubs + members + [admin, redattore])
         self._create_cards(clubs, members)
         posts = self._create_forum_posts(members)
         self._create_forum_comments(posts, members)
@@ -60,6 +61,34 @@ class Command(BaseCommand):
         admin.save()
         return admin
 
+    def _crea_redattore(self):
+        """L'account con cui il cliente compone le pagine.
+
+        Sta nel gruppo Redazione e **non** e' superuser: e' cio' che rende
+        verificabile la separazione. Vede pagine e immagini, non i tipi di
+        articolo, che restano a chi sviluppa.
+        """
+        from django.contrib.auth.models import Group
+
+        redattore, _ = User.objects.get_or_create(
+            email="redazione@demo.rotary",
+            defaults={"username": "redazione_demo", "first_name": "Redazione",
+                      "last_name": "Demo"},
+        )
+        redattore.is_staff = True        # serve per entrare in /cms/
+        redattore.is_superuser = False
+        redattore.is_active = True
+        redattore.set_password(PASSWORD_DEMO)
+        redattore.save()
+
+        gruppo = Group.objects.filter(name="Redazione").first()
+        if gruppo:
+            redattore.groups.add(gruppo)
+        else:
+            self.stdout.write(self.style.WARNING(
+                "  gruppo Redazione assente: esegui `build_site`"))
+        return redattore
+
     def _verifica_email(self, utenti):
         """Segna verificate le email di prova.
 
@@ -85,6 +114,7 @@ class Command(BaseCommand):
         if club:
             righe.append(f"  club   {club.email}  ({club.club_name})")
         righe.append("  admin  admin@demo.rotary")
+        righe.append("  cms    redazione@demo.rotary  (compone le pagine su /cms/)")
         righe.append("")
         righe.append("Tutti gli altri account di prova usano la stessa password.")
         righe.append("Gli stessi dati sono in ACCESSI-DEMO.md.")

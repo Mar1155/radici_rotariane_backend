@@ -25,6 +25,7 @@ PASSI = [
     ('build_pages_sezioni', 'pagine sezione'),
     ('build_page_home', 'homepage'),
     ('seed_menus', 'menu'),
+    ('seed_cms_groups', 'gruppi di redazione'),
 ]
 
 

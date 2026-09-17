@@ -10,7 +10,12 @@ demo12345
 |---|---|---|
 | Socio | `marco_rossi_1@demo.rotary` | Marco Rossi |
 | Club | `rotary_club_milano_duomo@demo.rotary` | Rotary Club Milano Duomo |
-| Admin | `admin@demo.rotary` | Superuser: vede anche `/cms/` e `/admin/` |
+| Admin | `admin@demo.rotary` | Superuser: vede tutto, `/cms/` e `/admin/` inclusi |
+| Redazione | `redazione@demo.rotary` | Il ruolo del cliente su `/cms/`: pagine, immagini e menu, **non** i tipi di articolo |
+
+L'account **Redazione** serve a vedere il pannello come lo vedra' il cliente:
+entrando con quello, le voci "Struttura" (tipi di articolo, geografia) e
+"Utenti" non compaiono proprio.
 
 Tutti gli altri account generati usano la stessa password. I soci seguono lo
 schema `nome_cognome_N@demo.rotary`, i club `rotary_club_citta_nome@demo.rotary`;

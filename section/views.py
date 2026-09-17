@@ -1,8 +1,10 @@
 # views.py
 from rest_framework import status
-from rest_framework.decorators import api_view, parser_classes
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from users.permissions import ruolo_applicativo
 from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
 from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
 from .sanitizers import sanitize_article_html
@@ -22,22 +24,6 @@ from chat.services.translation import (
     supported_languages,
     translate_text,
 )
-
-
-def ruolo_applicativo(user) -> str:
-    """Ruolo dell'utente ai fini della pubblicazione.
-
-    La derivazione precedente era invertita: guardava `user.club`, che su un
-    account CLUB e' vuoto (sono i soci a puntare al club, non il contrario).
-    Un club veniva quindi classificato 'user', e un socio con club 'club'.
-    """
-    if not getattr(user, 'is_authenticated', False):
-        return 'anonymous'
-    if user.is_staff or user.is_superuser:
-        return 'admin'
-    if getattr(user, 'user_type', None) == 'CLUB':
-        return 'club'
-    return 'user'
 
 
 def validate_article_fields(tipo, valori, info_values=None):
@@ -89,6 +75,9 @@ def validate_article_fields(tipo, valori, info_values=None):
     return True, None
 
 
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
+@permission_classes([IsAuthenticated])
 def create_article(request, type_key):
     """Crea un articolo del tipo indicato.
 
@@ -238,6 +227,7 @@ def create_article(request, type_key):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def list_articles(request):
     """Articoli pubblicati, filtrati per tipo.
 
@@ -284,6 +274,7 @@ def list_articles(request):
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
+@permission_classes([AllowAny])
 def get_card(request, slug):
     """
     Recupera, aggiorna o elimina una singola card per slug.
@@ -423,6 +414,7 @@ def get_card(request, slug):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def report_card(request, slug):
     """Segnala una card."""
     if not request.user.is_authenticated:
@@ -445,6 +437,7 @@ def report_card(request, slug):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def translate_card(request, slug):
     """Traduci una card nella lingua richiesta, con caching."""
     try:
@@ -519,6 +512,7 @@ def translate_card(request, slug):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def toggle_save_card(request, slug):
     """Toggle salvataggio di una card (salva/rimuovi)."""
     if not request.user.is_authenticated:
@@ -551,6 +545,7 @@ def toggle_save_card(request, slug):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_saved_cards(request):
     """
     Lista le card salvate.
@@ -594,6 +589,7 @@ def list_saved_cards(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def list_user_cards(request):
     """
     Lista le card pubblicate da un utente.

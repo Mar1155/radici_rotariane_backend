@@ -26,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
-INSTALLED_APPS += ['rest_framework', 'users', 'channels', 'chat', 'corsheaders', 'section', 'forum', 'storages']
+INSTALLED_APPS += ['rest_framework', 'rest_framework_simplejwt.token_blacklist',
+                   'users', 'channels', 'chat', 'corsheaders', 'section', 'forum', 'storages']
 
 # --- CMS (Wagtail) -----------------------------------------------------------
 # wagtail_localize.locales sostituisce wagtail.locales: non vanno messi entrambi.
@@ -167,16 +168,28 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    # Chiuso per difetto: una vista nuova nasce protetta, e chi vuole aprirla
+    # deve dirlo. Il contrario — aperto per difetto — fa si' che una
+    # dimenticatura non si veda, mentre una chiusura di troppo si nota subito.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 from datetime import timedelta
 
+# Le due durate erano invertite: l'access durava 7 giorni e il refresh 1, cosi'
+# un token rubato restava valido una settimana e la rotazione non poteva
+# funzionare (il refresh scadeva per primo). L'access e' la chiave che gira, e
+# deve essere la piu' corta.
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=90),
+    'ROTATE_REFRESH_TOKENS': True,
+    # Senza questo la rotazione non revoca niente: il vecchio refresh
+    # resterebbe valido accanto al nuovo.
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # Italiano: è la lingua sorgente dei contenuti e dell'interfaccia di

@@ -23,6 +23,7 @@ import logging
 from .models import User, Skill, SoftSkill, FocusArea, PasswordResetToken, EmailVerificationToken
 from .serializers import (
     UserSearchSerializer, UserRegistrationSerializer, UserProfileSerializer,
+    PublicProfileSerializer,
     SkillSerializer, SoftSkillSerializer, FocusAreaSerializer, EmailTokenObtainPairSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     EmailVerificationRequestSerializer, EmailVerificationConfirmSerializer
@@ -222,9 +223,14 @@ class SkillsFilterOptionsView(generics.GenericAPIView):
 
 
 class ClubListView(generics.ListAPIView):
-    """List all club users."""
+    """L'elenco dei club, pubblico: alimenta la mappa e le schede.
+
+    Serializer pubblico anche per chi ha fatto accesso: qui non c'e' niente di
+    piu' da mostrare, e un elenco che cambia forma a seconda di chi guarda si
+    presta a dimenticanze.
+    """
     permission_classes = [AllowAny]
-    serializer_class = UserProfileSerializer
+    serializer_class = PublicProfileSerializer
 
     def get_queryset(self):
         return User.objects.filter(user_type='CLUB').annotate(
@@ -364,9 +370,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action != 'retrieve':
+            return UserSearchSerializer
+        # Il dettaglio e' aperto perche' le pagine dei club sono pubbliche: a
+        # chi non ha fatto accesso si risponde senza i dati personali.
+        if self.request.user.is_authenticated:
             return UserProfileSerializer
-        return UserSearchSerializer
+        return PublicProfileSerializer
 
     def get_queryset(self):
         if self.request.user.is_authenticated:

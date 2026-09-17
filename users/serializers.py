@@ -265,6 +265,54 @@ class UserSearchSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class PublicProfileSerializer(serializers.ModelSerializer):
+    """Il profilo come lo vede chi non ha fatto accesso.
+
+    `/api/users/<id>/` e' aperto perche' le pagine dei club sono pubbliche — la
+    mappa dei club mostra l'indirizzo a cui scrivere, ed e' voluto. Ma prima
+    rispondeva con lo stesso serializer completo, e bastava incrementare un
+    numero per raccogliere email e Rotary ID di ogni socio.
+
+    La regola: l'email di un **club** e' un recapito istituzionale e resta; la
+    email di una **persona** e' un dato personale e sparisce. Il Rotary ID non
+    si mostra a nessuno, e nemmeno se un account e' amministratore.
+    """
+
+    skills = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
+    soft_skills = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
+    focus_areas = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
+    email = serializers.SerializerMethodField()
+    club_members_count = serializers.SerializerMethodField()
+    club_sister_clubs_count = serializers.SerializerMethodField()
+    club_affiliation_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'email',
+            'profession', 'sector', 'skills', 'soft_skills', 'focus_areas',
+            'languages', 'offers_mentoring',
+            'bio', 'club_name', 'location', 'avatar', 'user_type',
+            'club_president', 'club_city', 'club_country', 'club_district',
+            'club_latitude', 'club_longitude',
+            'club_members_count', 'club_sister_clubs_count',
+            'club', 'club_affiliation_name',
+        ]
+        read_only_fields = fields
+
+    def get_email(self, obj):
+        return obj.email if obj.user_type == User.Types.CLUB else None
+
+    def get_club_members_count(self, obj):
+        return getattr(obj, 'members_count', None) or obj.club_members_count
+
+    def get_club_sister_clubs_count(self, obj):
+        return getattr(obj, 'gemellaggi_count', None) or obj.club_sister_clubs_count
+
+    def get_club_affiliation_name(self, obj):
+        return obj.club.club_name if obj.club else obj.club_name
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile management."""
     skills = serializers.SlugRelatedField(
