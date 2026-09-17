@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -14,6 +15,10 @@ class UserTests(TestCase):
             first_name='Test',
             last_name='User'
         )
+        # Senza email verificata il login rifiuta con 401: il controllo e' stato
+        # aggiunto dopo questo test, che da allora non passava piu'.
+        self.user.email_verified_at = timezone.now()
+        self.user.save(update_fields=['email_verified_at'])
         self.token_url = reverse('token_obtain_pair')
         self.me_url = '/api/users/me/' # Hardcoded to verify the path structure
 

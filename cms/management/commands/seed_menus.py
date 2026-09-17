@@ -38,11 +38,12 @@ ESPLORA = [
     ('Partner', 'partner', 'Handshake'),
 ]
 
+# Niente voce "Accedi": la barra di navigazione ha gia' il suo pulsante di
+# accesso in fondo, e averlo due volte confonde.
 SERVIZI = [
     ('Rota-Space', '/rota-space', 'Users', MenuItem.Visibilita.SEMPRE),
     ('Rotariani nel Mondo', '/rotariani-nel-mondo', 'Globe', MenuItem.Visibilita.SEMPRE),
     ('Adotta un Progetto', 'adotta-un-progetto', 'Heart', MenuItem.Visibilita.SEMPRE),
-    ('Accedi', '/login', None, MenuItem.Visibilita.ANONIMI),
 ]
 
 

@@ -6,6 +6,9 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from users.models import User, Skill, SoftSkill
+
+# Password unica per tutti gli account di prova, stampata a fine esecuzione.
+PASSWORD_DEMO = "demo12345"
 from forum.models import Post, Comment
 from chat.models import Chat, Message
 from section.models import Card
@@ -29,12 +32,41 @@ class Command(BaseCommand):
         self._ensure_skills()
         clubs = self._create_clubs()
         members = self._create_members(clubs)
+        self._verifica_email(clubs + members)
         self._create_cards(clubs, members)
         posts = self._create_forum_posts(members)
         self._create_forum_comments(posts, members)
         self._create_chats(clubs, members)
 
-        self.stdout.write(self.style.SUCCESS("Demo data created successfully."))
+        self._stampa_accessi(clubs, members)
+
+    def _verifica_email(self, utenti):
+        """Segna verificate le email di prova.
+
+        Senza questo il login rifiuta: i dati esistono ma nessuno puo' entrare,
+        e per provare la webapp bisognerebbe passare dalla registrazione vera.
+        """
+        adesso = timezone.now()
+        User.objects.filter(pk__in=[u.pk for u in utenti],
+                            email_verified_at__isnull=True).update(email_verified_at=adesso)
+
+    def _stampa_accessi(self, clubs, members):
+        socio = members[0] if members else None
+        club = clubs[0] if clubs else None
+        righe = [
+            "",
+            f"Dati di prova pronti: {len(clubs)} club, {len(members)} soci, "
+            f"{Card.objects.count()} articoli.",
+            "",
+            f"Accessi (password: {PASSWORD_DEMO})",
+        ]
+        if socio:
+            righe.append(f"  socio  {socio.email}  ({socio.get_full_name()})")
+        if club:
+            righe.append(f"  club   {club.email}  ({club.club_name})")
+        righe.append("")
+        righe.append("Tutti gli altri account di prova usano la stessa password.")
+        self.stdout.write(self.style.SUCCESS("\n".join(righe)))
 
     def _reset_data(self):
         Message.objects.all().delete()
@@ -371,7 +403,7 @@ class Command(BaseCommand):
                 if not club.last_name:
                     club.last_name = pres_last
                 club.email = club.email or email
-            club.set_password("demo12345")
+            club.set_password(PASSWORD_DEMO)
             club.save()
             clubs.append(club)
 
@@ -486,7 +518,7 @@ class Command(BaseCommand):
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password="demo12345",
+                password=PASSWORD_DEMO,
                 first_name=first_name,
                 last_name=last_name,
                 user_type=User.Types.NORMAL,
@@ -510,41 +542,183 @@ class Command(BaseCommand):
 
         return members
 
+    # (titolo, sottotitolo, provincia) per ciascun tipo di articolo.
+    # Il titolo vuoto e' voluto: `testimonianza` non ha il campo titolo.
+    ARTICOLI = {
+        "progetto": [
+            ("Una biblioteca per il quartiere Sanita", "Un locale confiscato rimesso a nuovo e 4.000 volumi per i ragazzi del rione", "napoli"),
+            ("Acqua potabile a Tambacounda", "Due pozzi e la formazione di sei manutentori locali, con il RC Dakar", "torino"),
+            ("Borse di studio per giovani artigiani", "Dieci percorsi di bottega nella lavorazione del vetro", "venezia"),
+            ("Ambulatorio mobile nelle aree interne", "Un mezzo attrezzato per sei comuni rimasti senza medico di base", "potenza"),
+        ],
+        "evento": [
+            ("Assemblea distrettuale 2026", "Una giornata di lavori su azione internazionale e nuove generazioni", "bologna"),
+            ("Serata di gala per il service idrico", "Cena di raccolta fondi con asta benefica", "milano"),
+            ("Incontro con i club gemellati di Baviera", "Tre giorni di visite e tavoli di lavoro congiunti", "bolzano"),
+            ("Forum sui giovani e il lavoro", "Imprenditori e studenti a confronto", "firenze"),
+        ],
+        "itinerario": [
+            ("La Via Francigena da Lucca a Siena", "Sei tappe fra pievi, crete senesi e ospitalita rotariana", "siena"),
+            ("I borghi del Pollino", "Anello di quattro giorni fra Basilicata e Calabria", "cosenza"),
+            ("Barocco leccese in tre giorni", "Un percorso a piedi fra chiese, cortili e cave di tufo", "lecce"),
+            ("Le Dolomiti di Brenta", "Cinque giorni di rifugi e ferrate storiche", "trento"),
+        ],
+        "esperienza": [
+            ("Vendemmia nelle Langhe", "Una giornata in vigna e in cantina con un produttore socio del club", "cuneo"),
+            ("Laboratorio di ceramica a Grottaglie", "Mezza giornata al tornio nel quartiere delle ceramiche", "taranto"),
+            ("Pesca turismo a Cetara", "In mare all alba con i pescatori di alici", "salerno"),
+            ("Cammino notturno sull Etna", "Salita guidata fino ai crateri sommitali", "catania"),
+        ],
+        "eccellenza": [
+            ("Pasticceria Serafini", "Lievitati e dolci della tradizione, dal 1954", "perugia"),
+            ("Hotel Torre del Parco", "Dimora storica del 1419 nel centro di Lecce", "lecce"),
+            ("Cantine Vallebruna", "Vini biologici e visite guidate in cantina", "verona"),
+            ("Sartoria Lo Verso", "Su misura e riparazioni sartoriali", "palermo"),
+        ],
+        "storia": [
+            ("Mio nonno parti da Ellis Island", "La storia di una famiglia molisana fra due continenti", None),
+            ("Ritorno a Castelmezzano dopo sessant anni", "Il viaggio di un socio australiano nel paese dei suoi genitori", None),
+            ("La lettera trovata in soffitta", "Come un foglio del 1948 ha riunito due rami della stessa famiglia", None),
+        ],
+        "tradizione": [
+            ("La Infiorata di Spello", "Come si preparano i tappeti di petali, quartiere per quartiere", None),
+            ("Il pane di Altamura", "Impasto, lievito madre e forno a legna: una filiera che non e cambiata", None),
+            ("La Sartiglia di Oristano", "La giostra equestre che apre il carnevale sardo", None),
+        ],
+        "testimonianza": [
+            ("", "Sono tornata nel paese di mio padre dopo quarant anni e ho trovato la casa ancora in piedi", "campobasso"),
+            ("", "Il gemellaggio con il club di Lione ci ha cambiato il modo di pensare i progetti", "genova"),
+            ("", "Da studente ospite a socio: vent anni dopo ospito io i ragazzi", "padova"),
+        ],
+        "documento-archivio": [
+            ("Verbale del gemellaggio con il RC Nizza, 1987", "Il documento originale firmato dai due presidenti", None),
+            ("Fotografie del service alluvione 1994", "Quarantadue scatti dai giorni dell emergenza in Piemonte", None),
+            ("Registro dei soci fondatori", "Riproduzione digitale del registro del 1949", None),
+        ],
+        "scambio-offerta": [
+            ("Ospitalita a Trieste per l estate", "Appartamento con due camere a dieci minuti dal centro", "trieste"),
+            ("Casa in campagna vicino ad Assisi", "Disponibile per famiglie rotariane in primavera", "perugia"),
+            ("Posto barca e alloggio alla Maddalena", "Per chi arriva in Sardegna via mare", "sassari"),
+        ],
+        "scambio-richiesta": [
+            ("Cerchiamo ospitalita in Baviera", "Due settimane per una famiglia di quattro persone", "brescia"),
+            ("Studente in cerca di alloggio a Porto", "Semestre Erasmus, cerco famiglia ospitante", "bari"),
+            ("Ospitalita a Buenos Aires", "Per un viaggio sulle tracce dei nonni emigrati", "roma"),
+        ],
+        "consiglio": [
+            ("Casa Calabria International", "Il portale dei calabresi nel mondo", None),
+            ("Portale del Turismo delle Radici", "Il sito del Ministero degli Esteri dedicato al turismo di ritorno", None),
+        ],
+    }
+
+    CORPO = (
+        "<p>{sottotitolo}</p>"
+        "<p>Questo e un contenuto di prova, inserito per poter esplorare la "
+        "piattaforma con le pagine gia popolate: mostra come si presenta un "
+        "articolo completo, con la copertina, le informazioni laterali e i tag.</p>"
+        "<p>I contenuti veri li inserisce chi amministra il sito, direttamente "
+        "dalla piattaforma e senza passare da uno sviluppatore.</p>"
+    )
+
+    # Valori plausibili per gli elementi informativi, per chiave.
+    VALORI_INFO = {
+        "importo": ["12.000 euro", "4.500 euro", "30.000 euro", "8.200 euro"],
+        "impatto": ["400 persone", "2 comuni", "60 studenti", "1 quartiere"],
+        "scadenza": ["31/03/2026", "30/06/2026", "15/12/2026", "01/09/2026"],
+        "giorni": ["6", "4", "3", "5"],
+        "prezzo": ["45 euro", "Gratuito", "120 euro", "25 euro"],
+        "sconto": ["-15%", "-20%", "-10%", "Omaggio"],
+        "contattaci": ["info@esempio.it", "prenota@esempio.it", "ciao@esempio.it", "shop@esempio.it"],
+        "posti_disponibili": ["4", "2", "6", "3"],
+        "periodo_anno": ["Giugno - Agosto", "Primavera", "Tutto l anno", "Settembre"],
+    }
+
+    COLORI_COPERTINA = ["#17458f", "#009739", "#00a2e0", "#00adbb", "#ff7600",
+                        "#d41367", "#7a6e66", "#657f99", "#f7a81b"]
+
+    def _copertina(self, titolo, colore):
+        """Una copertina generata: tinta piena con il titolo in basso."""
+        from io import BytesIO
+        from django.core.files.base import ContentFile
+        from PIL import Image, ImageDraw
+
+        larghezza, altezza = 1200, 675
+        img = Image.new("RGB", (larghezza, altezza), colore)
+        d = ImageDraw.Draw(img)
+        d.rectangle([0, int(altezza * 0.72), larghezza, altezza], fill="#ffffff22")
+        testo = (titolo or "Radici Rotariane")[:46]
+        d.text((60, int(altezza * 0.80)), testo, fill="#ffffff")
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=82)
+        return ContentFile(buf.getvalue(), name=f"{slugify(testo) or 'copertina'}.jpg")
+
     def _create_cards(self, clubs, members):
-        """Articoli di prova, uno per tipo.
+        """Articoli di prova, piu d uno per tipo.
 
         Il tipo dice quali campi esistono, quali tag sono ammessi e quali
-        elementi informativi vanno compilati: il seed li legge da li' invece di
-        ripetere la stessa configurazione.
+        elementi informativi vanno compilati: il seed li legge da li invece di
+        ripetere la stessa configurazione, cosi non puo produrre un articolo
+        che il modello rifiuta.
         """
         from cms.models import ArticleType, GeoArea
 
-        tipi = list(ArticleType.objects.prefetch_related('allowed_tags', 'info_elements'))
+        tipi = {t.key: t for t in
+                ArticleType.objects.prefetch_related("allowed_tags", "info_elements")}
         if not tipi:
-            self.stdout.write('  (nessun tipo di articolo: esegui prima seed_article_types)')
+            self.stdout.write("  (nessun tipo di articolo: esegui prima seed_article_types)")
             return
 
-        aree = list(GeoArea.objects.filter(level='province')[:12])
+        province = {g.key: g for g in GeoArea.objects.filter(level="province")}
+        autori = (members or []) + (clubs or [])
+        if not autori:
+            return
 
-        for idx, tipo in enumerate(tipi, start=1):
+        for chiave, righe in self.ARTICOLI.items():
+            tipo = tipi.get(chiave)
+            if tipo is None:
+                continue
+
             attivi = set(tipo.active_fields or [])
             ammessi = [t.key for t in tipo.allowed_tags.all()]
-            card = Card(
-                article_type=tipo,
-                title=f'{tipo.name} di prova #{idx}' if 'title' in attivi else None,
-                subtitle=('Sintesi di prova con i valori del Rotary.'
-                          if 'subtitle' in attivi else None),
-                content=('<p>Contenuto di prova.</p>' if 'content' in attivi else None),
-                location=None,
-                geo_area=(random.choice(aree) if aree and 'location' in attivi else None),
-                tags=(random.sample(ammessi, k=min(len(ammessi), 2)) if ammessi and 'tags' in attivi else []),
-                info_values={e.key: f'{e.label} di prova' for e in tipo.info_elements.all()},
-                date_type='single' if 'date' in attivi else 'none',
-                date=(timezone.now().date() + timedelta(days=idx * 3)) if 'date' in attivi else None,
-                author=random.choice(members),
-                is_published=True,
-            )
-            card.save()
+            chiavi_info = [e.key for e in tipo.info_elements.all()]
+
+            for i, (titolo, sottotitolo, prov) in enumerate(righe):
+                slug = slugify(titolo or sottotitolo)[:60]
+                if Card.objects.filter(slug=slug).exists():
+                    continue
+
+                area = province.get(prov) if (prov and tipo.uses_geo) else None
+                card = Card(
+                    slug=slug,
+                    article_type=tipo,
+                    author=autori[(hash(slug) % len(autori))],
+                    is_published=True,
+                    geo_area=area,
+                    title=titolo if "title" in attivi else None,
+                    subtitle=sottotitolo if "subtitle" in attivi else None,
+                    content=(self.CORPO.format(sottotitolo=sottotitolo)
+                             if "content" in attivi else None),
+                    # `location` e il testo che si legge sulla card; `geo_area`
+                    # e cio su cui filtra la ricerca. Servono entrambi.
+                    location=(area.name if area else "Italia") if "location" in attivi else None,
+                    tags=(random.sample(ammessi, k=min(len(ammessi), 2))
+                          if ammessi and "tags" in attivi else []),
+                    info_values={k: self._valore_info(k, i) for k in chiavi_info},
+                    date_type="single" if "date" in attivi else "none",
+                    date=(timezone.now().date() + timedelta(days=random.randint(-40, 90)))
+                         if "date" in attivi else None,
+                )
+                if "coverImage" in attivi:
+                    card.cover_image = self._copertina(
+                        titolo or sottotitolo,
+                        self.COLORI_COPERTINA[i % len(self.COLORI_COPERTINA)])
+
+                card.validate_consistency()
+                card.save()
+
+    def _valore_info(self, chiave, i):
+        scelte = self.VALORI_INFO.get(chiave)
+        return scelte[i % len(scelte)] if scelte else "Da definire"
 
     def _create_forum_posts(self, members):
         topics = [

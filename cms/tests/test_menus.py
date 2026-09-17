@@ -43,9 +43,11 @@ class MenuSeedTest(TestCase):
     def test_esplora_ha_le_undici_voci_della_navbar(self):
         self.assertEqual(Menu.objects.get(key='esplora').items.count(), 11)
 
-    def test_voce_solo_per_anonimi(self):
-        accedi = MenuItem.objects.get(menu__key='servizi', label='Accedi')
-        self.assertEqual(accedi.visibility, MenuItem.Visibilita.ANONIMI)
+    def test_nessun_accesso_duplicato_nel_menu(self):
+        """La barra di navigazione ha gia' il suo pulsante di accesso in fondo."""
+        self.assertFalse(
+            MenuItem.objects.filter(route='/login').exists(),
+            'una voce "Accedi" nel menu duplicherebbe il pulsante della navbar')
 
 
 class MenuItemTest(TestCase):

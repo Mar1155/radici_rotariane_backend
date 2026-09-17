@@ -1,0 +1,312 @@
+[
+ {
+  "id": "bc3a53e4-67ba-47ec-bb77-4ade9c7f346f",
+  "type": "hero",
+  "value": {
+   "tag": "CIP",
+   "title": "Comitati Inter-Paese",
+   "surface": "brand-gradient",
+   "description": "Comitati Inter-Paese - Programmi di collaborazione internazionale e scambio culturale",
+   "scroll_to_id": "contenuto"
+  }
+ },
+ {
+  "id": "3e7bafdd-5f04-43af-abbf-baa9d4ff93f7",
+  "type": "quote",
+  "value": {
+   "role": "Presidente del Rotary International",
+   "quote": "Se i Comitati Inter-Paese non esistessero, bisognerebbe inventarli.",
+   "author": "Frank Devlyn",
+   "place_and_date": "Lilla, Francia • 25 Marzo 2001"
+  }
+ },
+ {
+  "id": "b7d94177-884b-4c56-88c2-0353b8ea7778",
+  "type": "text_band",
+  "value": {
+   "body": "I CIP (Comitati Inter-Paese) del Rotary sono organizzazioni che promuovono la pace globale e la comprensione internazionale attraverso la collaborazione e l'amicizia interculturale. Questi comitati mettono in contatto Distretti e Club di diversi paesi, incoraggiando Rotariani e Rotaractiani a impegnarsi in scambi significativi e progetti di servizio.\nI CIP fungono quindi da ponte tra le nazioni, facilitando il dialogo e la collaborazione su vari progetti, migliorando l'efficacia dei programmi del Rotary International e supportando le sue aree strategiche di intervento.",
+   "title": "Cosa sono i CIP",
+   "surface": "light"
+  }
+ },
+ {
+  "id": "1ad79f04-f55f-42ba-83b8-55a481e7a1e1",
+  "type": "task_list",
+  "value": {
+   "note": "Oggi, più di 750 sezioni ICC in tutto il mondo forniscono un supporto significativo a tutti i programmi del Rotary e della Rotary Foundation. La loro attività si inserisce nel quadro dei valori e degli obiettivi del Rotary International, contribuendo al rafforzamento delle relazioni internazionali e alla diffusione di una cultura di dialogo e collaborazione.\nIl Comitato Inter-Paese Italia-Malta-San Marino ha un Coordinatore Nazionale che, con il suo Staff, ha l'incarico di sovraintendere e coordinare le attività dei Presidenti delle Sezioni Nazionali, i quali dovranno promuovere il contatto tra Distretti e Club di due o più paesi.\nSono 39 le sezioni nazionali dei Comitati Inter-Paese Italia-Malta-San Marino, dall'Algeria agli USA.",
+   "items": [
+    {
+     "id": "db584906-12ef-456d-804a-7e2bdc8aacd5",
+     "type": "item",
+     "value": {
+      "link": {
+       "page": null,
+       "label": "Scambi d'amicizia Rotariana",
+       "route": "",
+       "external_url": "https://www.rotary.org/it/our-programs/friendship-exchange"
+      },
+      "title": "Organizzare Scambi d'amicizia Rotariana"
+     }
+    },
+    {
+     "id": "081b732e-78ae-4e3c-a2e4-fd7449e753e9",
+     "type": "item",
+     "value": {
+      "link": {
+       "page": null,
+       "label": "progetti internazionali",
+       "route": "",
+       "external_url": "https://spc.rotary.org/"
+      },
+      "title": "Avviare progetti internazionali di servizio e professionali"
+     }
+    },
+    {
+     "id": "98dc7944-28cc-4125-ba13-2febbab174f9",
+     "type": "item",
+     "value": {
+      "link": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "title": "Aiutare i Club a trovare partner in altri Paesi per Global Grants"
+     }
+    },
+    {
+     "id": "bc770910-6b30-402b-b622-353b7679c14b",
+     "type": "item",
+     "value": {
+      "link": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "title": "Facilitare gemellaggi tra Club distanti"
+     }
+    },
+    {
+     "id": "0c6869f8-f63a-4e2b-89cf-f65936a8168e",
+     "type": "item",
+     "value": {
+      "link": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "title": "Promuovere la pace e la comprensione tra popoli"
+     }
+    }
+   ],
+   "title": "Quali sono i compiti dei CIP?",
+   "surface": "white",
+   "subtitle": "Missioni e obiettivi fondamentali dei Comitati Inter-Paese"
+  }
+ },
+ {
+  "id": "8f73d7cc-892c-404f-99ac-e9c5d4c5020d",
+  "type": "cta_banner",
+  "value": {
+   "title": "Scopri di più",
+   "surface": "light",
+   "description": "Visita il sito ufficiale dei Comitati Inter-Paese Italia-Malta-San Marino",
+   "primary_cta": {
+    "page": null,
+    "label": "Sito Ufficiale CIP",
+    "route": "",
+    "external_url": "https://www.cip-rotary.it/"
+   },
+   "secondary_cta": {
+    "page": null,
+    "label": "",
+    "route": "",
+    "external_url": ""
+   }
+  }
+ },
+ {
+  "id": "cd0feaf1-673c-4063-bf05-d92394d07f5c",
+  "type": "people_grid",
+  "value": {
+   "items": [
+    {
+     "id": "6f4824ad-a797-4b76-b1bd-dfb1d8a8c68d",
+     "type": "item",
+     "value": {
+      "name": "PDG Francesco SOCIEVOLE",
+      "role": "Presidente Nazionale CIP Italia-Malta-San Marino/Canada",
+      "areas": [
+       {
+        "id": "2a553640-4446-4dc2-a258-9891debfdafc",
+        "type": "item",
+        "value": "Italia"
+       },
+       {
+        "id": "ca933da1-76d3-4bf5-8530-d0b6bc9090dd",
+        "type": "item",
+        "value": "Malta"
+       },
+       {
+        "id": "ddb3e44d-316d-4cba-86e8-cc0a680748bd",
+        "type": "item",
+        "value": "San Marino"
+       },
+       {
+        "id": "712d43c1-7584-4c2c-a5db-966c29ded840",
+        "type": "item",
+        "value": "Canada"
+       }
+      ],
+      "email": "f.socievole@gmail.com",
+      "photo": null
+     }
+    },
+    {
+     "id": "564a4f72-5a15-4fb0-b140-558325364045",
+     "type": "item",
+     "value": {
+      "name": "Tatjana Saveria Stefanka GRUEBLER",
+      "role": "Delegata Distrettuale CIP Italia-Malta-San Marino/Svizzera, Liechtenstein",
+      "areas": [
+       {
+        "id": "3283a1a8-b7f4-45bc-ba75-557a554b14d6",
+        "type": "item",
+        "value": "Italia"
+       },
+       {
+        "id": "c2ab2d5d-d8ac-4248-b63f-20c4fc3a6c2d",
+        "type": "item",
+        "value": "Malta"
+       },
+       {
+        "id": "ecb2c086-508a-465f-8611-66d3a3e792ea",
+        "type": "item",
+        "value": "San Marino"
+       },
+       {
+        "id": "ab6999fb-e45c-4729-92a1-4f6f55d3fc16",
+        "type": "item",
+        "value": "Svizzera"
+       },
+       {
+        "id": "aa8de885-731f-45f8-bcf7-5d7b63fbe0ac",
+        "type": "item",
+        "value": "Liechtenstein"
+       }
+      ],
+      "email": "arch.tatjana74@gmail.com",
+      "photo": null
+     }
+    },
+    {
+     "id": "b20b861d-b666-4c5e-814e-e54fc4549869",
+     "type": "item",
+     "value": {
+      "name": "Rodolfo INDERST",
+      "role": "Delegato Distrettuale CIP Italia-Malta-San Marino/Austria, Germania",
+      "areas": [
+       {
+        "id": "d8c38a78-7ef4-4f94-b5ae-9b163b0632ba",
+        "type": "item",
+        "value": "Italia"
+       },
+       {
+        "id": "7cb19e72-0429-41b3-be48-762d84d53600",
+        "type": "item",
+        "value": "Malta"
+       },
+       {
+        "id": "ce710ff5-4a7e-499b-add8-7c4922db68ca",
+        "type": "item",
+        "value": "San Marino"
+       },
+       {
+        "id": "079b6428-7d17-4b18-bdc9-4c28279becd8",
+        "type": "item",
+        "value": "Austria"
+       },
+       {
+        "id": "3d316533-c17f-4470-9f24-acceeeafade2",
+        "type": "item",
+        "value": "Germania"
+       }
+      ],
+      "email": "rodolfoinderst@gmail.com",
+      "photo": null
+     }
+    },
+    {
+     "id": "f41a3726-d75b-459b-a99d-1a784d3bdbda",
+     "type": "item",
+     "value": {
+      "name": "Maria Giovanna Irene FUSCA",
+      "role": "Delegata Distrettuale CIP Italia-Malta-San Marino/Grecia",
+      "areas": [
+       {
+        "id": "2ef3bc97-21b8-4b3a-9be7-1c79e4850ec2",
+        "type": "item",
+        "value": "Italia"
+       },
+       {
+        "id": "3ceab5f9-304d-4f79-be82-20fa4b4a9ea3",
+        "type": "item",
+        "value": "Malta"
+       },
+       {
+        "id": "3cd2f398-0130-40e0-a7bb-26f7a68dcfa6",
+        "type": "item",
+        "value": "San Marino"
+       },
+       {
+        "id": "c31e4d28-6d31-49a8-b00c-711271ef81bd",
+        "type": "item",
+        "value": "Grecia"
+       }
+      ],
+      "email": "mgfusca@gmail.com",
+      "photo": null
+     }
+    },
+    {
+     "id": "67e688b1-3b90-4be7-a1f2-13abcbeec100",
+     "type": "item",
+     "value": {
+      "name": "Flora Maria RITACCA",
+      "role": "Delegata Distrettuale CIP Italia-Malta-San Marino/Argentina",
+      "areas": [
+       {
+        "id": "f72f9e3d-5573-4f3a-a7e8-7c74b8e446a2",
+        "type": "item",
+        "value": "Italia"
+       },
+       {
+        "id": "26d48536-b6ec-48ac-a192-14824272b109",
+        "type": "item",
+        "value": "Malta"
+       },
+       {
+        "id": "b50d2d81-3acf-41e8-8da5-aa0538403aac",
+        "type": "item",
+        "value": "San Marino"
+       },
+       {
+        "id": "dd707b8d-8a49-48e1-98c1-d4dd5ceebe7e",
+        "type": "item",
+        "value": "Argentina"
+       }
+      ],
+      "email": "ritaccaflora@gmail.com",
+      "photo": null
+     }
+    }
+   ],
+   "title": "Referenti CIP Distretto 2102",
+   "columns": "2",
+   "surface": "white",
+   "description": "Elenco aggiornato dei Referenti CIP e loro aree di competenza"
+  }
+ }
+]

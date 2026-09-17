@@ -1,0 +1,166 @@
+[
+ {
+  "id": "20153a35-1811-467d-a199-091ed872bcf0",
+  "type": "hero",
+  "value": {
+   "tag": "i nostri Partner",
+   "title": "Partner e Sponsor",
+   "surface": "brand-gradient",
+   "description": "Lo spazio dedicato ai partner istituzionali e agli sponsor che sostengono Radici Rotariane nel mondo: collaborazioni strategiche per il successo del progetto.",
+   "scroll_to_id": "main-sponsors"
+  }
+ },
+ {
+  "id": "b20728b8-a6b8-41dc-9b63-bc0835c255b7",
+  "type": "partner_grid",
+  "value": {
+   "items": [
+    {
+     "id": "ef46e10c-e06f-47a1-b052-8c998b8d1216",
+     "type": "item",
+     "value": {
+      "link": "https://www.scintilleshop.com/",
+      "logo": "@Scintille",
+      "name": "Scintille",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "84ac528a-e9f9-486e-af92-7facc7fe0c95",
+     "type": "item",
+     "value": {
+      "link": "https://fidiasrl.wixsite.com/fidia",
+      "logo": "@Fidia s.r.l.",
+      "name": "Fidia s.r.l.",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "ec844c4a-bd1d-4ce9-b55e-a44b3c46ed94",
+     "type": "item",
+     "value": {
+      "link": "https://www.fonderiezicarelli.eu/",
+      "logo": "@Zicarelli",
+      "name": "Zicarelli",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "5f78b94d-b7ed-42e6-b8c1-8ad7e14c7450",
+     "type": "item",
+     "value": {
+      "link": "https://www.gruppochiappetta.it/",
+      "logo": "@Gruppo Chiappetta",
+      "name": "Gruppo Chiappetta",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "11aeb832-168a-4a4a-aabc-94be4db97845",
+     "type": "item",
+     "value": {
+      "link": "https://www.mausergas.com/",
+      "logo": "@Mauser Gas",
+      "name": "Mauser Gas",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "10debaad-b1cb-4ba9-8b10-e0e83ce92e38",
+     "type": "item",
+     "value": {
+      "link": "https://www.greenpipe.it/",
+      "logo": "@Greenpipe",
+      "name": "Greenpipe",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "068906f7-82bf-48b6-84c8-1a2d57bfac20",
+     "type": "item",
+     "value": {
+      "link": "https://barci.it/",
+      "logo": "@Barci Engineering",
+      "name": "Barci Engineering",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    },
+    {
+     "id": "fd133b18-13d2-4f44-9294-d32d576e9443",
+     "type": "item",
+     "value": {
+      "link": "https://www.instagram.com/lineaimmagine",
+      "logo": "@Linea Immagine",
+      "name": "Linea Immagine",
+      "emoji": "",
+      "logo_scale": 100,
+      "description": ""
+     }
+    }
+   ],
+   "title": "Main Sponsor",
+   "columns": "4",
+   "surface": "white",
+   "description": "Gli Sponsor che hanno reso possibile il nostro progetto"
+  }
+ },
+ {
+  "id": "6af6e12e-f809-4260-b6e8-f07a991694b3",
+  "type": "partner_grid",
+  "value": {
+   "items": [
+    {
+     "id": "00569d65-02db-4d72-803b-9cfbfdeee410",
+     "type": "item",
+     "value": {
+      "link": "https://www.casacalabriainternational.com/",
+      "logo": null,
+      "name": "Casa Calabria International",
+      "emoji": "🌏",
+      "logo_scale": 100,
+      "description": "Partner fondamentale specializzato in turismo esperienziale per calabresi."
+     }
+    }
+   ],
+   "title": "Partner Istituzionali",
+   "columns": "3",
+   "surface": "light",
+   "description": "Enti e organizzazioni che collaborano per gli obiettivi comuni"
+  }
+ },
+ {
+  "id": "e5e4d47d-fba8-424e-a048-fae3358d44b7",
+  "type": "cta_banner",
+  "value": {
+   "title": "Vuoi diventare nostro Partner?",
+   "surface": "brand-gradient",
+   "description": "Contattaci per scoprire le opportunità di collaborazione e come possiamo crescere insieme.",
+   "primary_cta": {
+    "page": null,
+    "label": "Contattaci",
+    "route": "/rota-space",
+    "external_url": ""
+   },
+   "secondary_cta": {
+    "page": null,
+    "label": "Test",
+    "route": "",
+    "external_url": ""
+   }
+  }
+ }
+]

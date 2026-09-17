@@ -1,0 +1,352 @@
+[
+ {
+  "id": "2a96a0d2-79af-483e-9cd3-3cbafa8aa961",
+  "type": "hero",
+  "value": {
+   "tag": "Distretto Rotary 2102",
+   "title": "Radici Rotariane nel Mondo",
+   "surface": "brand-gradient",
+   "description": "Un'iniziativa del Distretto Rotary 2102 per potenziare l'Azione internazionale e promuovere al contempo il territorio calabrese.",
+   "scroll_to_id": "contenuto"
+  }
+ },
+ {
+  "id": "e81940eb-3aa7-4d39-871e-e694f2398528",
+  "type": "icon_card_grid",
+  "value": {
+   "items": [
+    {
+     "id": "d63436bc-2bff-4952-8a04-6ca59d24d5f4",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Target",
+      "title": "Mission",
+      "accent": "brand-primary",
+      "description": "Creare una rete globale interattiva, che partendo dalla Calabria, connetta il Distretto 2102 con i Rotariani di tutto il mondo, promuovendo e facilitando progetti di service transnazionali, scambi d'amicizia rotariana e gemellaggi."
+     }
+    },
+    {
+     "id": "ae0c05f5-c536-4d3f-830c-0bc810783524",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Compass",
+      "title": "Vision",
+      "accent": "sky",
+      "description": "Diventare un punto di riferimento per i Rotariani nel mondo, creando opportunità di crescita personale e professionale, promuovendo l'eccellenza Calabrese e contribuendo allo sviluppo sostenibile delle comunità locali e globali."
+     }
+    }
+   ],
+   "title": "Cos'è la Piattaforma?",
+   "columns": "2",
+   "surface": "white",
+   "subtitle": "Radici Rotariane nel Mondo è un progetto che nasce con l'intento iniziale di rafforzare i legami tra i Rotariani di origine Calabrese residenti all'estero e la loro terra d'origine, per poi trasformarsi in uno strumento interattivo innovativo capace di rendere l'Azione Internazionale più connessa e significativa.\nLa WebApp RRNM offre la possibilità di creare nuovi contatti e promuovere scambi d'amicizia Rotariana, gemellaggi e progetti comuni, valorizzando al contempo l'identità Calabrese e facilitando la connessione tra Rotariani di tutto il mondo, in linea con i valori del Rotary."
+  }
+ },
+ {
+  "id": "c6734d5d-62e4-484e-bb3f-58f6390ca9ce",
+  "type": "icon_card_grid",
+  "value": {
+   "items": [
+    {
+     "id": "658cc6ff-4b2b-4f84-9554-617cbbc10948",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Users",
+      "title": "Network Globale",
+      "accent": "brand-primary",
+      "description": "Creare nuove connessioni e nuovi ponti culturali"
+     }
+    },
+    {
+     "id": "ebf5461a-414e-4099-8117-2b7ee94f9c1d",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Handshake",
+      "title": "Gemellaggi",
+      "accent": "emerald",
+      "description": "Incentivare gemellaggi tra Club del Distretto 2102 e Club internazionali"
+     }
+    },
+    {
+     "id": "ac44323e-33a7-49f4-a55e-b7e27437bdcb",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Heart",
+      "title": "Progetti di Service",
+      "accent": "rose",
+      "description": "Rafforzare la cooperazione su progetti comuni e sostenere progetti di service locali."
+     }
+    },
+    {
+     "id": "613b1ac3-943d-4154-b955-3a50d2758c98",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Award",
+      "title": "Eccellenza Calabrese",
+      "accent": "amber",
+      "description": "Promuovere l'identità e l'eccellenza calabrese in tutti i settori, mantenendo vive le specificità culturali e salvaguardando le tradizioni locali."
+     }
+    },
+    {
+     "id": "a7f10214-ec32-446d-af81-f2865f902b60",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Leaf",
+      "title": "Sviluppo Sostenibile",
+      "accent": "emerald",
+      "description": "Contribuire allo sviluppo economico e sociale sostenibile delle comunità locali e internazionali"
+     }
+    }
+   ],
+   "title": "Obiettivi Strategici",
+   "columns": "3",
+   "surface": "light",
+   "subtitle": "I cinque pilastri che guidano il nostro progetto"
+  }
+ },
+ {
+  "id": "ff2c3545-f232-4230-b412-9fc915d8644c",
+  "type": "tier_cards",
+  "value": {
+   "items": [
+    {
+     "id": "0583b2b3-8b79-48e0-89f9-dc73b5a99c73",
+     "type": "item",
+     "value": {
+      "tier": "bronze",
+      "title": "Bronzo",
+      "description": "Riconoscimento per Club che hanno stabilito le prime collaborazioni internazionali"
+     }
+    },
+    {
+     "id": "eef619d8-9e0a-45e0-a2ea-8f1d0ad7bd30",
+     "type": "item",
+     "value": {
+      "tier": "silver",
+      "title": "Argento",
+      "description": "Per Club che hanno consolidato una rete significativa di partnership"
+     }
+    },
+    {
+     "id": "40ecfb8d-3066-4765-9e85-9c8b2988d9f7",
+     "type": "item",
+     "value": {
+      "tier": "gold",
+      "title": "Oro",
+      "description": "Eccellenza per Club con una rete internazionale estesa e attiva"
+     }
+    }
+   ],
+   "title": "Sistema Badge per Club",
+   "surface": "white",
+   "subtitle": "Un sistema per incentivare la collaborazione e i gemellaggi tra i Club Rotary"
+  }
+ },
+ {
+  "id": "4df541e2-7376-498a-ad25-982edca9cd51",
+  "type": "icon_card_grid",
+  "value": {
+   "items": [
+    {
+     "id": "27a512dc-7cc8-4cb8-a012-920dcccdf34b",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Info",
+      "title": "Assistente Digitale AI",
+      "accent": "brand-secondary",
+      "description": "Un assistente di supporto guidato dall'intelligenza artificiale"
+     }
+    },
+    {
+     "id": "20cef125-0827-4100-8ad4-ef88550647eb",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Info",
+      "title": "Supporto Economico ai Progetti",
+      "accent": "brand-secondary",
+      "description": "Finanziamento diretto ai progetti di service pubblicati sulla piattaforma"
+     }
+    },
+    {
+     "id": "12f8def2-8000-4a56-92d5-3449b63b4866",
+     "type": "item",
+     "value": {
+      "cta": {
+       "page": null,
+       "label": "",
+       "route": "",
+       "external_url": ""
+      },
+      "icon": "Info",
+      "title": "Metaverso Rotariano",
+      "accent": "brand-secondary",
+      "description": "Spazio immersivo con avatar e ambientazioni virtuali"
+     }
+    }
+   ],
+   "title": "Prospettiva Futura",
+   "columns": "3",
+   "surface": "brand-gradient",
+   "subtitle": "La piattaforma \"Radici Rotariane nel mondo\" mira a superare i confini del Distretto 2102 diventando uno strumento completo a supporto dell'Azione Internazionale del Rotary, con l'obiettivo di favorire connessioni, networking e la nascita di nuovi gemellaggi tra Club geograficamente distanti, creando così un ponte digitale tra culture diverse.\nGrazie alla versatilità delle sue numerose sezioni e funzionalità, rappresenta un progetto innovativo ad alto potenziale di scalabilità, con la possibilità di diventare un modello replicabile a livello internazionale."
+  }
+ },
+ {
+  "type": "people_grid",
+  "value": {
+   "title": "Il nostro Team",
+   "description": "Il team che guida lo sviluppo di \"Radici Rotariane nel Mondo\"",
+   "columns": "2",
+   "surface": "white",
+   "items": [
+    {
+     "name": "Dino De Marco",
+     "role": "Governatore Distretto 2102 A.R. 2025-2026",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Flora Maria Ritacca",
+     "role": "Presidente Commissione \"Radici Rotariane nel Mondo\" Distretto 2102 A.R. 2025-2026",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Tatjana Gruebler",
+     "role": "Coordinatore Azione Internazionale Distretto 2102 A.R. 2025-2026",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Serena Francesca Ferrante",
+     "role": "Rotary Club Rende",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Maria Stillo",
+     "role": "Delegata Distrettuale Data Base e Promozione Distretto 2102 A.R. 2025-2026",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Amalia Castiglione",
+     "role": "Rotary Club Rende",
+     "email": "",
+     "photo": null,
+     "areas": []
+    },
+    {
+     "name": "Carlo Maria Comito",
+     "role": "Delegato Distrettuale DNR e Risorse Progettuali Distretto 2102 A.R. 2025-2026",
+     "email": "",
+     "photo": null,
+     "areas": []
+    }
+   ]
+  },
+  "id": "8e0ccd9e-fda8-4546-8c03-5046777a8793"
+ },
+ {
+  "type": "cta_banner",
+  "value": {
+   "title": "Sviluppo Tecnico",
+   "description": "Giuseppe Barbieri — Tech Solutions",
+   "surface": "light",
+   "primary_cta": {
+    "label": "www.tech-solutions.me",
+    "page": null,
+    "route": "",
+    "external_url": "https://tech-solutions.me",
+    "visibility": "always"
+   },
+   "secondary_cta": {
+    "label": "",
+    "page": null,
+    "route": "",
+    "external_url": "",
+    "visibility": "always"
+   }
+  },
+  "id": "15b04a7e-470a-4faf-b0fd-6272661680a0"
+ },
+ {
+  "id": "bc3f748e-f174-4afb-bf0e-8701354cb53e",
+  "type": "cta_banner",
+  "value": {
+   "title": "Funzionalità aggiuntive sviluppabili in futuro:",
+   "surface": "light",
+   "description": "",
+   "primary_cta": {
+    "page": null,
+    "label": "Unisciti al Progetto",
+    "route": "/rota-space",
+    "external_url": ""
+   },
+   "secondary_cta": {
+    "page": null,
+    "label": "Visita il sito del Distretto 2102",
+    "route": "",
+    "external_url": "https://rotary2102.org/"
+   }
+  }
+ }
+]
