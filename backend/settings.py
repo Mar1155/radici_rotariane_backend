@@ -341,6 +341,9 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Spegne la traduzione in sottofondo durante i test: vedi backend/test_runner.py
+TEST_RUNNER = 'backend.test_runner.Runner'
+
 # =============================================================================
 # Translation settings
 # =============================================================================

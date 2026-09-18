@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 
 from django.conf import settings
-from django.db import close_old_connections
+from django.db import close_old_connections, transaction
 
 from .motori import MotoreTraduzione, motore
 
@@ -146,8 +146,17 @@ def traduci_in_sottofondo(genere: str, oggetto):
     Il thread e' quindi **best effort** — se il processo si riavvia a meta', la
     traduzione si perde. La rete di sicurezza e' `translate_pending` su cron,
     che riprende tutto cio' che e' rimasto indietro.
+
+    Parte al commit, non subito: il thread ha una connessione sua e non vede
+    quello che la transazione di chi ha scritto non ha ancora confermato. Oggi
+    le viste sono in autocommit e `on_commit` esegue all'istante, quindi non
+    cambia niente; se un domani una vista finisse dentro una transazione,
+    senza questo la traduzione cercherebbe una riga che non c'e' ancora.
     """
     import threading
+
+    if not getattr(settings, 'TRADUZIONE_IN_SOTTOFONDO', True):
+        return
 
     def lavora():
         try:
@@ -158,4 +167,4 @@ def traduci_in_sottofondo(genere: str, oggetto):
         finally:
             close_old_connections()
 
-    threading.Thread(target=lavora, daemon=True).start()
+    transaction.on_commit(lambda: threading.Thread(target=lavora, daemon=True).start())

@@ -11,8 +11,12 @@ class CommentReplyAPITests(APITestCase):
 
 	def setUp(self):
 		User = get_user_model()
-		self.author = User.objects.create_user(username='author', password='pass123')
-		self.other_user = User.objects.create_user(username='other', password='pass123')
+		# L'email e' la chiave di accesso ed e' unica: due utenti senza email
+		# hanno entrambi la stringa vuota e il secondo non entra nel database.
+		self.author = User.objects.create_user(
+			username='author', email='author@test.com', password='pass123')
+		self.other_user = User.objects.create_user(
+			username='other', email='other@test.com', password='pass123')
 		self.post = Post.objects.create(title='Post', description='Body', author=self.author)
 		self.other_post = Post.objects.create(title='Another', description='Body', author=self.author)
 		self.client.force_authenticate(self.author)
@@ -29,7 +33,7 @@ class CommentReplyAPITests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.assertEqual(response.data['parent_id'], str(parent.id))
-		self.assertEqual(response.data['post'], str(self.post.id))
+		self.assertEqual(str(response.data['post_id']), str(self.post.id))
 
 	def test_cannot_reply_to_reply(self):
 		parent = Comment.objects.create(post=self.post, author=self.author, text='Parent comment')

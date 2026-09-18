@@ -1,74 +1,107 @@
-from django.test import TestCase, TransactionTestCase
-from django.contrib.auth import get_user_model
-from channels.testing import WebsocketCommunicator
-from channels.layers import get_channel_layer
-from channels.db import database_sync_to_async
-from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
-from unittest.mock import patch
-from .models import Chat, Message, ChatParticipant, MessageTranslation
+"""Chat: modello, websocket e API REST.
+
+Una chat diretta non e' piu' una riga con due colonne `user1`/`user2`: e' una
+chat con esattamente due partecipanti, collegati da `ChatParticipant`. Si
+costruisce da `Chat.get_or_create_direct_chat`, che e' anche cio' che
+garantisce che fra due persone ce ne sia una sola.
+"""
+
 import json
 
+from channels.db import database_sync_to_async
+from channels.testing import WebsocketCommunicator
+from django.contrib.auth import get_user_model
+from django.test import TestCase, TransactionTestCase
+from rest_framework.test import APIClient, APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import Chat, ChatParticipant, Message, MessageTranslation
+
 User = get_user_model()
+
+
+def crea_utente(nome):
+    """L'email e' la chiave di accesso ed e' unica: non si puo' omettere."""
+    return User.objects.create_user(
+        username=nome, email=f'{nome}@test.com', password='testpass123')
+
+
+def token(utente):
+    return str(RefreshToken.for_user(utente).access_token)
+
+
+async def connetti(chat, gettone):
+    """Apre il websocket e consuma la cronologia.
+
+    Appena accettata la connessione il consumer manda un frame `history` con i
+    messaggi gia' scritti. Chi legge subito dopo si trova quello, non il
+    proprio messaggio: va tolto di mezzo qui, una volta, invece che in ogni
+    test che poi leggerebbe tutto sfasato di uno.
+    """
+    from backend.asgi import application
+
+    communicator = WebsocketCommunicator(
+        application, f"/ws/chat/{chat.id}/?token={gettone}")
+    connesso, _ = await communicator.connect()
+    assert connesso, 'connessione al websocket rifiutata'
+    cronologia = await communicator.receive_json_from(timeout=5)
+    assert cronologia['type'] == 'history', cronologia['type']
+    return communicator
 
 
 class ChatModelTest(TestCase):
     """Test per il modello Chat"""
 
     def setUp(self):
-        self.user1 = User.objects.create_user(
-            username="user1", email="user1@test.com", password="testpass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", email="user2@test.com", password="testpass123"
-        )
-        self.user3 = User.objects.create_user(
-            username="user3", email="user3@test.com", password="testpass123"
-        )
+        self.user1 = crea_utente('user1')
+        self.user2 = crea_utente('user2')
+        self.user3 = crea_utente('user3')
 
     def test_create_chat(self):
         """Test creazione di una chat tra due utenti"""
-        chat = Chat.objects.create(user1=self.user1, user2=self.user2)
+        chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
         self.assertIsNotNone(chat.id)
-        self.assertEqual(chat.user1, self.user1)
-        self.assertEqual(chat.user2, self.user2)
+        self.assertEqual(chat.chat_type, 'direct')
+        self.assertCountEqual(chat.participants.all(), [self.user1, self.user2])
         self.assertIsNotNone(chat.created_at)
 
     def test_get_or_create_chat(self):
-        """Test del metodo get_or_create_chat"""
+        """Test del metodo get_or_create_direct_chat"""
         # Crea una nuova chat
-        chat1 = Chat.get_or_create_chat(self.user1, self.user2)
+        chat1 = Chat.get_or_create_direct_chat(self.user1, self.user2)
         self.assertIsNotNone(chat1.id)
 
         # Verifica che la stessa chat venga restituita
-        chat2 = Chat.get_or_create_chat(self.user1, self.user2)
+        chat2 = Chat.get_or_create_direct_chat(self.user1, self.user2)
         self.assertEqual(chat1.id, chat2.id)
 
         # Verifica che l'ordine degli utenti non importi
-        chat3 = Chat.get_or_create_chat(self.user2, self.user1)
+        chat3 = Chat.get_or_create_direct_chat(self.user2, self.user1)
         self.assertEqual(chat1.id, chat3.id)
 
+    def test_una_chat_diretta_per_coppia(self):
+        """Fra due persone c'e' una sola chat diretta, con chiunque altro un'altra."""
+        chat_a = Chat.get_or_create_direct_chat(self.user1, self.user2)
+        chat_b = Chat.get_or_create_direct_chat(self.user1, self.user3)
+
+        self.assertNotEqual(chat_a.id, chat_b.id)
+        self.assertEqual(Chat.objects.count(), 2)
+
     def test_chat_unique_constraint(self):
-        """Test che non si possano creare chat duplicate"""
-        Chat.objects.create(user1=self.user1, user2=self.user2)
-        
-        # Tentativo di creare una chat duplicata dovrebbe fallire
+        """Lo stesso utente non puo' entrare due volte nella stessa chat"""
+        chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
+
         with self.assertRaises(Exception):
-            Chat.objects.create(user1=self.user1, user2=self.user2)
+            ChatParticipant.objects.create(chat=chat, user=self.user1, role='member')
 
 
 class MessageModelTest(TestCase):
     """Test per il modello Message"""
 
     def setUp(self):
-        self.user1 = User.objects.create_user(
-            username="user1", email="user1@test.com", password="testpass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", email="user2@test.com", password="testpass123"
-        )
-        self.chat = Chat.objects.create(user1=self.user1, user2=self.user2)
+        self.user1 = crea_utente('user1')
+        self.user2 = crea_utente('user2')
+        self.chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
 
     def test_create_message(self):
         """Test creazione di un messaggio"""
@@ -96,41 +129,28 @@ class ChatConsumerTest(TransactionTestCase):
     """Test per il ChatConsumer (WebSocket)"""
 
     def setUp(self):
-        from channels.layers import get_channel_layer
         from django.conf import settings
-        
+
         # Configura in-memory channel layer per i test
         settings.CHANNEL_LAYERS = {
             "default": {
                 "BACKEND": "channels.layers.InMemoryChannelLayer"
             }
         }
-        
-        self.user1 = User.objects.create_user(
-            username="user1", email="user1@test.com", password="testpass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", email="user2@test.com", password="testpass123"
-        )
-        self.user3 = User.objects.create_user(
-            username="user3", email="user3@test.com", password="testpass123"
-        )
-        self.chat = Chat.objects.create(user1=self.user1, user2=self.user2)
 
-        # Genera token JWT per l'autenticazione
-        refresh = RefreshToken.for_user(self.user1)
-        self.token_user1 = str(refresh.access_token)
-        
-        refresh = RefreshToken.for_user(self.user2)
-        self.token_user2 = str(refresh.access_token)
-        
-        refresh = RefreshToken.for_user(self.user3)
-        self.token_user3 = str(refresh.access_token)
+        self.user1 = crea_utente('user1')
+        self.user2 = crea_utente('user2')
+        self.user3 = crea_utente('user3')
+        self.chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
+
+        self.token_user1 = token(self.user1)
+        self.token_user2 = token(self.user2)
+        self.token_user3 = token(self.user3)
 
     async def test_connect_authenticated_participant(self):
         """Test connessione di un utente autenticato e partecipante alla chat"""
         from backend.asgi import application
-        
+
         communicator = WebsocketCommunicator(
             application,
             f"/ws/chat/{self.chat.id}/?token={self.token_user1}"
@@ -142,19 +162,21 @@ class ChatConsumerTest(TransactionTestCase):
     async def test_connect_unauthenticated(self):
         """Test connessione di un utente non autenticato"""
         from backend.asgi import application
-        
+
         communicator = WebsocketCommunicator(
             application,
             f"/ws/chat/{self.chat.id}/"
         )
         connected, code = await communicator.connect()
         self.assertFalse(connected)
-        self.assertEqual(code, 4401)
+        # 4003 = nessun token. Il consumer distingue 4001 scaduto, 4002 non
+        # valido, 4003 assente, e il frontend reagisce diversamente a ciascuno.
+        self.assertEqual(code, 4003)
 
     async def test_connect_non_participant(self):
         """Test connessione di un utente che non è partecipante della chat"""
         from backend.asgi import application
-        
+
         communicator = WebsocketCommunicator(
             application,
             f"/ws/chat/{self.chat.id}/?token={self.token_user3}"
@@ -165,21 +187,8 @@ class ChatConsumerTest(TransactionTestCase):
 
     async def test_send_and_receive_message(self):
         """Test invio e ricezione di un messaggio"""
-        from backend.asgi import application
-        
-        # Connetti user1
-        communicator1 = WebsocketCommunicator(
-            application,
-            f"/ws/chat/{self.chat.id}/?token={self.token_user1}"
-        )
-        await communicator1.connect()
-
-        # Connetti user2
-        communicator2 = WebsocketCommunicator(
-            application,
-            f"/ws/chat/{self.chat.id}/?token={self.token_user2}"
-        )
-        await communicator2.connect()
+        communicator1 = await connetti(self.chat, self.token_user1)
+        communicator2 = await connetti(self.chat, self.token_user2)
 
         # User1 invia un messaggio
         await communicator1.send_json_to({
@@ -212,13 +221,7 @@ class ChatConsumerTest(TransactionTestCase):
 
     async def test_message_persistence(self):
         """Test che i messaggi vengano salvati correttamente nel database"""
-        from backend.asgi import application
-        
-        communicator = WebsocketCommunicator(
-            application,
-            f"/ws/chat/{self.chat.id}/?token={self.token_user1}"
-        )
-        await communicator.connect()
+        communicator = await connetti(self.chat, self.token_user1)
 
         # Invia più messaggi
         messages_to_send = ["Messaggio 1", "Messaggio 2", "Messaggio 3"]
@@ -246,29 +249,21 @@ class ChatViewSetTest(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(
-            username="user1", email="user1@test.com", password="testpass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", email="user2@test.com", password="testpass123"
-        )
-        self.user3 = User.objects.create_user(
-            username="user3", email="user3@test.com", password="testpass123"
-        )
+        self.user1 = crea_utente('user1')
+        self.user2 = crea_utente('user2')
+        self.user3 = crea_utente('user3')
 
         # Crea alcune chat
-        self.chat1 = Chat.objects.create(user1=self.user1, user2=self.user2)
-        self.chat2 = Chat.objects.create(user1=self.user1, user2=self.user3)
+        self.chat1 = Chat.get_or_create_direct_chat(self.user1, self.user2)
+        self.chat2 = Chat.get_or_create_direct_chat(self.user1, self.user3)
 
-        # Genera token JWT
-        refresh = RefreshToken.for_user(self.user1)
-        self.token_user1 = str(refresh.access_token)
+        self.token_user1 = token(self.user1)
 
     def test_list_user_chats(self):
         """Test recupero della lista di chat dell'utente"""
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token_user1}")
         response = self.client.get("/api/chats/", follow=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
@@ -280,7 +275,7 @@ class ChatViewSetTest(APITestCase):
     def test_create_direct_chat(self):
         """Test creazione di una chat diretta tra due utenti"""
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token_user1}")
-        
+
         # Crea una chat con user2 (dovrebbe restituire la chat esistente)
         response = self.client.post("/api/chats/direct/", {"user_id": self.user2.id}, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -290,10 +285,10 @@ class ChatViewSetTest(APITestCase):
         """Test creazione di una nuova chat diretta"""
         # Prima elimina la chat esistente
         self.chat1.delete()
-        
+
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token_user1}")
         response = self.client.post("/api/chats/direct/", {"user_id": self.user2.id}, follow=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.data["id"])
 
@@ -303,13 +298,9 @@ class MessageViewSetTest(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(
-            username="user1", email="user1@test.com", password="testpass123"
-        )
-        self.user2 = User.objects.create_user(
-            username="user2", email="user2@test.com", password="testpass123"
-        )
-        self.chat = Chat.objects.create(user1=self.user1, user2=self.user2)
+        self.user1 = crea_utente('user1')
+        self.user2 = crea_utente('user2')
+        self.chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
 
         # Crea alcuni messaggi
         for i in range(5):
@@ -319,15 +310,13 @@ class MessageViewSetTest(APITestCase):
                 body=f"Messaggio {i}"
             )
 
-        # Genera token JWT
-        refresh = RefreshToken.for_user(self.user1)
-        self.token_user1 = str(refresh.access_token)
+        self.token_user1 = token(self.user1)
 
     def test_list_messages(self):
         """Test recupero della lista di messaggi di una chat"""
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token_user1}")
         response = self.client.get(f"/api/chats/{self.chat.id}/messages/", follow=True)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 5)
 
@@ -339,7 +328,7 @@ class MessageViewSetTest(APITestCase):
             {"body": "Nuovo messaggio via API"},
             follow=True
         )
-        
+
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["body"], "Nuovo messaggio via API")
         self.assertEqual(response.data["sender"], self.user1.id)
@@ -348,4 +337,3 @@ class MessageViewSetTest(APITestCase):
         """Test che un utente non autenticato non possa accedere ai messaggi"""
         response = self.client.get(f"/api/chats/{self.chat.id}/messages/", follow=True)
         self.assertEqual(response.status_code, 401)
-
