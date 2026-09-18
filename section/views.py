@@ -8,7 +8,7 @@ from users.permissions import ruolo_applicativo
 from .media import ImmagineNonValida, normalizza
 from .models import (Card, CardAttachment, CardReport, CardTranslation,
                      MediaAsset, SavedCard)
-from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
+from .serializers import CardSerializer, CardListSerializer
 from .schema import CorpoNonValido, pulisci_corpo, testo_semplice
 from cms.models import GeoArea
 from cms.media import url_assoluto
@@ -20,13 +20,6 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db import transaction
 from common.richtext import sanitize_rich_text
-from chat.services.translation import (
-    TranslationProviderError,
-    TranslationServiceNotConfigured,
-    normalize_language_code,
-    supported_languages,
-    translate_text,
-)
 
 
 def _area_geografica(chiave, tipo):
@@ -495,82 +488,6 @@ def report_card(request, slug):
     return Response({'message': 'Segnalazione inviata'}, status=status.HTTP_201_CREATED)
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def translate_card(request, slug):
-    """Traduci una card nella lingua richiesta, con caching."""
-    try:
-        card = Card.objects.get(slug=slug)
-    except Card.DoesNotExist:
-        return Response(
-            {'detail': 'Card non trovata.'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-    target_language = request.data.get('target_language') or request.query_params.get('target_language')
-    if not target_language:
-        return Response(
-            {'detail': 'target_language è obbligatorio.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    normalized_language = normalize_language_code(target_language)
-    if normalized_language not in supported_languages():
-        return Response(
-            {'detail': 'Lingua di destinazione non supportata.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    existing = CardTranslation.objects.filter(card=card, target_language=normalized_language).first()
-    if existing:
-        serializer = CardTranslationSerializer(existing)
-        return Response(serializer.data)
-
-    if not (card.title or card.subtitle or card.body):
-        return Response(
-            {'detail': 'La card è vuota, impossibile tradurre.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    try:
-        title_result = translate_text(card.title or '', normalized_language)
-        subtitle_result = translate_text(card.subtitle or '', normalized_language)
-        content_result = translate_text(
-            testo_semplice(card.body),
-            normalized_language,
-            text_format='html'
-        )
-    except TranslationServiceNotConfigured:
-        return Response(
-            {'detail': 'Nessun provider di traduzione configurato.'},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
-    except TranslationProviderError as exc:
-        return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
-
-    # Il corpo si traduce come testo semplice, estratto dal documento. Non e'
-    # una perdita rispetto a prima: il servizio di traduzione riceveva HTML e
-    # restituiva HTML che perdeva comunque le immagini. La traduzione che
-    # conserva la struttura arriva con la traduzione automatica, dove i nodi di
-    # testo si sostituiscono per percorso dentro il documento.
-    safe_content = content_result.text or ''
-
-    with transaction.atomic():
-        translation, created = CardTranslation.objects.update_or_create(
-            card=card,
-            target_language=normalized_language,
-            defaults={
-                'translated_title': title_result.text,
-                'translated_subtitle': subtitle_result.text,
-                'translated_content': safe_content,
-                'provider': title_result.provider,
-                'detected_source_language': title_result.detected_source_language,
-            }
-        )
-
-    serializer = CardTranslationSerializer(translation)
-    http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-    return Response(serializer.data, status=http_status)
 
 
 @api_view(['POST'])

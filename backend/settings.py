@@ -27,7 +27,8 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS += ['rest_framework', 'rest_framework_simplejwt.token_blacklist',
-                   'users', 'channels', 'chat', 'corsheaders', 'section', 'forum', 'storages']
+                   'users', 'channels', 'chat', 'corsheaders', 'section', 'forum',
+                   'traduzione', 'storages']
 
 # --- CMS (Wagtail) -----------------------------------------------------------
 # wagtail_localize.locales sostituisce wagtail.locales: non vanno messi entrambi.
@@ -349,6 +350,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # =============================================================================
 # Translation settings
 # =============================================================================
+
+# --- Traduzione di pagine e articoli -----------------------------------------
+# Distinta da quella di chat e forum, che resta su DeepL: una conversazione non
+# e' un documento, e non deve dipendere dal glossario del Rotary.
+TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
+TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-opus-5')
+ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
 TRANSLATION_SUPPORTED_LANGUAGES = config(
     'TRANSLATION_SUPPORTED_LANGUAGES',

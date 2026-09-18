@@ -184,3 +184,74 @@ def testo_semplice(documento) -> str:
 
     visita(documento)
     return re.sub(r'\n{3,}', '\n\n', ''.join(pezzi)).strip()
+
+# --- Testo per la traduzione --------------------------------------------------
+#
+# Il documento si traduce **nodo per nodo**, non riscrivendo il markup: si
+# estraggono i testi col loro percorso, si traducono, si rimettono dove stavano.
+# La formattazione non passa mai dal traduttore, quindi non puo' corrompersi —
+# ed e' il motivo per cui il corpo e' un documento e non HTML.
+
+
+def _percorsi_testo(nodo, percorso=()):
+    """Coppie (percorso, testo) per ogni nodo di testo del documento."""
+    if not isinstance(nodo, dict):
+        return
+    if nodo.get('type') == 'text' and _testo(nodo.get('text')):
+        yield percorso, nodo['text']
+    # Anche le didascalie delle immagini sono testo da tradurre.
+    if nodo.get('type') == 'image' and _testo((nodo.get('attrs') or {}).get('alt')):
+        yield percorso + ('alt',), nodo['attrs']['alt']
+    for i, figlio in enumerate(nodo.get('content') or []):
+        yield from _percorsi_testo(figlio, percorso + (i,))
+
+
+def estrai_testi(documento) -> dict[str, str]:
+    """I testi del documento, indicizzati per percorso.
+
+    La chiave e' il percorso reso stringa, cosi' sopravvive a un giro in JSON:
+    un traduttore che restituisce le stesse chiavi permette di verificare che
+    non ne abbia inventate o perse.
+    """
+    if not isinstance(documento, dict):
+        return {}
+    return {'.'.join(str(p) for p in percorso): testo
+            for percorso, testo in _percorsi_testo(documento)}
+
+
+def _scrivi(nodo, passi, valore):
+    if not passi:
+        return
+    if passi[0] == 'alt':
+        nodo.setdefault('attrs', {})['alt'] = valore
+        return
+    if len(passi) == 1:
+        figli = nodo.get('content') or []
+        indice = passi[0]
+        if isinstance(indice, int) and 0 <= indice < len(figli):
+            if figli[indice].get('type') == 'text':
+                figli[indice]['text'] = valore
+        return
+    figli = nodo.get('content') or []
+    indice = passi[0]
+    if isinstance(indice, int) and 0 <= indice < len(figli):
+        _scrivi(figli[indice], passi[1:], valore)
+
+
+def reinserisci_testi(documento, testi: dict[str, str]):
+    """Il documento con i testi sostituiti ai loro percorsi.
+
+    Non modifica l'originale. Un percorso che non esiste piu' viene ignorato:
+    il documento puo' essere cambiato mentre la traduzione era in corso, e in
+    quel caso si perde una frase, non l'articolo.
+    """
+    import copy
+
+    if not isinstance(documento, dict):
+        return documento
+    copia = copy.deepcopy(documento)
+    for chiave, valore in (testi or {}).items():
+        passi = [p if p == 'alt' else int(p)
+                 for p in chiave.split('.') if p != '']
+        _scrivi(copia, passi, valore)
+    return copia

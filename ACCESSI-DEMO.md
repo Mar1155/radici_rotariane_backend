@@ -57,6 +57,35 @@ Unica cosa che il reset non riporta indietro: i **loghi dei partner**, che sono
 file caricati e non testo. `build_pages_statiche` dice quali mancano; si
 ricaricano da `/cms/` con lo stesso titolo e si rilancia.
 
+## Traduzione automatica
+
+Pagine e articoli si traducono con un modello linguistico, guidato dal glossario
+in `traduzione/glossario.py` (i nomi dei Club non si traducono, "Azione
+internazionale" diventa "International Service", e così via).
+
+Serve una chiave:
+
+```bash
+# .env
+ANTHROPIC_API_KEY=sk-ant-...
+TRANSLATION_ENGINE=claude      # è già il default
+```
+
+**Senza chiave il sito continua a funzionare**: le traduzioni riportano il testo
+originale e finiscono nella coda di revisione, con un avviso nei log. Un
+articolo leggibile nella lingua sbagliata è meglio di un articolo assente.
+
+```bash
+python manage.py translate_pending              # quel che manca
+python manage.py translate_pending --forza      # anche quel che c'è già
+```
+
+Va su cron, non dentro una richiesta: tradurre un articolo lungo richiede
+secondi e nessuno deve aspettarli premendo "Pubblica". Le correzioni fatte a
+mano (`human_locked`) non vengono mai sovrascritte.
+
+Chat e forum non passano di qui: restano su DeepL, con la loro configurazione.
+
 ## Se il login rifiuta
 
 Il seed segna le email come verificate. Un account creato in altro modo (da

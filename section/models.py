@@ -128,6 +128,12 @@ class Card(models.Model):
         verbose_name="Ultimo aggiornamento"
     )
     
+    # In che lingua e' stato scritto. Serve a sapere cosa tradurre e cosa no,
+    # e a dire al lettore "scritto originariamente in italiano".
+    source_locale = models.CharField(
+        max_length=10, default='it', db_index=True,
+        verbose_name='lingua di stesura')
+
     is_published = models.BooleanField(
         default=True,
         verbose_name="Pubblicato",
@@ -371,9 +377,18 @@ class CardReport(models.Model):
 
 
 class CardTranslation(models.Model):
+    """La versione di un articolo in un'altra lingua.
+
+    Una riga per lingua: aggiungerne una non richiede migrazioni, che e' cio'
+    che rende vero "aggiungere una lingua costa tre righe di configurazione".
+    """
+
     PROVIDER_CHOICES = [
+        ('claude', 'Modello linguistico'),
         ('deepl', 'DeepL'),
         ('google', 'Google Cloud Translation'),
+        ('identita', 'Nessuna traduzione (testo originale)'),
+        ('umano', 'Scritta da una persona'),
     ]
 
     card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='translations')
@@ -383,10 +398,26 @@ class CardTranslation(models.Model):
     # a Postgres come errore 'value too long' invece che come ValidationError.
     translated_title = models.TextField()
     translated_subtitle = models.TextField(blank=True)
-    translated_content = models.TextField(blank=True)
+    translated_location = models.TextField(blank=True)
+    # Il corpo tradotto e' un documento, non testo: i nodi di testo si
+    # sostituiscono al loro posto e la formattazione non passa dal traduttore.
+    translated_body = models.JSONField(null=True, blank=True)
+    translated_info_values = models.JSONField(default=dict, blank=True)
+
     provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
     detected_source_language = models.CharField(max_length=10, blank=True, null=True)
+
+    # Una correzione fatta a mano non va sovrascritta dalla ri-traduzione
+    # automatica: chi l'ha scritta ne sapeva piu' della macchina.
+    human_locked = models.BooleanField(
+        default=False, verbose_name='corretta a mano')
+    # Tradotta senza un motore vero, o con un motore che non garantisce il
+    # glossario: e' la coda di revisione.
+    needs_review = models.BooleanField(
+        default=False, db_index=True, verbose_name='da rivedere')
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('card', 'target_language')

@@ -26,7 +26,11 @@ class CardTranslationSerializer(serializers.ModelSerializer):
             'target_language',
             'translated_title',
             'translated_subtitle',
-            'translated_content',
+            'translated_location',
+            'translated_body',
+            'translated_info_values',
+            'needs_review',
+            'human_locked',
             'provider',
             'detected_source_language',
             'created_at',
@@ -47,6 +51,14 @@ class CardSerializer(serializers.ModelSerializer):
     geo_area = serializers.SerializerMethodField(read_only=True)
     article_type = serializers.SlugRelatedField(slug_field='key', read_only=True)
     assets = serializers.SerializerMethodField(read_only=True)
+    # I campi testuali arrivano gia' nella lingua richiesta: e' il server a
+    # scegliere fra originale e traduzione, non il client ad assemblarli.
+    title = serializers.SerializerMethodField()
+    subtitle = serializers.SerializerMethodField()
+    location = serializers.SerializerMethodField()
+    body = serializers.SerializerMethodField()
+    info_values = serializers.SerializerMethodField()
+    translated_from = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -82,6 +94,8 @@ class CardSerializer(serializers.ModelSerializer):
             'club_id',
             'article_type',
             'info_values',
+            'source_locale',
+            'translated_from',
             'is_saved',
             'saved_by_users',
             'geo_area',
@@ -140,6 +154,59 @@ class CardSerializer(serializers.ModelSerializer):
                 return getattr(club, 'id', None) or getattr(club, 'name', None)
         return None
 
+
+    # --- Lingua richiesta ----------------------------------------------------
+
+    def _lingua(self):
+        richiesta = self.context.get('locale')
+        if not richiesta:
+            req = self.context.get('request')
+            richiesta = req.GET.get('locale') if req else None
+        return (richiesta or '').strip().lower() or None
+
+    def _traduzione(self, obj):
+        """La traduzione da usare, o None se si mostra l'originale."""
+        if '_traduzione' in self.__dict__.setdefault('_cache', {}).get(obj.pk, {}):
+            return self._cache[obj.pk]['_traduzione']
+        lingua = self._lingua()
+        trovata = None
+        if lingua and lingua != (obj.source_locale or 'it'):
+            trovata = next(
+                (t for t in obj.translations.all() if t.target_language == lingua),
+                None)
+        self._cache.setdefault(obj.pk, {})['_traduzione'] = trovata
+        return trovata
+
+    def get_title(self, obj):
+        t = self._traduzione(obj)
+        return (t.translated_title or obj.title) if t else obj.title
+
+    def get_subtitle(self, obj):
+        t = self._traduzione(obj)
+        return (t.translated_subtitle or obj.subtitle) if t else obj.subtitle
+
+    def get_location(self, obj):
+        t = self._traduzione(obj)
+        return (t.translated_location or obj.location) if t else obj.location
+
+    def get_body(self, obj):
+        t = self._traduzione(obj)
+        return (t.translated_body or obj.body) if t else obj.body
+
+    def get_info_values(self, obj):
+        t = self._traduzione(obj)
+        if t and t.translated_info_values:
+            # I valori tradotti, con quelli non tradotti al loro posto.
+            return {**(obj.info_values or {}), **t.translated_info_values}
+        return obj.info_values
+
+    def get_translated_from(self, obj):
+        """La lingua originale, quando si sta leggendo una traduzione.
+
+        `None` quando si legge l'originale: e' cosi' che il frontend sa se
+        mostrare la nota "scritto originariamente in ...".
+        """
+        return (obj.source_locale or 'it') if self._traduzione(obj) else None
 
     def get_assets(self, obj):
         """Le immagini citate dal corpo, risolte in indirizzi.

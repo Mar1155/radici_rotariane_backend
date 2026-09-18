@@ -8,7 +8,6 @@ urlpatterns = [
     path('cards/<slug:slug>', views.get_card, name='get-card'),
     path('cards/<slug:slug>/save/', views.toggle_save_card, name='toggle-save-card'),
     path('cards/<slug:slug>/report/', views.report_card, name='report-card'),
-    path('cards/<slug:slug>/translate/', views.translate_card, name='translate-card'),
     # Gli articoli si indirizzano per TIPO, non per sezione: e' il tipo a dire
     # a quale elenco appartengono. La sezione e' diventata una pagina del CMS
     # che sceglie quale tipo mostrare.

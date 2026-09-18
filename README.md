@@ -20,6 +20,7 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 python manage.py migrate
 python manage.py build_site     # pagine, menu, tipi di articolo, geografia
 python manage.py seed_demo      # account, articoli, forum, chat
+python manage.py translate_pending   # traduzioni (serve ANTHROPIC_API_KEY)
 ```
 
 ## Dati di prova
