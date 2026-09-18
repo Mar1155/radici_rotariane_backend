@@ -454,3 +454,65 @@ class BozzeVisibiliTest(TestCase):
         Card.objects.create(slug='piu-recente', title='Recente', article_type=tipo,
                             author=self.autore, is_published=False)
         self.assertEqual(self.elenco(self._suo(), stato='bozze')[0], 'piu-recente')
+
+class AndataERitornoTest(TestCase):
+    """Cio' che il form scrive deve tornare indietro quando si riapre.
+
+    `location` si salvava e l'API non lo restituiva: non era nei campi del
+    serializer. Riaprendo una bozza spariva, ed e' obbligatorio per meta' dei
+    tipi — quindi la bozza non si poteva piu' pubblicare senza riscriverlo.
+    Il test guarda l'elenco dei campi, non un caso particolare: e' l'unico modo
+    perche' il prossimo campo aggiunto non sparisca allo stesso modo.
+    """
+
+    # Cio' che il form invia, col nome che ha sul modello.
+    INVIATI = {
+        'title': 'title', 'subtitle': 'subtitle', 'coverImage': 'cover_image',
+        'galleryFiles': 'attachments', 'tags': 'tags', 'body': 'body',
+        'dateType': 'date_type', 'date': 'date', 'dateStart': 'date_start',
+        'dateEnd': 'date_end', 'location': 'location', 'infoValues': 'info_values',
+        'geoArea': 'geo_area', 'isPublished': 'is_published',
+    }
+
+    def test_ogni_campo_scritto_e_anche_letto(self):
+        from section.serializers import CardSerializer
+        esposti = set(CardSerializer.Meta.fields)
+        mancanti = {k: v for k, v in self.INVIATI.items() if v not in esposti}
+        self.assertEqual(mancanti, {},
+                         f'Campi che si salvano ma non tornano indietro: {mancanti}')
+
+    def test_un_articolo_completo_si_riapre_uguale(self):
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        call_command('seed_geo', verbosity=0)
+        call_command('seed_article_types', verbosity=0)
+
+        autore = User.objects.create_user(
+            username='rt', email='rt@prova.it', password='prova12345')
+        autore.email_verified_at = timezone.now()
+        autore.save()
+        c = APIClient()
+        c.force_authenticate(user=autore)
+
+        doc = {'type': 'doc', 'content': [paragrafo('Il corpo')]}
+        creata = c.post('/api/section/articles/itinerario/create', {
+            'title': 'Andata', 'subtitle': 'e ritorno', 'location': 'Siena',
+            'geoArea': 'siena', 'tags': '[]', 'infoValues': '{"giorni":"4"}',
+            'body': json.dumps(doc), 'coverImage': immagine(),
+            'isPublished': 'false',
+        })
+        self.assertEqual(creata.status_code, 201, creata.content[:300])
+
+        riaperta = c.get('/api/section/cards/andata').json()
+        self.assertEqual(riaperta['title'], 'Andata')
+        self.assertEqual(riaperta['subtitle'], 'e ritorno')
+        self.assertEqual(riaperta['location'], 'Siena')
+        self.assertEqual(riaperta['geo_area']['key'], 'siena')
+        self.assertEqual(riaperta['info_values'], {'giorni': '4'})
+        self.assertEqual(riaperta['body']['content'][0]['type'], 'paragraph')
+        self.assertTrue(riaperta['cover_image'])
+        self.assertFalse(riaperta['is_published'])

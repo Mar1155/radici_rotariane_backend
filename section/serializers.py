@@ -60,6 +60,11 @@ class CardSerializer(serializers.ModelSerializer):
             'tags',
             'body',
             'assets',
+            # `location` e' il testo che si legge sulla card; `geo_area` e' cio'
+            # su cui filtra la ricerca. Servono entrambi, e mancava il primo:
+            # si salvava e l'API non lo restituiva, quindi riaprendo una bozza
+            # spariva — ed e' obbligatorio per meta' dei tipi.
+            'location',
             'date_type',
             'date',
             'date_start',
