@@ -276,3 +276,96 @@ class BiografiaTest(TestCase):
         salvata = self._salva('<p>Sono <strong>Anna</strong> e faccio <em>questo</em>.</p>')
         self.assertIn('<strong>Anna</strong>', salvata)
         self.assertIn('<em>questo</em>', salvata)
+
+class BozzeEGeografiaTest(TestCase):
+    """I difetti che hanno reso inutilizzabile la creazione articoli.
+
+    Erano quattro, e tre avevano una causa diversa da quella che sembrava.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        # La geografia prima dei tipi, come in `build_site`: e' da li' che
+        # `seed_article_types` capisce quali tag sono in realta' luoghi.
+        call_command('seed_geo', verbosity=0)
+        call_command('seed_article_types', verbosity=0)
+        cls.socio = User.objects.create_user(
+            username='a3', email='a3@prova.it', password='prova12345')
+        cls.socio.email_verified_at = timezone.now()
+        cls.socio.save()
+
+    def client_auth(self):
+        c = APIClient()
+        c.force_authenticate(user=self.socio)
+        return c
+
+    def test_una_bozza_col_solo_titolo_si_salva(self):
+        """Il server validava anche le bozze, e "salva bozza" rispondeva
+        chiedendo campi che stanno in un'altra parte del form."""
+        r = self.client_auth().post('/api/section/articles/storia/create', {
+            'title': 'Appena iniziata', 'isPublished': 'false',
+            'tags': '[]', 'infoValues': '{}',
+        })
+        self.assertEqual(r.status_code, 201, r.content[:300])
+        self.assertFalse(Card.objects.get(slug='appena-iniziata').is_published)
+
+    def test_pubblicare_invece_valida(self):
+        r = self.client_auth().post('/api/section/articles/storia/create', {
+            'title': 'Incompleta', 'isPublished': 'true',
+            'tags': '[]', 'infoValues': '{}',
+        })
+        self.assertEqual(r.status_code, 400)
+
+    def test_nessun_tipo_chiede_cio_che_non_si_puo_dare(self):
+        """`itinerario` aveva i tag obbligatori e zero tag ammessi: nessuno
+        poteva pubblicare, e dal form non si capiva perche'."""
+        for tipo in ArticleType.objects.all():
+            if 'tags' in (tipo.required_fields or []):
+                self.assertTrue(tipo.allowed_tags.exists(),
+                                f'{tipo.key}: tag obbligatori ma nessuno ammesso')
+            if 'infoElements' in (tipo.required_fields or []):
+                self.assertTrue(tipo.info_elements.exists(), tipo.key)
+
+    def test_il_modello_rifiuta_lo_stato_impossibile(self):
+        from django.core.exceptions import ValidationError
+        tipo = ArticleType.objects.get(key='storia')
+        tipo.allowed_tags.all().delete()
+        tipo.active_fields = list(set(tipo.active_fields) | {'tags'})
+        tipo.required_fields = list(set(tipo.required_fields) | {'tags'})
+        with self.assertRaises(ValidationError):
+            tipo.full_clean()
+
+    def test_l_area_geografica_si_puo_impostare(self):
+        """La tassonomia e il filtro esistevano dalla fase 4, ma un articolo
+        scritto dall'app non poteva avere un'area: non era impostabile."""
+        r = self.client_auth().post('/api/section/articles/itinerario/create', {
+            'title': 'Con area', 'subtitle': 's', 'location': 'Siena',
+            'geoArea': 'siena', 'tags': '[]', 'infoValues': '{"giorni":"3"}',
+            'coverImage': immagine(), 'isPublished': 'false',
+        })
+        self.assertEqual(r.status_code, 201, r.content[:300])
+        card = Card.objects.get(slug='con-area')
+        self.assertIsNotNone(card.geo_area)
+        self.assertEqual(card.geo_area.key, 'siena')
+
+    def test_il_filtro_geografico_e_gerarchico(self):
+        c = self.client_auth()
+        r = c.post('/api/section/articles/itinerario/create', {
+            'title': 'In Toscana', 'subtitle': 's', 'location': 'Siena',
+            'geoArea': 'siena', 'tags': '[]', 'infoValues': '{"giorni":"3"}',
+            'coverImage': immagine(),
+            'body': json.dumps({'type': 'doc', 'content': [paragrafo('Il percorso')]}),
+        })
+        self.assertEqual(r.status_code, 201, r.content[:300])
+        def slugs(area):
+            return [x['slug'] for x in
+                    self.client.get('/api/section/articles/', {'geo': area}).json()]
+        self.assertIn('in-toscana', slugs('siena'))
+        self.assertIn('in-toscana', slugs('toscana'))   # la regione contiene la provincia
+        self.assertNotIn('in-toscana', slugs('lombardia'))

@@ -140,6 +140,10 @@ class Command(BaseCommand):
                 # la tassonomia geografica. Riconosciuti confrontandoli con
                 # l'albero invece che con un elenco scritto a mano, cosi' la
                 # regola resta vera anche per sezioni future.
+                #
+                # DIPENDENZA: serve che `seed_geo` sia gia' girato. Senza
+                # l'albero, i luoghi restano tag e un tipo puo' finire con i
+                # tag obbligatori e nessun tag da scegliere.
                 chiavi_geo = set(
                     GeoArea.objects.filter(key__in=tdata.get('tags') or [])
                     .values_list('key', flat=True)

@@ -43,6 +43,13 @@ class ArticleTypeCoverageTest(TestCase):
                 t, cfg = self._tipo(sezione, tab), self._tab(sezione, tab)
                 nascosti = set(cfg['fields'].get('hidden') or [])
                 attesi = [f for f in vocab.FIELD_KEYS if f not in nascosti]
+                # Se i tag di quel tab erano TUTTI luoghi, il concetto e'
+                # passato alla tassonomia geografica e il campo non esiste piu'
+                # per questo tipo. Tenerlo obbligatorio rendeva `itinerario`
+                # impossibile da pubblicare: si chiedeva un tag e non ce n'era
+                # nessuno da scegliere.
+                if not t.allowed_tags.exists() and (cfg.get('tags') or []):
+                    attesi = [f for f in attesi if f != 'tags']
                 self.assertEqual(sorted(t.active_fields), sorted(attesi))
                 # nessun campo nascosto e' rimasto attivo
                 self.assertFalse(set(t.active_fields) & nascosti)
@@ -53,6 +60,10 @@ class ArticleTypeCoverageTest(TestCase):
                     if f == 'gallery':
                         self.assertTrue(t.field_is_active(f))
                         self.assertFalse(t.field_is_required(f))
+                    elif f == 'tags' and not t.allowed_tags.exists():
+                        # Vedi sopra: i tag erano luoghi, e sono diventati geografia.
+                        self.assertFalse(t.field_is_active(f))
+                        self.assertTrue(t.uses_geo)
                     else:
                         self.assertTrue(t.field_is_required(f))
 

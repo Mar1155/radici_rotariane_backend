@@ -29,6 +29,13 @@ from chat.services.translation import (
 )
 
 
+def _area_geografica(chiave, tipo):
+    """L'area scelta, se il tipo usa la geografia. `None` se non c'e'."""
+    if not chiave or not tipo.uses_geo:
+        return None
+    return GeoArea.objects.filter(key=chiave, is_active=True).first()
+
+
 def _puo_gestire(user, card) -> bool:
     """Chi ha scritto l'articolo, o un amministratore."""
     if not getattr(user, 'is_authenticated', False):
@@ -146,6 +153,7 @@ def create_article(request, type_key):
         date_type = request.data.get('dateType', 'none')
         location = request.data.get('location')
         info_values_json = request.data.get('infoValues')
+        geo_key = (request.data.get('geoArea') or '').strip()
         gallery_files = request.FILES.getlist('galleryFiles')
         
         # Estrai date
@@ -194,6 +202,11 @@ def create_article(request, type_key):
             'location': location,
             'author': request.user,
             'info_values': info_values,
+            # L'area geografica e' cio' su cui filtra la ricerca. Finora non era
+            # impostabile da nessuna parte: la tassonomia e il filtro esistevano
+            # dalla fase 4, ma un articolo scritto dall'app non poteva averla, e
+            # quindi non compariva mai in un filtro per regione.
+            'geo_area': _area_geografica(geo_key, tipo),
             # Il primo passo del form salva una bozza; il secondo pubblica.
             # Prima `is_published` esisteva come colonna ma non come flusso: un
             # articolo nasceva pubblicato, e non c'era modo di metterlo via.
@@ -401,6 +414,9 @@ def get_card(request, slug):
         card.subtitle = data.get('subtitle') or None
     if 'body' in data:
         card.body = corpo
+    if 'geoArea' in data:
+        card.geo_area = _area_geografica((data.get('geoArea') or '').strip(),
+                                         card.article_type)
     if 'isPublished' in data:
         card.is_published = str(data.get('isPublished')).lower() != 'false'
     if 'location' in data:

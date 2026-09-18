@@ -19,8 +19,12 @@ from django.db import transaction
 from cms.bootstrap import assicura_homepage
 
 PASSI = [
-    ('seed_article_types', 'tipi di articolo'),
+    # La geografia PRIMA dei tipi: `seed_article_types` riconosce quali tag
+    # sono in realta' luoghi confrontandoli con l'albero geografico, e senza
+    # l'albero li tratta come tag normali. E' cosi' che `itinerario` finiva con
+    # i tag obbligatori e nessun tag ammesso: impossibile da pubblicare.
     ('seed_geo', 'aree geografiche'),
+    ('seed_article_types', 'tipi di articolo'),
     ('build_pages_statiche', 'pagine a contenuto fisso'),
     ('build_pages_sezioni', 'pagine sezione'),
     ('build_page_home', 'homepage'),
