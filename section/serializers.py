@@ -46,6 +46,7 @@ class CardSerializer(serializers.ModelSerializer):
     saved_by_users = serializers.SerializerMethodField(read_only=True)
     geo_area = serializers.SerializerMethodField(read_only=True)
     article_type = serializers.SlugRelatedField(slug_field='key', read_only=True)
+    assets = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Card
@@ -57,7 +58,8 @@ class CardSerializer(serializers.ModelSerializer):
             'cover_image',
             'attachments',
             'tags',
-            'content',
+            'body',
+            'assets',
             'date_type',
             'date',
             'date_start',
@@ -134,14 +136,37 @@ class CardSerializer(serializers.ModelSerializer):
         return None
 
 
+    def get_assets(self, obj):
+        """Le immagini citate dal corpo, risolte in indirizzi.
+
+        Il corpo memorizza l'identificativo, mai l'indirizzo: se i file si
+        spostano, gli articoli non vanno toccati. Il prezzo e' questa tabella
+        di risoluzione, che viaggia accanto al documento invece che dentro.
+        """
+        from cms.media import url_assoluto
+        from .media_refs import identificativi_media
+        from .models import MediaAsset
+
+        ids = identificativi_media(obj.body)
+        if not ids:
+            return {}
+        return {
+            str(a.id): {
+                'url': url_assoluto(a.file.url),
+                'width': a.width, 'height': a.height, 'alt': a.alt,
+            }
+            for a in MediaAsset.objects.filter(id__in=ids)
+        }
+
+
 class CardListSerializer(CardSerializer):
     """Serializer per gli ENDPOINT DI LISTA.
 
-    Identico a CardSerializer ma senza `content`: il corpo di un articolo non
+    Identico a CardSerializer ma senza `body`: il corpo di un articolo non
     serve per disegnare una card in griglia, e includerlo rende ogni risposta
     di lista pesante quanto la somma di tutti gli articoli della sezione.
     Il corpo resta disponibile sul dettaglio (GET /api/section/cards/<slug>).
     """
 
     class Meta(CardSerializer.Meta):
-        fields = [f for f in CardSerializer.Meta.fields if f != 'content']
+        fields = [f for f in CardSerializer.Meta.fields if f != 'body']

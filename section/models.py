@@ -79,11 +79,13 @@ class Card(models.Model):
     
     # Contenuto ricco (HTML dall'editor)
     # TextField supporta testo molto grande (fino a ~2GB in PostgreSQL)
-    content = models.TextField(
+    # Documento ProseMirror, non HTML. La forma e la validazione stanno in
+    # `section/schema.py`, insieme alla ragione per cui non e' HTML.
+    body = models.JSONField(
         null=True,
         blank=True,
-        verbose_name="Contenuto",
-        help_text="Contenuto HTML dell'articolo"
+        verbose_name="Corpo",
+        help_text="Documento strutturato dell'articolo"
     )
     
     # Gestione date
@@ -288,6 +290,38 @@ class Card(models.Model):
         """
         super().clean()
         self.validate_consistency()
+
+class MediaAsset(models.Model):
+    """Un'immagine caricata, riferita dal corpo di un articolo.
+
+    Il corpo memorizza l'**identificativo**, non un indirizzo: se un giorno i
+    file si spostano (altro bucket, altro dominio), gli articoli non vanno
+    toccati. Un indirizzo dentro il testo e' una dipendenza nascosta che si
+    scopre solo quando si rompe.
+    """
+
+    file = models.ImageField(upload_to='articoli/%Y/%m/', verbose_name='file')
+    # Sul contenuto normalizzato: caricare due volte la stessa foto non
+    # duplica niente.
+    checksum = models.CharField(max_length=64, unique=True, db_index=True,
+                                verbose_name='impronta')
+    width = models.PositiveIntegerField(verbose_name='larghezza')
+    height = models.PositiveIntegerField(verbose_name='altezza')
+    byte_size = models.PositiveIntegerField(verbose_name='peso in byte')
+    alt = models.CharField(max_length=255, blank=True, verbose_name='testo alternativo')
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='media', verbose_name='caricata da')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'immagine'
+        verbose_name_plural = 'immagini'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.file.name} ({self.width}x{self.height})'
+
 
 class CardAttachment(models.Model):
     FILE_TYPE_CHOICES = [

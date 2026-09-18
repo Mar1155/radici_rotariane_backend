@@ -14,4 +14,6 @@ urlpatterns = [
     # che sceglie quale tipo mostrare.
     path('articles/', views.list_articles, name='list-articles'),
     path('articles/<slug:type_key>/create', views.create_article, name='create-article'),
+    # Le immagini del corpo si caricano qui: e' cio' che le tiene fuori dal testo.
+    path('media/upload/', views.upload_media, name='upload-media'),
 ]

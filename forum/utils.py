@@ -1,36 +1,11 @@
-"""Utility helpers for the forum app."""
+"""Utility del forum.
 
-from __future__ import annotations
+La sanitizzazione del testo ricco e' passata in `common/richtext.py`: la usano
+anche le biografie di soci e club, e `users` non deve dipendere da `forum`.
+"""
 
-import bleach
-from bleach.css_sanitizer import CSSSanitizer
-
-ALLOWED_RICH_TEXT_TAGS = [
-    'p', 'strong', 'em', 'u', 's', 'blockquote', 'ul', 'ol', 'li', 'a',
-    'h1', 'h2', 'h3', 'br', 'span'
-]
-
-ALLOWED_RICH_TEXT_ATTRIBUTES = {
-    '*': ['class'],
-    'a': ['href', 'title', 'target', 'rel'],
-    'p': ['style'],
-    'h1': ['style'],
-    'h2': ['style'],
-    'h3': ['style'],
-    'span': ['style'],
-}
-
-_css_sanitizer = CSSSanitizer(allowed_css_properties=['text-align'])
-_rich_text_cleaner = bleach.Cleaner(
-    tags=ALLOWED_RICH_TEXT_TAGS,
-    attributes=ALLOWED_RICH_TEXT_ATTRIBUTES,
-    css_sanitizer=_css_sanitizer,
-    strip=True,
+from common.richtext import (  # noqa: F401  (ri-esportati per compatibilita')
+    ATTRIBUTI_AMMESSI as ALLOWED_RICH_TEXT_ATTRIBUTES,
+    TAG_AMMESSI as ALLOWED_RICH_TEXT_TAGS,
+    sanitize_rich_text,
 )
-
-
-def sanitize_rich_text(value: str) -> str:
-    """Sanitize rich text HTML to the subset that we support."""
-    if not value:
-        return ''
-    return _rich_text_cleaner.clean(value).strip()

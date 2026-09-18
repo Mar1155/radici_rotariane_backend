@@ -14,7 +14,7 @@ from .serializers import (
     CommentCreateSerializer,
     PostTranslationSerializer,
 )
-from .utils import sanitize_rich_text
+from common.richtext import sanitize_rich_text
 from chat.services.translation import (
     TranslationProviderError,
     TranslationServiceNotConfigured,

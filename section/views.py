@@ -5,10 +5,13 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.permissions import ruolo_applicativo
-from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
+from .media import ImmagineNonValida, normalizza
+from .models import (Card, CardAttachment, CardReport, CardTranslation,
+                     MediaAsset, SavedCard)
 from .serializers import CardSerializer, CardListSerializer, CardTranslationSerializer
-from .sanitizers import sanitize_article_html
+from .schema import CorpoNonValido, pulisci_corpo, testo_semplice
 from cms.models import GeoArea
+from cms.media import url_assoluto
 from cms.models import ArticleType
 import json
 from datetime import datetime
@@ -16,7 +19,7 @@ import traceback
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.db import transaction
-from forum.utils import sanitize_rich_text
+from common.richtext import sanitize_rich_text
 from chat.services.translation import (
     TranslationProviderError,
     TranslationServiceNotConfigured,
@@ -24,6 +27,32 @@ from chat.services.translation import (
     supported_languages,
     translate_text,
 )
+
+
+def _puo_gestire(user, card) -> bool:
+    """Chi ha scritto l'articolo, o un amministratore."""
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    if ruolo_applicativo(user) == 'admin':
+        return True
+    return bool(card.author_id and card.author_id == user.id)
+
+
+def _corpo_da_richiesta(request, tipo):
+    """Il corpo dell'articolo, ripulito contro la palette del suo tipo.
+
+    Arriva come JSON dentro un FormData (l'articolo si invia insieme ai file),
+    quindi puo' essere una stringa da decodificare o gia' un oggetto.
+    """
+    grezzo = request.data.get('body')
+    if grezzo in (None, '', 'null'):
+        return None
+    if isinstance(grezzo, str):
+        try:
+            grezzo = json.loads(grezzo)
+        except json.JSONDecodeError:
+            raise CorpoNonValido('Il corpo non e JSON valido.')
+    return pulisci_corpo(grezzo, tipo.body_blocks)
 
 
 def validate_article_fields(tipo, valori, info_values=None):
@@ -113,7 +142,7 @@ def create_article(request, type_key):
         subtitle = request.data.get('subtitle')
         cover_image = request.FILES.get('coverImage')
         tags_json = request.data.get('tags')
-        content = sanitize_article_html(request.data.get('content'))
+        corpo = _corpo_da_richiesta(request, tipo)
         date_type = request.data.get('dateType', 'none')
         location = request.data.get('location')
         info_values_json = request.data.get('infoValues')
@@ -137,7 +166,7 @@ def create_article(request, type_key):
         
         # 4. Validazione centralizzata di tutti i campi richiesti
         is_valid, error_msg = validate_article_fields(tipo, {
-            'title': title, 'subtitle': subtitle, 'content': content,
+            'title': title, 'subtitle': subtitle, 'content': corpo,
             'coverImage': cover_image, 'tags': tags, 'location': location,
             'gallery': gallery_files, 'date': has_date,
         }, info_values)
@@ -155,12 +184,15 @@ def create_article(request, type_key):
             'subtitle': subtitle,
             'cover_image': cover_image,
             'tags': tags,
-            'content': content,
+            'body': corpo,
             'date_type': date_type,
             'location': location,
             'author': request.user,
             'info_values': info_values,
-            'is_published': True,
+            # Il primo passo del form salva una bozza; il secondo pubblica.
+            # Prima `is_published` esisteva come colonna ma non come flusso: un
+            # articolo nasceva pubblicato, e non c'era modo di metterlo via.
+            'is_published': str(request.data.get('isPublished', 'true')).lower() != 'false',
         }
         
         # Aggiungi date in base al tipo
@@ -281,10 +313,11 @@ def get_card(request, slug):
     PATCH/DELETE consentiti solo al proprietario o superuser.
     """
     try:
-        if request.method == 'GET':
-            card = Card.objects.get(slug=slug, is_published=True)
-        else:
-            card = Card.objects.get(slug=slug)
+        card = Card.objects.get(slug=slug)
+        if request.method == 'GET' and not card.is_published:
+            # Una bozza la vede solo chi l'ha scritta, e gli amministratori.
+            if not _puo_gestire(request.user, card):
+                raise Card.DoesNotExist
     except Card.DoesNotExist:
         return Response(
             {'error': 'Card non trovata'},
@@ -304,7 +337,7 @@ def get_card(request, slug):
             status=status.HTTP_401_UNAUTHORIZED
         )
 
-    if not (request.user.is_superuser or (card.author_id and card.author_id == request.user.id)):
+    if not _puo_gestire(request.user, card):
         return Response(
             {'error': 'Non autorizzato'},
             status=status.HTTP_403_FORBIDDEN
@@ -331,7 +364,7 @@ def get_card(request, slug):
     # Prepara i dati per la validazione (usa valori attuali se non forniti)
     title = data.get('title') if 'title' in data else card.title
     subtitle = data.get('subtitle') if 'subtitle' in data else card.subtitle
-    content = sanitize_article_html(data.get('content')) if 'content' in data else card.content
+    corpo = _corpo_da_richiesta(request, card.article_type) if 'body' in data else card.body
     cover_image = request.FILES.get('coverImage') if 'coverImage' in request.FILES else card.cover_image
     tags = parse_json_field(data.get('tags'), None) if 'tags' in data else card.tags
     location = data.get('location') if 'location' in data else card.location
@@ -342,7 +375,7 @@ def get_card(request, slug):
     
     # Validazione centralizzata
     is_valid, error_msg = validate_article_fields(card.article_type, {
-        'title': title, 'subtitle': subtitle, 'content': content,
+        'title': title, 'subtitle': subtitle, 'content': corpo,
         'coverImage': cover_image, 'tags': tags, 'location': location,
         'gallery': gallery_files, 'date': has_date,
     }, info_values)
@@ -358,8 +391,10 @@ def get_card(request, slug):
         card.title = data.get('title') or None
     if 'subtitle' in data:
         card.subtitle = data.get('subtitle') or None
-    if 'content' in data:
-        card.content = sanitize_article_html(data.get('content')) or None
+    if 'body' in data:
+        card.body = corpo
+    if 'isPublished' in data:
+        card.is_published = str(data.get('isPublished')).lower() != 'false'
     if 'location' in data:
         card.location = data.get('location') or None
 
@@ -467,7 +502,7 @@ def translate_card(request, slug):
         serializer = CardTranslationSerializer(existing)
         return Response(serializer.data)
 
-    if not (card.title or card.subtitle or card.content):
+    if not (card.title or card.subtitle or card.body):
         return Response(
             {'detail': 'La card è vuota, impossibile tradurre.'},
             status=status.HTTP_400_BAD_REQUEST
@@ -477,7 +512,7 @@ def translate_card(request, slug):
         title_result = translate_text(card.title or '', normalized_language)
         subtitle_result = translate_text(card.subtitle or '', normalized_language)
         content_result = translate_text(
-            card.content or '',
+            testo_semplice(card.body),
             normalized_language,
             text_format='html'
         )
@@ -489,9 +524,12 @@ def translate_card(request, slug):
     except TranslationProviderError as exc:
         return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
-    # sanitize_article_html (non quello del forum): conserva le immagini,
-    # che l'allowlist del forum eliminerebbe dalla versione tradotta.
-    safe_content = sanitize_article_html(content_result.text) if content_result.text else ''
+    # Il corpo si traduce come testo semplice, estratto dal documento. Non e'
+    # una perdita rispetto a prima: il servizio di traduzione riceveva HTML e
+    # restituiva HTML che perdeva comunque le immagini. La traduzione che
+    # conserva la struttura arriva con la traduzione automatica, dove i nodi di
+    # testo si sostituiscono per percorso dentro il documento.
+    safe_content = content_result.text or ''
 
     with transaction.atomic():
         translation, created = CardTranslation.objects.update_or_create(
@@ -618,10 +656,54 @@ def list_user_cards(request):
             )
         target_user = request.user
 
-    cards_qs = Card.objects.filter(author=target_user, is_published=True).select_related('author')
+    cards_qs = Card.objects.filter(author=target_user).select_related('author')
+    # Le bozze le vede solo chi le ha scritte: a chiunque altro il profilo
+    # mostra ciò che è pubblicato.
+    if not _puo_gestire(request.user, Card(author_id=target_user.id)):
+        cards_qs = cards_qs.filter(is_published=True)
     if tipo_key:
         cards_qs = cards_qs.filter(article_type__key=tipo_key)
     cards_qs = cards_qs.order_by('-created_at')
 
     serializer = CardListSerializer(cards_qs, many=True, context={'request': request})
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([IsAuthenticated])
+def upload_media(request):
+    """Carica un'immagine per il corpo di un articolo.
+
+    E' il pezzo che impedisce alle immagini di tornare dentro il testo come
+    base64: l'editor chiama questa, riceve un identificativo e lo mette nel
+    documento. Prima non esisteva, e incollare una foto era l'unico modo.
+    """
+    file = request.FILES.get('file')
+    if file is None:
+        return Response({'error': 'Nessun file.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        contenuto, meta = normalizza(file)
+    except ImmagineNonValida as e:
+        return Response({'error': ' '.join(e.messages)},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    # Stessa immagine gia' caricata: si riusa invece di duplicare il file.
+    asset = MediaAsset.objects.filter(checksum=meta['checksum']).first()
+    creato = asset is None
+    if creato:
+        asset = MediaAsset(uploaded_by=request.user, **meta)
+        asset.alt = (request.data.get('alt') or '')[:255]
+        asset.file.save(f"{meta['checksum'][:16]}.webp", contenuto, save=True)
+
+    return Response(
+        {
+            'id': asset.id,
+            'url': url_assoluto(asset.file.url),
+            'width': asset.width,
+            'height': asset.height,
+            'alt': asset.alt,
+        },
+        status=status.HTTP_201_CREATED if creato else status.HTTP_200_OK,
+    )

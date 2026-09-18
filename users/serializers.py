@@ -1,3 +1,4 @@
+from common.richtext import sanitize_rich_text
 import json
 import re
 from django.utils.text import slugify
@@ -356,6 +357,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'club', 'club_affiliation_name'
         ]
         read_only_fields = ['username', 'email', 'club_members_count', 'club_sister_clubs_count', 'is_superuser', 'is_email_verified']
+
+    def validate_bio(self, value):
+        """La biografia e HTML scritto da una persona: si ripulisce in scrittura.
+
+        Veniva salvata cosi' com'era e resa con `dangerouslySetInnerHTML` sul
+        profilo, sulla pagina del club e su /skills: bastava mettere uno
+        <script> nella propria bio perche' girasse a chiunque le aprisse.
+        """
+        return sanitize_rich_text(value or '')
 
     def validate_rotary_id(self, value):
         if value is None:

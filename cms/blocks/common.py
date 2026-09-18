@@ -8,6 +8,7 @@ from wagtail.images.blocks import ImageChooserBlock
 from wagtail.snippets.blocks import SnippetChooserBlock
 
 from cms import vocabularies as vocab
+from cms.media import url_assoluto
 
 # Superfici ammesse per lo sfondo di una sezione. Sono token, non colori:
 # il frontend li traduce in classi Tailwind gia' definite nel design system,
@@ -104,19 +105,6 @@ def percorso_pagina(page) -> str:
             percorso = '/' + percorso[len(prefisso):]
     return percorso.rstrip('/') or '/'
 
-
-def url_assoluto(url: str) -> str:
-    """Rende assoluto un URL di media.
-
-    Con S3 gli URL sono gia' assoluti; con lo storage su disco sono relativi
-    (`/media/...`), e il frontend gira su un'altra porta: un URL relativo
-    verrebbe cercato sul server Next, dove non c'e' nulla.
-    """
-    if not url or url.startswith(('http://', 'https://', '//')):
-        return url
-    base = (getattr(settings, 'MEDIA_BASE_URL', '')
-            or getattr(settings, 'WAGTAILADMIN_BASE_URL', '') or '')
-    return f'{base.rstrip("/")}{url}' if base else url
 
 
 class ImmagineBlock(ImageChooserBlock):

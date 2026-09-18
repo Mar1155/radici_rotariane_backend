@@ -663,14 +663,26 @@ class Command(BaseCommand):
         ],
     }
 
-    CORPO = (
-        "<p>{sottotitolo}</p>"
-        "<p>Questo e un contenuto di prova, inserito per poter esplorare la "
-        "piattaforma con le pagine gia popolate: mostra come si presenta un "
-        "articolo completo, con la copertina, le informazioni laterali e i tag.</p>"
-        "<p>I contenuti veri li inserisce chi amministra il sito, direttamente "
-        "dalla piattaforma e senza passare da uno sviluppatore.</p>"
-    )
+    def _corpo(self, sottotitolo):
+        """Un corpo di prova, come documento e non come HTML."""
+        def paragrafo(testo):
+            return {'type': 'paragraph',
+                    'content': [{'type': 'text', 'text': testo}]}
+
+        return {'type': 'doc', 'content': [
+            paragrafo(sottotitolo),
+            {'type': 'heading', 'attrs': {'level': 2},
+             'content': [{'type': 'text', 'text': 'Di cosa si tratta'}]},
+            paragrafo(
+                'Questo e un contenuto di prova, inserito per poter esplorare '
+                'la piattaforma con le pagine gia popolate: mostra come si '
+                'presenta un articolo completo, con la copertina, le '
+                'informazioni laterali e i tag.'),
+            paragrafo(
+                'I contenuti veri li inserisce chi amministra il sito, '
+                'direttamente dalla piattaforma e senza passare da uno '
+                'sviluppatore.'),
+        ]}
 
     # Valori plausibili per gli elementi informativi, per chiave.
     VALORI_INFO = {
@@ -748,8 +760,7 @@ class Command(BaseCommand):
                     geo_area=area,
                     title=titolo if "title" in attivi else None,
                     subtitle=sottotitolo if "subtitle" in attivi else None,
-                    content=(self.CORPO.format(sottotitolo=sottotitolo)
-                             if "content" in attivi else None),
+                    body=(self._corpo(sottotitolo) if "content" in attivi else None),
                     # `location` e il testo che si legge sulla card; `geo_area`
                     # e cio su cui filtra la ricerca. Servono entrambi.
                     location=(area.name if area else "Italia") if "location" in attivi else None,

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.html import strip_tags
 from rest_framework import serializers
 from .models import Post, Comment, PostTranslation
-from .utils import sanitize_rich_text
+from common.richtext import sanitize_rich_text
 
 User = get_user_model()
 
