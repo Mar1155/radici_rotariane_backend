@@ -173,6 +173,8 @@ class Message(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     body = models.TextField(blank=True)
+    source_locale = models.CharField(max_length=10, default='it',
+                                     verbose_name='lingua di stesura')
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     client_msg_id = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
 
@@ -181,11 +183,12 @@ class Message(models.Model):
 
 
 class MessageTranslation(models.Model):
-    """Stores cached translations for chat messages."""
+    """Un messaggio in un'altra lingua, tenuto in cache."""
 
     PROVIDER_CHOICES = [
-        ('deepl', 'DeepL'),
-        ('google', 'Google Cloud Translation'),
+        ('claude', 'Modello linguistico'),
+        ('identita', 'Nessuna traduzione (testo originale)'),
+        ('umano', 'Scritta da una persona'),
     ]
 
     id = models.BigAutoField(primary_key=True)
@@ -194,7 +197,10 @@ class MessageTranslation(models.Model):
     translated_text = models.TextField()
     provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
     detected_source_language = models.CharField(max_length=10, blank=True, null=True)
+    needs_review = models.BooleanField(default=False, db_index=True)
+    human_locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('message', 'target_language')

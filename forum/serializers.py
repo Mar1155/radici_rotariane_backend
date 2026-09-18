@@ -3,6 +3,7 @@ from django.utils.html import strip_tags
 from rest_framework import serializers
 from .models import Post, Comment, PostTranslation
 from common.richtext import sanitize_rich_text
+from traduzione.lettura import InLinguaDelLettore
 
 User = get_user_model()
 
@@ -16,8 +17,10 @@ class AuthorSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    """Serializer for comments with nested replies."""
+class CommentSerializer(InLinguaDelLettore, serializers.ModelSerializer):
+    """Un commento, nella lingua del lettore."""
+
+    campi_tradotti = {'text': 'translated_text'}
 
     author = AuthorSerializer(read_only=True)
     post_id = serializers.UUIDField(read_only=True)
@@ -32,6 +35,7 @@ class CommentSerializer(serializers.ModelSerializer):
             'parent_id',
             'author',
             'text',
+            'source_locale',
             'replies',
             'created_at',
             'updated_at',
@@ -79,15 +83,21 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         return Comment.objects.create(parent=parent, **validated_data)
 
 
-class PostListSerializer(serializers.ModelSerializer):
-    """Serializer for listing posts (without full description)."""
+class PostListSerializer(InLinguaDelLettore, serializers.ModelSerializer):
+    """Serializer for listing posts (without full description). Nella lingua del lettore."""
+
+    campi_tradotti = {'title': 'translated_title',
+                      'description': 'translated_description'}
+
     author = AuthorSerializer(read_only=True)
     comment_count = serializers.IntegerField(read_only=True)
     unread_comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'content_html', 'author',
+                  'source_locale',
+                  'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
         read_only_fields = ['id', 'author', 'comment_count', 'unread_comment_count', 'created_at', 'updated_at']
 
     def get_unread_comment_count(self, obj):
@@ -101,8 +111,12 @@ class PostListSerializer(serializers.ModelSerializer):
         return comments_qs.count()
 
 
-class PostDetailSerializer(serializers.ModelSerializer):
-    """Serializer for post detail view with nested comments."""
+class PostDetailSerializer(InLinguaDelLettore, serializers.ModelSerializer):
+    """Serializer for post detail view with nested comments. Nella lingua del lettore."""
+
+    campi_tradotti = {'title': 'translated_title',
+                      'description': 'translated_description'}
+
     author = AuthorSerializer(read_only=True)
     comments = serializers.SerializerMethodField()
     comment_count = serializers.IntegerField(read_only=True)
@@ -110,7 +124,9 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'description', 'content_html', 'author', 'comment_count', 'unread_comment_count', 'comments', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'description', 'content_html', 'author',
+                  'source_locale',
+                  'comment_count', 'unread_comment_count', 'comments', 'created_at', 'updated_at']
         read_only_fields = ['id', 'author', 'comment_count', 'unread_comment_count', 'comments', 'created_at', 'updated_at']
 
     def get_comments(self, obj):

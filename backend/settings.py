@@ -351,30 +351,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Translation settings
 # =============================================================================
 
-# --- Traduzione di pagine e articoli -----------------------------------------
-# Distinta da quella di chat e forum, che resta su DeepL: una conversazione non
-# e' un documento, e non deve dipendere dal glossario del Rotary.
+# Un solo motore per tutto cio' che una persona scrive: pagine, articoli, post,
+# commenti, messaggi. Prima conversazioni e documenti avevano due servizi, due
+# chiavi e un glossario solo, quindi lo stesso termine veniva tradotto in due
+# modi a seconda di dove fosse scritto.
 TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
 TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-opus-5')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
-TRANSLATION_SUPPORTED_LANGUAGES = config(
-    'TRANSLATION_SUPPORTED_LANGUAGES',
-    default='it,en,es,fr,de',
-    cast=Csv(),
-)
-TRANSLATION_PROVIDER_PRIORITY = config(
-    'TRANSLATION_PROVIDER_PRIORITY',
-    default='deepl,google',
-    cast=Csv(),
-)
-DEEPL_API_KEY = config('DEEPL_API_KEY', default=None)
-DEEPL_API_URL = config('DEEPL_API_URL', default='https://api-free.deepl.com/v2/translate')
-GOOGLE_TRANSLATE_API_KEY = config('GOOGLE_TRANSLATE_API_KEY', default=None)
-GOOGLE_TRANSLATE_API_URL = config(
-    'GOOGLE_TRANSLATE_API_URL',
-    default='https://translation.googleapis.com/language/translate/v2',
-)
+# Le lingue in cui si traduce sono quelle registrate (`CONTENT_LANGUAGES`), non
+# un secondo elenco: averne due significava poter tradurre una chat in spagnolo
+# mentre il sito lo spagnolo non ce l'ha.
 TRANSLATION_HTTP_TIMEOUT = config('TRANSLATION_HTTP_TIMEOUT', default=10, cast=int)
 
 LOGGING = {

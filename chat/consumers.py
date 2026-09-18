@@ -1,3 +1,4 @@
+from traduzione.conversazioni import traduci_in_sottofondo
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
@@ -98,6 +99,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def _create_message(self, user_id, body):
         msg = Message.objects.create(chat_id=self.chat_id, sender_id=user_id, body=body)
+        traduci_in_sottofondo('messaggio', msg)
         return {
             "id": msg.id,
             "sender_id": user_id,
@@ -391,6 +393,7 @@ class GlobalChatConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def _create_message(self, chat_id, user_id, body):
         msg = Message.objects.create(chat_id=chat_id, sender_id=user_id, body=body)
+        traduci_in_sottofondo('messaggio', msg)
         return {
             "id": msg.id,
             "sender_id": user_id,

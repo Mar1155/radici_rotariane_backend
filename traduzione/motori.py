@@ -5,9 +5,10 @@ stia usando. Serve perche' i motori hanno caratteristiche diverse e la scelta
 puo' cambiare: un modello linguistico rispetta un glossario in prosa, un
 servizio di traduzione classico no, ma costa meno ed e' gia' configurato.
 
-La chat e il forum NON passano di qui: restano su `chat/services/translation.py`
-con DeepL. Sono conversazioni, non documenti, e mescolarli significherebbe far
-dipendere una chat dal glossario del Rotary.
+Ci passa **tutto** cio' che una persona scrive: articoli, pagine, post del
+forum, commenti, messaggi di chat. Prima conversazioni e documenti avevano due
+servizi diversi, due chiavi e un glossario solo: lo stesso termine veniva
+tradotto in due modi a seconda di dove fosse scritto.
 """
 
 from __future__ import annotations

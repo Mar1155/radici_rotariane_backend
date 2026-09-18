@@ -1,3 +1,4 @@
+from traduzione.conversazioni import traduci_in_sottofondo
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,13 +16,6 @@ from .serializers import (
     PostTranslationSerializer,
 )
 from common.richtext import sanitize_rich_text
-from chat.services.translation import (
-    TranslationProviderError,
-    TranslationServiceNotConfigured,
-    normalize_language_code,
-    supported_languages,
-    translate_text,
-)
 
 
 class PostPagination(PageNumberPagination):
@@ -82,7 +76,9 @@ class PostViewSet(viewsets.ModelViewSet):
         return PostListSerializer
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        # Tradotto appena pubblicato, in sottofondo: chi scrive non aspetta.
+        traduci_in_sottofondo('post', post)
 
     def destroy(self, request, *args, **kwargs):
         post = self.get_object()
@@ -103,77 +99,6 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().update(request, *args, **kwargs)
-
-    @action(detail=True, methods=["post"])
-    def translate(self, request, pk=None):
-        post = self.get_object()
-        target_language = request.data.get("target_language") or request.query_params.get(
-            "target_language"
-        )
-
-        if not target_language:
-            return Response(
-                {"detail": "target_language è obbligatorio."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        normalized_language = normalize_language_code(target_language)
-        if normalized_language not in supported_languages():
-            return Response(
-                {"detail": "Lingua di destinazione non supportata."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        existing = PostTranslation.objects.filter(
-            post=post, target_language=normalized_language
-        ).first()
-        if existing:
-            serializer = PostTranslationSerializer(existing)
-            return Response(serializer.data)
-
-        if not post.title.strip() and not post.description.strip():
-             return Response(
-                {"detail": "Il post è vuoto, impossibile tradurre."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        body_has_html = bool(post.content_html and post.content_html.strip())
-        body_source = post.content_html if body_has_html else post.description
-
-        try:
-            title_result = translate_text(post.title, normalized_language)
-            description_result = translate_text(
-                body_source,
-                normalized_language,
-                text_format="html" if body_has_html else "text",
-            )
-        except TranslationServiceNotConfigured:
-            return Response(
-                {"detail": "Nessun provider di traduzione configurato."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        except TranslationProviderError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
-
-        safe_translated_body = (
-            sanitize_rich_text(description_result.text) if body_has_html else description_result.text
-        )
-
-        with transaction.atomic():
-            translation, _created = PostTranslation.objects.update_or_create(
-                post=post,
-                target_language=normalized_language,
-                defaults={
-                    "translated_title": title_result.text,
-                    "translated_description": safe_translated_body,
-                    "provider": title_result.provider,
-                    "detected_source_language": title_result.detected_source_language,
-                },
-            )
-
-        serializer = PostTranslationSerializer(translation)
-        http_status = status.HTTP_201_CREATED if _created else status.HTTP_200_OK
-        return Response(serializer.data, status=http_status)
 
     @action(detail=True, methods=['get'])
     def comments(self, request, pk=None):
@@ -214,6 +139,7 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = CommentCreateSerializer(data=request.data, context={'request': request, 'post': post})
         if serializer.is_valid():
             comment = serializer.save(post=post, author=request.user)
+            traduci_in_sottofondo('commento', comment)
             return Response(
                 CommentSerializer(comment, context=self.get_serializer_context()).data,
                 status=status.HTTP_201_CREATED

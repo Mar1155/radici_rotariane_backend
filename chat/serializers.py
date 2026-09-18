@@ -1,3 +1,4 @@
+from traduzione.lettura import InLinguaDelLettore
 from rest_framework import serializers
 from .models import Chat, Message, ChatParticipant, MessageTranslation
 from .services.presence import is_user_online
@@ -5,14 +6,21 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class MessageSerializer(serializers.ModelSerializer):
+class MessageSerializer(InLinguaDelLettore, serializers.ModelSerializer):
+    """Un messaggio, nella lingua del lettore."""
+
+    campi_tradotti = {'body': 'translated_text'}
+
+
     sender_username = serializers.CharField(source='sender.username', read_only=True)
     chat = serializers.PrimaryKeyRelatedField(read_only=True)
     sender = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = Message
-        fields = ["id", "chat", "sender", "sender_username", "body", "created_at", "client_msg_id"]
+        fields = ["id", "chat", "sender", "sender_username", "body",
+                  "source_locale",
+                  "created_at", "client_msg_id"]
         read_only_fields = ["id", "created_at"]
 
 

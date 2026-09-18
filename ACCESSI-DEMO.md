@@ -84,7 +84,15 @@ Va su cron, non dentro una richiesta: tradurre un articolo lungo richiede
 secondi e nessuno deve aspettarli premendo "Pubblica". Le correzioni fatte a
 mano (`human_locked`) non vengono mai sovrascritte.
 
-Chat e forum non passano di qui: restano su DeepL, con la loro configurazione.
+**Ci passa tutto**: articoli, pagine, post del forum, commenti, messaggi di
+chat. Prima conversazioni e documenti avevano due servizi diversi, due chiavi e
+un glossario solo — lo stesso termine veniva tradotto in due modi a seconda di
+dove fosse scritto. Ora c'è una chiave sola.
+
+Post e commenti si traducono alla pubblicazione, i messaggi all'invio, sempre
+in sottofondo: chi scrive non aspetta. Non esiste una coda di lavori nel
+progetto, quindi la traduzione in sottofondo è *best effort* — se il processo
+si riavvia a metà si perde, e `translate_pending` la riprende.
 
 ## Se il login rifiuta
 
