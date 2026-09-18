@@ -12,7 +12,8 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 - `cms/` — Wagtail: pagine, menu, tipi di articolo, geografia.
 - `manage.py` — Entry point Django.
 - `requirements.txt` — Dipendenze runtime.
-- `nixpacks.toml` — Build/deploy Railway (venv + pip).
+- `railpack.json` — Comando di avvio in produzione.
+- `.env.example` — Tutte le variabili d'ambiente, con spiegazione.
 
 ## Ripartire da zero
 
@@ -35,64 +36,69 @@ python manage.py seed_demo --reset    # prima cancella (tiene i superuser)
 Le credenziali degli account generati sono in [ACCESSI-DEMO.md](ACCESSI-DEMO.md),
 insieme all'ordine dei comandi da eseguire su un database vuoto.
 
-## Variabili d’ambiente (runtime)
+## Variabili d'ambiente
 
-Essenziali:
-- `SECRET_KEY` — Chiave Django.
-- `DEBUG` — `false` in produzione.
-- `ALLOWED_HOSTS` — Lista separata da virgole (es. `example.com,api.example.com`).
-- `DATABASE_URL` — Connessione Postgres (es. Railway).
+L'elenco completo, con spiegazione di cosa succede se una manca, sta in
+[.env.example](.env.example). Copialo in `.env` e riempi i valori.
 
-Consigliate per produzione:
-- `CORS_ALLOW_ALL_ORIGINS` — `false` in produzione (usa `CORS_ALLOWED_ORIGINS`).
-- `CORS_ALLOWED_ORIGINS` — Lista separata da virgole.
-- `CSRF_TRUSTED_ORIGINS` — Lista separata da virgole con schema (es. `https://example.com`).
-- `LOG_LEVEL` — `INFO`/`DEBUG`.
+Quel file e' l'unica lista: se ne aggiungi una al codice, aggiungila li'.
 
-Realtime (Channels):
-- `REDIS_HOST` — Host Redis.
-- `REDIS_PORT` — Porta Redis (default `6379`).
 
-Media su S3 (se `USE_S3=true`):
-- `USE_S3` — `true` per usare S3.
-- `AWS_ACCESS_KEY_ID` — Access key.
-- `AWS_SECRET_ACCESS_KEY` — Secret key.
-- `AWS_STORAGE_BUCKET_NAME` — Nome bucket.
-- `AWS_S3_REGION_NAME` — Regione (es. `us-east-1`).
-- `AWS_S3_CUSTOM_DOMAIN` — (opzionale) CDN o custom domain.
-- `AWS_S3_ADDRESSING_STYLE` — `virtual` o `path` (default `virtual`).
+## Messa in produzione
 
-Opzionali:
-- `LOG_FILE` — Path file log (default `app.log`).
-- `STATIC_URL`, `STATIC_ROOT` — Static files (default `/static/`, `staticfiles`).
-- `MEDIA_URL`, `MEDIA_ROOT` — Media files (default `/media/`, `media`).
-- `DEEPL_API_KEY`, `DEEPL_API_URL` — Traduzioni.
-- `GOOGLE_TRANSLATE_API_KEY`, `GOOGLE_TRANSLATE_API_URL` — Traduzioni.
+### Le migrazioni non partono da sole
 
-Email (Gmail SMTP):
-- `EMAIL_HOST` — Default `smtp.gmail.com`.
-- `EMAIL_PORT` — Default `587`.
-- `EMAIL_USE_TLS` — Default `true`.
-- `EMAIL_HOST_USER` — Account Gmail.
-- `EMAIL_HOST_PASSWORD` — App Password Gmail.
-- `DEFAULT_FROM_EMAIL` — Mittente (default `EMAIL_HOST_USER`).
-- `SUPPORT_EMAIL` — Email supporto (default `EMAIL_HOST_USER`).
-- `SITE_NAME` — Nome visualizzato nelle email.
+`railpack.json` avvia solo `collectstatic` e il server. Le migrazioni si
+lanciano a mano, una volta, **prima** del primo deploy:
 
-Reset password (OTP):
-- `PASSWORD_RESET_OTP_TTL_MINUTES` — Default `30`.
-- `PASSWORD_RESET_RESEND_SECONDS` — Default `60`.
-- `PASSWORD_RESET_MAX_PER_HOUR` — Default `5`.
-- `PASSWORD_RESET_MAX_ATTEMPTS` — Default `5`.
+```bash
+python manage.py migrate      # ~220 migrazioni: qualche minuto
+python manage.py build_site   # pagine, menu, tipi di articolo, geografia
+python manage.py createsuperuser
+```
 
-Verifica email (OTP):
-- `EMAIL_VERIFICATION_OTP_TTL_MINUTES` — Default `30`.
-- `EMAIL_VERIFICATION_RESEND_SECONDS` — Default `60`.
-- `EMAIL_VERIFICATION_MAX_PER_HOUR` — Default `5`.
-- `EMAIL_VERIFICATION_MAX_ATTEMPTS` — Default `5`.
+Sono fuori dall'avvio perche' il primo `migrate` dura piu' dell'attesa
+concessa al controllo di salute: il servizio verrebbe dichiarato morto e
+riavviato a meta' migrazione. E perche' con piu' istanze partirebbero in
+parallelo sullo stesso database.
 
-## Componenti necessari
+Quando un deploy successivo porta migrazioni nuove, vanno lanciate allo stesso
+modo prima di pubblicarlo.
 
-Per funzionare in produzione servono:
-- **PostgreSQL** — Database principale (via `DATABASE_URL`).
-- **Redis** — Backend per Django Channels (via `REDIS_HOST/REDIS_PORT`).
+### Cosa serve accanto
+
+| Componente | Perche' | Se manca |
+|---|---|---|
+| PostgreSQL | Database | non parte |
+| Redis | Django Channels | chat e notifiche mute, il resto funziona |
+| SMTP | Verifica dell'indirizzo | **nessuno riesce a registrarsi** |
+| S3 | File caricati | spariscono a ogni riavvio del container |
+| `ANTHROPIC_API_KEY` | Traduzione automatica | i contenuti restano nella lingua d'origine |
+
+Gli statici non vanno su S3: li serve whitenoise dall'immagine, generati da
+`collectstatic` a ogni avvio. Su S3 vanno solo i media, cioe' i file caricati
+dagli utenti e dal CMS. Per verificare che il bucket sia a posto:
+
+```bash
+python manage.py check_s3
+```
+
+Scrive un file, lo rilegge, ne scarica l'URL pubblico e lo cancella. Se la
+lettura non torna 200 il bucket non e' leggibile dal browser, e nessuna
+immagine si vedra' sul sito.
+
+### Le traduzioni vogliono un cron
+
+`translate_pending` traduce cio' che e' stato scritto e non ha ancora tutte le
+lingue. Non gira dentro una richiesta: va messo su un'esecuzione periodica,
+ogni cinque minuti.
+
+```bash
+*/5 * * * * cd /app && python manage.py translate_pending
+```
+
+Su Railway e' un servizio cron separato che punta allo stesso repository, con
+`python manage.py translate_pending` come comando.
+
+Senza cron il sito funziona: chi pubblica vede il suo testo, gli altri lo
+vedono nella lingua d'origine con la nota che lo dice.

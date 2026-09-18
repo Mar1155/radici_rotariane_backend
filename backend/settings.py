@@ -28,7 +28,7 @@ INSTALLED_APPS = [
 
 INSTALLED_APPS += ['rest_framework', 'rest_framework_simplejwt.token_blacklist',
                    'users', 'channels', 'chat', 'corsheaders', 'section', 'forum',
-                   'traduzione', 'storages']
+                   'traduzione', 'storages', 'common']
 
 # --- CMS (Wagtail) -----------------------------------------------------------
 # wagtail_localize.locales sostituisce wagtail.locales: non vanno messi entrambi.
@@ -318,12 +318,13 @@ if USE_S3:
         'CacheControl': 'max-age=86400',
     }
 
+    # Solo i media vanno su S3. Gli statici restano su whitenoise: sono
+    # artefatti di build, gia' dentro l'immagine, e mandarli su S3 costringe
+    # collectstatic a interrogare il bucket file per file a ogni avvio.
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
-        STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
     else:
         MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/media/"
-        STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/static/"
 
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -332,18 +333,11 @@ if USE_S3:
             "file_overwrite": False,
         },
     }
-    
-    STORAGES["staticfiles"] = {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        "OPTIONS": {
-            "location": "static",
-        },
-    }
-    
-    print(f"--> S3 Storage Configured. Bucket: {AWS_STORAGE_BUCKET_NAME}, Region: {AWS_S3_REGION_NAME}")
 
-if not USE_S3:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    print(f"--> S3 per i media. Bucket: {AWS_STORAGE_BUCKET_NAME}, Regione: {AWS_S3_REGION_NAME}")
+
+# Sempre, non solo senza S3: gli statici li serve whitenoise in ogni caso.
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
