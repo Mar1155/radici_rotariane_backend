@@ -132,6 +132,22 @@ class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
                 "Un campo obbligatorio deve essere anche attivo, altrimenti "
                 "l'autore non potrebbe compilarlo."
             )
+        # Un campo obbligatorio che non si puo' soddisfare blocca del tutto la
+        # pubblicazione, e dal form non si capisce perche': si chiede un tag e
+        # non ce n'e' nessuno da scegliere.
+        if self.pk:
+            if 'tags' in (self.required_fields or []) and not self.allowed_tags.exists():
+                errors['required_fields'] = (
+                    "I tag sono obbligatori ma questo tipo non ne ammette nessuno: "
+                    "nessuno potrebbe pubblicare. Aggiungi dei tag, oppure togli "
+                    "'tags' dai campi obbligatori."
+                )
+            if ('infoElements' in (self.required_fields or [])
+                    and not self.info_elements.exists()):
+                errors['required_fields'] = (
+                    "Gli elementi informativi sono obbligatori ma questo tipo non "
+                    "ne definisce nessuno."
+                )
         if errors:
             raise ValidationError(errors)
 

@@ -164,8 +164,13 @@ def create_article(request, type_key):
         # gli elementi corrompeva in silenzio gli articoli gia' scritti.
         info_values = json.loads(info_values_json) if info_values_json else {}
         
-        # 4. Validazione centralizzata di tutti i campi richiesti
-        is_valid, error_msg = validate_article_fields(tipo, {
+        # 4. Validazione dei campi richiesti.
+        #
+        # Solo per cio' che si pubblica: una bozza incompleta e' il motivo per
+        # cui esistono le bozze. Prima si validava comunque, e "salva bozza"
+        # rispondeva chiedendo campi che stanno in un altro passo del form.
+        pubblica = str(request.data.get('isPublished', 'true')).lower() != 'false'
+        is_valid, error_msg = (True, None) if not pubblica else validate_article_fields(tipo, {
             'title': title, 'subtitle': subtitle, 'content': corpo,
             'coverImage': cover_image, 'tags': tags, 'location': location,
             'gallery': gallery_files, 'date': has_date,
@@ -192,7 +197,7 @@ def create_article(request, type_key):
             # Il primo passo del form salva una bozza; il secondo pubblica.
             # Prima `is_published` esisteva come colonna ma non come flusso: un
             # articolo nasceva pubblicato, e non c'era modo di metterlo via.
-            'is_published': str(request.data.get('isPublished', 'true')).lower() != 'false',
+            'is_published': pubblica,
         }
         
         # Aggiungi date in base al tipo
@@ -373,8 +378,11 @@ def get_card(request, slug):
     # Determina se c'è una data valida (per validazione)
     has_date = card.date or card.date_start  # Controlla se la card ha già date
     
-    # Validazione centralizzata
-    is_valid, error_msg = validate_article_fields(card.article_type, {
+    # Validazione solo di cio' che resta (o diventa) pubblicato: una bozza
+    # incompleta e' il motivo per cui esistono le bozze.
+    restera_pubblicato = (str(data.get('isPublished')).lower() != 'false'
+                          if 'isPublished' in data else card.is_published)
+    is_valid, error_msg = (True, None) if not restera_pubblicato else validate_article_fields(card.article_type, {
         'title': title, 'subtitle': subtitle, 'content': corpo,
         'coverImage': cover_image, 'tags': tags, 'location': location,
         'gallery': gallery_files, 'date': has_date,

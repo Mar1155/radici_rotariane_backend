@@ -150,12 +150,21 @@ class Command(BaseCommand):
                     tipo.save(update_fields=['uses_geo'])
 
                 tipo.allowed_tags.all().delete()
-                for i, t in enumerate(
-                        [x for x in (tdata.get('tags') or []) if x not in chiavi_geo]):
+                rimasti = [x for x in (tdata.get('tags') or []) if x not in chiavi_geo]
+                for i, t in enumerate(rimasti):
                     ArticleTypeTag.objects.create(
                         article_type=tipo, sort_order=i, key=t,
                         label=etichette_tag.get(t, {}).get('it', t.replace('-', ' ').capitalize()),
                         locale=locale)
+
+                # Se i tag erano TUTTI luoghi, il campo non esiste piu' per
+                # questo tipo: il concetto e' passato alla geografia. Lasciarlo
+                # fra gli obbligatori rendeva `itinerario` impossibile da
+                # pubblicare — si chiedeva un tag e non ce n'era nessuno.
+                if not rimasti:
+                    tipo.active_fields = [f for f in tipo.active_fields if f != 'tags']
+                    tipo.required_fields = [f for f in tipo.required_fields if f != 'tags']
+                    tipo.save(update_fields=['active_fields', 'required_fields'])
 
         if dry:
             self.stdout.write(self.style.WARNING('\ndry-run: niente scritto.'))
