@@ -369,3 +369,88 @@ class BozzeEGeografiaTest(TestCase):
         self.assertIn('in-toscana', slugs('siena'))
         self.assertIn('in-toscana', slugs('toscana'))   # la regione contiene la provincia
         self.assertNotIn('in-toscana', slugs('lombardia'))
+
+class BozzeVisibiliTest(TestCase):
+    """Salvare una bozza senza poterla ritrovare e' mezza funzione.
+
+    Una bozza e' un articolo con `is_published=False`: nessun modello nuovo. Il
+    server e' l'unico a sapere cosa sia, e la restituisce solo al suo autore.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        call_command('seed_geo', verbosity=0)
+        call_command('seed_article_types', verbosity=0)
+
+        cls.autore = User.objects.create_user(
+            username='au', email='au@prova.it', password='prova12345')
+        cls.autore.email_verified_at = timezone.now()
+        cls.autore.save()
+        cls.estraneo = User.objects.create_user(
+            username='es', email='es@prova.it', password='prova12345')
+
+        tipo = ArticleType.objects.get(key='storia')
+        # Completa: una bozza a meta' non si puo' pubblicare, ed e' giusto cosi'.
+        cls.bozza = Card.objects.create(
+            slug='mia-bozza', title='Mia bozza', subtitle='Sottotitolo',
+            body={'type': 'doc', 'content': [paragrafo('Il corpo')]},
+            cover_image='cards/covers/finta.jpg',
+            article_type=tipo, author=cls.autore, is_published=False)
+        cls.pubblicato = Card.objects.create(
+            slug='mio-pubblicato', title='Pubblicato', article_type=tipo,
+            author=cls.autore, is_published=True)
+
+    def elenco(self, client, **params):
+        params.setdefault('user_id', self.autore.id)
+        return [c['slug'] for c in client.get('/api/section/cards/user/', params).json()]
+
+    def _suo(self):
+        c = APIClient()
+        c.force_authenticate(user=self.autore)
+        return c
+
+    def test_l_autore_ritrova_le_proprie_bozze(self):
+        self.assertEqual(self.elenco(self._suo(), stato='bozze'), ['mia-bozza'])
+
+    def test_le_pubblicazioni_non_contengono_bozze(self):
+        """Mescolarle non lascia capire cosa e' online."""
+        self.assertEqual(self.elenco(self._suo(), stato='pubblicati'), ['mio-pubblicato'])
+
+    def test_un_estraneo_non_vede_le_bozze(self):
+        c = APIClient()
+        c.force_authenticate(user=self.estraneo)
+        self.assertEqual(self.elenco(c, stato='pubblicati'), ['mio-pubblicato'])
+        self.assertNotIn('mia-bozza', self.elenco(c))
+
+    def test_a_un_estraneo_che_chiede_le_bozze_si_risponde_vuoto(self):
+        """Non il pubblicato al loro posto: chiedeva bozze, non altro."""
+        self.assertEqual(self.elenco(self.client, stato='bozze'), [])
+
+    def test_si_possono_chiedere_le_bozze_di_un_tipo_solo(self):
+        """E' cio' che permette di chiedere "hai itinerari non finiti?"."""
+        self.assertEqual(self.elenco(self._suo(), stato='bozze', type='storia'),
+                         ['mia-bozza'])
+        self.assertEqual(self.elenco(self._suo(), stato='bozze', type='evento'), [])
+
+    def test_pubblicare_una_bozza_la_fa_uscire(self):
+        c = self._suo()
+        r = c.patch(f'/api/section/cards/{self.bozza.slug}',
+                    {'isPublished': True}, format='json')
+        self.assertEqual(r.status_code, 200, r.content[:200])
+        self.bozza.refresh_from_db()
+        self.assertTrue(self.bozza.is_published)
+        pubblici = [x['slug'] for x in self.client.get('/api/section/articles/').json()]
+        self.assertIn('mia-bozza', pubblici)
+
+    def test_le_bozze_si_ordinano_per_ultima_modifica(self):
+        """Si riprende quella che si stava scrivendo, non la piu' vecchia."""
+        tipo = ArticleType.objects.get(key='storia')
+        Card.objects.create(slug='piu-recente', title='Recente', article_type=tipo,
+                            author=self.autore, is_published=False)
+        self.assertEqual(self.elenco(self._suo(), stato='bozze')[0], 'piu-recente')

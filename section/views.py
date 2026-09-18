@@ -680,14 +680,30 @@ def list_user_cards(request):
             )
         target_user = request.user
 
-    cards_qs = Card.objects.filter(author=target_user).select_related('author')
+    cards_qs = (Card.objects.filter(author=target_user)
+                .select_related('author', 'article_type'))
+
     # Le bozze le vede solo chi le ha scritte: a chiunque altro il profilo
     # mostra ciò che è pubblicato.
-    if not _puo_gestire(request.user, Card(author_id=target_user.id)):
+    # `stato` risparmia al client di scaricare tutto per poi filtrare, e tiene
+    # qui la definizione di cos'è una bozza.
+    stato = request.GET.get('stato')
+    proprio = _puo_gestire(request.user, Card(author_id=target_user.id))
+    if not proprio:
+        # Chi guarda il profilo di un altro vede solo il pubblicato; se chiede
+        # le bozze riceve un elenco vuoto, non il pubblicato al loro posto.
+        cards_qs = (cards_qs.none() if stato == 'bozze'
+                    else cards_qs.filter(is_published=True))
+    elif stato == 'bozze':
+        cards_qs = cards_qs.filter(is_published=False)
+    elif stato == 'pubblicati':
         cards_qs = cards_qs.filter(is_published=True)
+
     if tipo_key:
         cards_qs = cards_qs.filter(article_type__key=tipo_key)
-    cards_qs = cards_qs.order_by('-created_at')
+    # Le bozze si ordinano per ultima modifica: si riprende quella che si stava
+    # scrivendo, non quella che si è cominciata per prima.
+    cards_qs = cards_qs.order_by('-updated_at', '-created_at')
 
     serializer = CardListSerializer(cards_qs, many=True, context={'request': request})
     return Response(serializer.data)
