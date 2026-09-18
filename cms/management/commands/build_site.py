@@ -25,6 +25,9 @@ PASSI = [
     # i tag obbligatori e nessun tag ammesso: impossibile da pubblicare.
     ('seed_geo', 'aree geografiche'),
     ('seed_article_types', 'tipi di articolo'),
+    # Le immagini prima delle pagine che le citano: le pagine le cercano per
+    # titolo, e senza il file resterebbero dei riquadri vuoti.
+    ('seed_immagini', 'immagini dei contenuti'),
     ('build_pages_statiche', 'pagine a contenuto fisso'),
     ('build_pages_sezioni', 'pagine sezione'),
     ('build_page_home', 'homepage'),

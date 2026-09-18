@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
+from wagtail.models import Site
 from wagtail.snippets.blocks import SnippetChooserBlock
 
 from cms import vocabularies as vocab
@@ -98,7 +99,13 @@ def percorso_pagina(page) -> str:
     if not page:
         return '/'
     percorso = page.url_path or '/'
-    sito = page.get_site()
+    try:
+        sito = page.get_site()
+    except Site.DoesNotExist:
+        # Succede mentre si cancella la pagina che era radice del sito: la FK
+        # a cascata porta via il Site prima che arrivi il segnale. Senza sito
+        # non sappiamo il prefisso, e il percorso intero e' la scelta onesta.
+        return percorso.rstrip('/') or '/'
     if sito and sito.root_page:
         prefisso = sito.root_page.url_path
         if percorso.startswith(prefisso):
