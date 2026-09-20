@@ -176,6 +176,26 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # Un tetto alla frequenza delle richieste. Non e' una misura di sicurezza —
+    # per quella ci sono i permessi — ma di spesa: ogni articolo, post,
+    # commento e messaggio scritto fa partire una traduzione a pagamento, e
+    # ogni immagine caricata occupa spazio. Senza un tetto, un ciclo lasciato
+    # acceso per sbaglio o qualcuno che si diverte si traducono in soldi.
+    #
+    # I numeri sono larghi apposta: una persona che usa la webapp normalmente
+    # non li sfiora. Servono a fermare le macchine, non le persone.
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': config('THROTTLE_ANON', default='300/hour'),
+        'user': config('THROTTLE_USER', default='2000/hour'),
+        # Le due che costano davvero, per persona.
+        'scrittura': config('THROTTLE_SCRITTURA', default='120/hour'),
+        'caricamento': config('THROTTLE_CARICAMENTO', default='60/hour'),
+    },
 }
 
 from datetime import timedelta
@@ -310,19 +330,34 @@ if USE_S3:
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None  # ACLs disabled - using bucket policy for public access
     AWS_S3_ADDRESSING_STYLE = config('AWS_S3_ADDRESSING_STYLE', default='virtual')
-    AWS_QUERYSTRING_AUTH = False  # Don't use signed URLs for public access
     AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default=None)
 
-    # Cache control for static files
+    # Non solo Amazon: qualunque storage che parli S3. Railway espone i suoi
+    # bucket cosi', e cambia solo l'indirizzo a cui si bussa.
+    AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default=None)
+
+    # Un bucket privato serve i file solo con un URL firmato; uno pubblico
+    # (bucket AWS con policy di lettura) li serve senza. I bucket Railway sono
+    # privati e basta, quindi con un endpoint proprio si firma di default.
+    AWS_QUERYSTRING_AUTH = config(
+        'AWS_QUERYSTRING_AUTH', default=bool(AWS_S3_ENDPOINT_URL), cast=bool)
+    # Sette giorni: il massimo che la firma v4 ammette. Le pagine si
+    # rigenerano ogni 60 secondi e rifanno le firme, quindi quello che il
+    # browser riceve e' sempre appena emesso; il margine serve solo a chi
+    # tiene una pagina aperta per giorni.
+    AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', default=604800, cast=int)
+
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
     }
 
-    # Solo i media vanno su S3. Gli statici restano su whitenoise: sono
-    # artefatti di build, gia' dentro l'immagine, e mandarli su S3 costringe
-    # collectstatic a interrogare il bucket file per file a ogni avvio.
+    # Solo i media sul bucket. Gli statici restano su whitenoise: sono
+    # artefatti di build, gia' dentro l'immagine, e mandarli sul bucket
+    # costringe collectstatic a interrogarlo file per file a ogni avvio.
     if AWS_S3_CUSTOM_DOMAIN:
         MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    elif AWS_S3_ENDPOINT_URL:
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL.rstrip('/')}/{AWS_STORAGE_BUCKET_NAME}/media/"
     else:
         MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/media/"
 
@@ -334,10 +369,16 @@ if USE_S3:
         },
     }
 
-    print(f"--> S3 per i media. Bucket: {AWS_STORAGE_BUCKET_NAME}, Regione: {AWS_S3_REGION_NAME}")
+    _dove = AWS_S3_ENDPOINT_URL or f'AWS {AWS_S3_REGION_NAME}'
+    _come = 'URL firmati' if AWS_QUERYSTRING_AUTH else 'URL pubblici'
+    print(f"--> Media sul bucket {AWS_STORAGE_BUCKET_NAME} ({_dove}), {_come}.")
 
 # Sempre, non solo senza S3: gli statici li serve whitenoise in ogni caso.
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+# Lo stesso tetto che vale per le immagini degli articoli, applicato anche a
+# quelle caricate dal pannello: il bucket e' lo stesso e si paga a spazio.
+WAGTAILIMAGES_MAX_UPLOAD_SIZE = 12 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

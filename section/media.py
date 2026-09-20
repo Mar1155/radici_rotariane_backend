@@ -28,6 +28,12 @@ LATO_MASSIMO = 2000
 # Limite sul file in ingresso, prima ancora di aprirlo.
 BYTE_MASSIMI = 12 * 1024 * 1024
 
+# Un'immagine puo' essere piccola da scaricare e enorme da aprire: pochi
+# kilobyte di PNG compresso diventano gigabyte di pixel in memoria. Pillow ha
+# un tetto suo, ma alto; qui vale il conto che serve davvero, 2000x2000
+# ridimensionati con un margine largo per le foto verticali da telefono.
+PIXEL_MASSIMI = 80_000_000
+
 # Formati che accettiamo in ingresso. In uscita c'e' solo WebP.
 FORMATI_AMMESSI = {'JPEG', 'PNG', 'WEBP', 'GIF', 'BMP', 'TIFF'}
 
@@ -41,6 +47,13 @@ def normalizza(file) -> tuple[ContentFile, dict]:
 
     Solleva `ImmagineNonValida` se il file non e' un'immagine trattabile.
     """
+    # Prima la dimensione dichiarata, che non costa niente: leggere un file
+    # da mezzo giga per poi scartarlo lo tiene comunque in memoria o su disco.
+    dimensione = getattr(file, 'size', None)
+    if dimensione is not None and dimensione > BYTE_MASSIMI:
+        raise ImmagineNonValida(
+            f'Immagine troppo grande: massimo {BYTE_MASSIMI // (1024 * 1024)} MB.')
+
     dati = file.read()
     if len(dati) > BYTE_MASSIMI:
         raise ImmagineNonValida(
@@ -57,6 +70,10 @@ def normalizza(file) -> tuple[ContentFile, dict]:
     img = Image.open(BytesIO(dati))
     if img.format not in FORMATI_AMMESSI:
         raise ImmagineNonValida(f'Formato non ammesso: {img.format}.')
+    larghezza, altezza = img.size
+    if larghezza * altezza > PIXEL_MASSIMI:
+        raise ImmagineNonValida(
+            f'Immagine troppo grande: {larghezza}x{altezza} pixel.')
 
     # La trasparenza si appiattisce su bianco: WebP la reggerebbe, ma un PNG
     # trasparente su fondo chiaro e uno su fondo scuro si comportano diversamente

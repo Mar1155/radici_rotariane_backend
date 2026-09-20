@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from common.throttling import SoloInScrittura
 from .models import Chat, ChatParticipant, Message, MessageTranslation
 from .serializers import (
     ChatSerializer,
@@ -217,7 +218,7 @@ class ChatViewSet(viewsets.ModelViewSet):
         return Response({"status": "ok"})
 
 
-class MessageViewSet(viewsets.ModelViewSet):
+class MessageViewSet(SoloInScrittura, viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 

@@ -1,6 +1,8 @@
 # views.py
 from rest_framework import status
-from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.decorators import (api_view, parser_classes,
+                                       permission_classes, throttle_classes)
+from common.throttling import Caricamento, Scrittura
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -107,6 +109,7 @@ def validate_article_fields(tipo, valori, info_values=None):
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @permission_classes([IsAuthenticated])
+@throttle_classes([Scrittura])
 def create_article(request, type_key):
     """Crea un articolo del tipo indicato.
 
@@ -629,6 +632,7 @@ def list_user_cards(request):
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([IsAuthenticated])
+@throttle_classes([Caricamento])
 def upload_media(request):
     """Carica un'immagine per il corpo di un articolo.
 

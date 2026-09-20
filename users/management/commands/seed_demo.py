@@ -602,64 +602,126 @@ class Command(BaseCommand):
             ("Acqua potabile a Tambacounda", "Due pozzi e la formazione di sei manutentori locali, con il RC Dakar", "torino"),
             ("Borse di studio per giovani artigiani", "Dieci percorsi di bottega nella lavorazione del vetro", "venezia"),
             ("Ambulatorio mobile nelle aree interne", "Un mezzo attrezzato per sei comuni rimasti senza medico di base", "potenza"),
+            ("Orto didattico in tre scuole elementari", "Serre, attrezzi e un agronomo per un anno scolastico", "ravenna"),
+            ("Alfabetizzazione digitale per over 65", "Corsi gratuiti in biblioteca, due volte a settimana", "trieste"),
+            ("Defibrillatori nelle piazze del Salento", "Dodici postazioni e centoventi persone formate", "lecce"),
+            ("Rifugio per donne in uscita dalla violenza", "Ristrutturazione e arredo di un appartamento protetto", "bologna"),
+            ("Ricostruzione della scuola di Bhaktapur", "Due aule antisismiche con il RC Kathmandu Mid-Town", "bergamo"),
+            ("Un pulmino per il centro diurno", "Trasporto quotidiano per trenta ragazzi con disabilita", "ancona"),
         ],
         "evento": [
             ("Assemblea distrettuale 2026", "Una giornata di lavori su azione internazionale e nuove generazioni", "bologna"),
             ("Serata di gala per il service idrico", "Cena di raccolta fondi con asta benefica", "milano"),
             ("Incontro con i club gemellati di Baviera", "Tre giorni di visite e tavoli di lavoro congiunti", "bolzano"),
             ("Forum sui giovani e il lavoro", "Imprenditori e studenti a confronto", "firenze"),
+            ("Concerto di primavera al Teatro Massimo", "Il ricavato al progetto di borse di studio", "palermo"),
+            ("Congresso distrettuale sull acqua", "Relatori da quattro paesi del Mediterraneo", "cagliari"),
+            ("Torneo di golf per la Rotary Foundation", "Diciotto buche e una cena di premiazione", "varese"),
+            ("Camminata della memoria", "Dieci chilometri fra i luoghi dell emigrazione", "campobasso"),
+            ("Premio giovani ricercatori", "Cinque tesi di laurea premiate in Sala dei Notari", "perugia"),
+            ("Mercatino di Natale rotariano", "Tre giorni di banchi in centro, ricavato ai service locali", "trento"),
         ],
         "itinerario": [
             ("La Via Francigena da Lucca a Siena", "Sei tappe fra pievi, crete senesi e ospitalita rotariana", "siena"),
             ("I borghi del Pollino", "Anello di quattro giorni fra Basilicata e Calabria", "cosenza"),
             ("Barocco leccese in tre giorni", "Un percorso a piedi fra chiese, cortili e cave di tufo", "lecce"),
             ("Le Dolomiti di Brenta", "Cinque giorni di rifugi e ferrate storiche", "trento"),
+            ("Il Cammino di San Benedetto", "Da Norcia a Subiaco, sedici tappe fra Umbria e Lazio", "rieti"),
+            ("Le cinque terre fuori stagione", "Quattro giorni di sentieri alti, senza folla", "la-spezia"),
+            ("Sulle tracce dei Longobardi", "Cividale, Brescia, Spoleto: tre siti UNESCO in una settimana", "udine"),
+            ("Il Salento delle masserie", "Sei giorni fra fortificazioni rurali e frantoi ipogei", "brindisi"),
+            ("Anello dell Appennino tosco-emiliano", "Cinque giorni sul crinale, con rientro in treno", "modena"),
+            ("Le valli valdesi", "Tre giorni fra templi, musei e sentieri della resistenza", "torino"),
         ],
         "esperienza": [
             ("Vendemmia nelle Langhe", "Una giornata in vigna e in cantina con un produttore socio del club", "cuneo"),
             ("Laboratorio di ceramica a Grottaglie", "Mezza giornata al tornio nel quartiere delle ceramiche", "taranto"),
             ("Pesca turismo a Cetara", "In mare all alba con i pescatori di alici", "salerno"),
             ("Cammino notturno sull Etna", "Salita guidata fino ai crateri sommitali", "catania"),
+            ("Raccolta delle olive in Sabina", "Una giornata di raccolta e frangitura a freddo", "rieti"),
+            ("Corso di cucina con le sfogline", "Tre ore di mattarello, tagliatelle e tortellini", "bologna"),
+            ("Battuta di transumanza in Molise", "Due giorni lungo il tratturo con i pastori", "isernia"),
+            ("Soffiatura del vetro a Murano", "Dimostrazione e prova guidata in fornace", "venezia"),
+            ("Giornata in malga in Val di Fiemme", "Mungitura, caseificazione e pranzo in quota", "trento"),
+            ("Birdwatching nelle valli di Comacchio", "All alba in barca fra fenicotteri e aironi", "ferrara"),
         ],
         "eccellenza": [
             ("Pasticceria Serafini", "Lievitati e dolci della tradizione, dal 1954", "perugia"),
             ("Hotel Torre del Parco", "Dimora storica del 1419 nel centro di Lecce", "lecce"),
             ("Cantine Vallebruna", "Vini biologici e visite guidate in cantina", "verona"),
             ("Sartoria Lo Verso", "Su misura e riparazioni sartoriali", "palermo"),
+            ("Liuteria Bellandi", "Violini e viole costruiti a mano nella citta di Stradivari", "cremona"),
+            ("Caseificio Le Tre Valli", "Pecorino e ricotta di giornata, punto vendita in azienda", "grosseto"),
+            ("Libreria Antiquaria Palladio", "Stampe, mappe e edizioni rare dal Cinquecento", "vicenza"),
+            ("Ristorante Il Faro Vecchio", "Cucina di mare con pescato del giorno", "livorno"),
+            ("Orafi Di Salvo", "Filigrana e restauro di gioielleria storica", "agrigento"),
+            ("Tessitura Serica Vanzetti", "Sete stampate a mano per l alta moda", "como"),
         ],
         "storia": [
             ("Mio nonno parti da Ellis Island", "La storia di una famiglia molisana fra due continenti", None),
             ("Ritorno a Castelmezzano dopo sessant anni", "Il viaggio di un socio australiano nel paese dei suoi genitori", None),
             ("La lettera trovata in soffitta", "Come un foglio del 1948 ha riunito due rami della stessa famiglia", None),
+            ("Il baule che arrivo da Buenos Aires", "Fotografie, un passaporto e una ricetta scritta a mano", None),
+            ("Tre fratelli, tre continenti", "Da un paese del Friuli a Toronto, San Paolo e Melbourne", None),
+            ("La bottega che non ha mai chiuso", "Cinque generazioni dietro lo stesso bancone a Genova", None),
+            ("Cercavo un cognome, ho trovato un paese", "Come un archivio parrocchiale ha riscritto una storia di famiglia", None),
+            ("Il quaderno del maestro elementare", "Nomi, date e partenze annotati fra il 1901 e il 1913", None),
         ],
         "tradizione": [
             ("La Infiorata di Spello", "Come si preparano i tappeti di petali, quartiere per quartiere", None),
             ("Il pane di Altamura", "Impasto, lievito madre e forno a legna: una filiera che non e cambiata", None),
             ("La Sartiglia di Oristano", "La giostra equestre che apre il carnevale sardo", None),
+            ("I Gigli di Nola", "Otto obelischi di legno portati a spalla per le vie del centro", None),
+            ("La Faggiola di Bagnoli", "Il rito del tronco trascinato a valle, ogni anno da sei secoli", None),
+            ("Il Palio marinaro dell Argentario", "Quattro rioni, quattro gozzi, una regata di duemila metri", None),
+            ("La Fiera di Sant Orso ad Aosta", "Mille banchi di artigianato valdostano in due giorni di gennaio", None),
+            ("Il Canto a tenore in Barbagia", "Quattro voci, nessuno strumento: come si impara ancora oggi", None),
         ],
         "testimonianza": [
             ("", "Sono tornata nel paese di mio padre dopo quarant anni e ho trovato la casa ancora in piedi", "campobasso"),
             ("", "Il gemellaggio con il club di Lione ci ha cambiato il modo di pensare i progetti", "genova"),
             ("", "Da studente ospite a socio: vent anni dopo ospito io i ragazzi", "padova"),
+            ("", "Non parlavo italiano quando sono arrivato. Il club mi ha trovato un insegnante e un lavoro", "brescia"),
+            ("", "Ho conosciuto i miei cugini argentini a un congresso rotariano, per caso", "roma"),
+            ("", "Mia figlia ha fatto lo scambio in Giappone. E tornata un altra persona", "firenze"),
+            ("", "Abbiamo adottato un progetto in Senegal e ci siamo andati tutti insieme", "verona"),
+            ("", "Sono entrata nel club a trentadue anni. Pensavo di essere fuori posto, mi sbagliavo", "bari"),
         ],
         "documento-archivio": [
             ("Verbale del gemellaggio con il RC Nizza, 1987", "Il documento originale firmato dai due presidenti", None),
             ("Fotografie del service alluvione 1994", "Quarantadue scatti dai giorni dell emergenza in Piemonte", None),
             ("Registro dei soci fondatori", "Riproduzione digitale del registro del 1949", None),
+            ("Corrispondenza con il Rotary International, 1952-1958", "Lettere sulla nascita del distretto", None),
+            ("Album del primo scambio giovani, 1974", "Trenta fotografie e l elenco delle famiglie ospitanti", None),
+            ("Statuto del club, edizione 1961", "Con le annotazioni a margine del segretario", None),
         ],
         "scambio-offerta": [
             ("Ospitalita a Trieste per l estate", "Appartamento con due camere a dieci minuti dal centro", "trieste"),
             ("Casa in campagna vicino ad Assisi", "Disponibile per famiglie rotariane in primavera", "perugia"),
             ("Posto barca e alloggio alla Maddalena", "Per chi arriva in Sardegna via mare", "sassari"),
+            ("Mansarda in centro a Bologna", "Due posti letto, disponibile nei fine settimana", "bologna"),
+            ("Baita in Val Pusteria", "Sei posti letto, da dicembre a marzo", "bolzano"),
+            ("Camera doppia a Siracusa", "In Ortigia, a due passi dal Duomo", "siracusa"),
+            ("Appartamento vista lago a Stresa", "Tre camere, disponibile da maggio a settembre", "verbano-cusio-ossola"),
+            ("Casa colonica in Maremma", "Otto posti letto per gruppi o famiglie numerose", "grosseto"),
         ],
         "scambio-richiesta": [
             ("Cerchiamo ospitalita in Baviera", "Due settimane per una famiglia di quattro persone", "brescia"),
             ("Studente in cerca di alloggio a Porto", "Semestre Erasmus, cerco famiglia ospitante", "bari"),
             ("Ospitalita a Buenos Aires", "Per un viaggio sulle tracce dei nonni emigrati", "roma"),
+            ("Alloggio a Barcellona per un mese", "Tirocinio universitario, giugno 2026", "torino"),
+            ("Famiglia ospitante in Canada", "Nostro figlio diciassettenne, anno scolastico all estero", "padova"),
+            ("Una settimana a Lisbona in agosto", "Coppia con due bambini piccoli", "napoli"),
+            ("Cerco ospitalita a Melbourne", "Per ritrovare i parenti emigrati nel 1955", "messina"),
+            ("Alloggio a Bruxelles per tre mesi", "Stage presso le istituzioni europee", "milano"),
         ],
         "consiglio": [
             ("Casa Calabria International", "Il portale dei calabresi nel mondo", None),
             ("Portale del Turismo delle Radici", "Il sito del Ministero degli Esteri dedicato al turismo di ritorno", None),
+            ("Antenati, il portale degli archivi", "Registri di stato civile digitalizzati, ricerca per cognome e comune", None),
+            ("Il Museo Nazionale dell Emigrazione", "A Genova, alla Commenda di Pre", None),
+            ("My Rotary", "L area riservata del Rotary International, per soci e dirigenti", None),
+            ("Rotary Showcase", "La vetrina internazionale dei progetti dei club", None),
         ],
     }
 
@@ -819,7 +881,7 @@ class Command(BaseCommand):
                 ),
             },
             {
-                "title": "Eventi culturali per la diaspora calabrese",
+                "title": "Eventi culturali per gli italiani all estero",
                 "summary": "Connessioni tra community all'estero e club italiani.",
                 "content": (
                     "<p>Le serate di networking hanno favorito il dialogo tra professionisti residenti in Italia e all'estero.</p>"
@@ -882,6 +944,74 @@ class Command(BaseCommand):
                     "<p>Il format prevede ora una piattaforma per candidature e report finale.</p>"
                 ),
             },
+            {
+                "title": "Come si scrive una domanda alla Rotary Foundation",
+                "summary": "Errori ricorrenti e documenti da preparare prima di iniziare.",
+                "content": (
+                    "<p>La parte piu lunga non e la compilazione: e mettere d accordo i club partner "
+                    "sul budget e sul referente unico.</p>"
+                    "<p>Raccogliamo qui i modelli che hanno gia superato la revisione distrettuale.</p>"
+                ),
+            },
+            {
+                "title": "Ospitalita per lo scambio giovani: chi si offre",
+                "summary": "Famiglie disponibili e periodi coperti, distretto per distretto.",
+                "content": (
+                    "<p>Ogni anno la difficolta e la stessa: trovare la terza famiglia ospitante.</p>"
+                    "<p>Proviamo a tenere aggiornato un elenco unico invece di ripartire da zero.</p>"
+                ),
+            },
+            {
+                "title": "Archivi parrocchiali e ricerca genealogica",
+                "summary": "A chi rivolgersi quando il cognome si perde prima del 1866.",
+                "content": (
+                    "<p>Prima dello stato civile unitario i registri sono quelli delle parrocchie, "
+                    "e non sono quasi mai digitalizzati.</p>"
+                    "<p>Alcuni soci hanno costruito rapporti diretti con le diocesi: condividiamoli.</p>"
+                ),
+            },
+            {
+                "title": "Service ambientali: cosa ha funzionato davvero",
+                "summary": "Un bilancio onesto dopo tre anni di piantumazioni e pulizie.",
+                "content": (
+                    "<p>Le giornate di pulizia fanno notizia ma durano un giorno. "
+                    "Gli interventi che reggono sono quelli con un custode locale.</p>"
+                    "<p>Proviamo a confrontare i risultati a due anni di distanza.</p>"
+                ),
+            },
+            {
+                "title": "Comunicare il Rotary senza sembrare autoreferenziali",
+                "summary": "Cosa pubblicare, cosa evitare, e chi se ne occupa nel club.",
+                "content": (
+                    "<p>La foto della consegna dell assegno non racconta niente a chi sta fuori.</p>"
+                    "<p>Raccogliamo esempi di comunicazione che ha portato persone nuove.</p>"
+                ),
+            },
+            {
+                "title": "Soci under 40: perche entrano e perche se ne vanno",
+                "summary": "Numeri del distretto e qualche ipotesi scomoda.",
+                "content": (
+                    "<p>Il problema non e il reclutamento: nei primi due anni entriamo bene. "
+                    "Il problema e il terzo anno.</p>"
+                    "<p>Apriamo la discussione con i dati alla mano, non con le impressioni.</p>"
+                ),
+            },
+            {
+                "title": "Gemellaggi: come si tengono vivi dopo la firma",
+                "summary": "Tre club raccontano cosa fanno per non farli spegnere.",
+                "content": (
+                    "<p>Un gemellaggio senza un progetto comune dura il tempo della cerimonia.</p>"
+                    "<p>Qui le pratiche che hanno retto oltre i dieci anni.</p>"
+                ),
+            },
+            {
+                "title": "Accoglienza di chi torna: cosa serve davvero",
+                "summary": "Chi rientra in Italia per ritrovare le origini chiede sempre le stesse cose.",
+                "content": (
+                    "<p>Un contatto in loco, qualcuno che parli la lingua e un aiuto con gli archivi.</p>"
+                    "<p>Costruiamo una scaletta condivisa invece di improvvisare ogni volta.</p>"
+                ),
+            },
         ]
 
         posts = []
@@ -900,23 +1030,44 @@ class Command(BaseCommand):
 
         return posts
 
+    RISPOSTE = [
+        "Grazie del riscontro, ci coordiniamo nel gruppo dedicato.",
+        "Ti scrivo in privato, cosi ci mettiamo d accordo sulle date.",
+        "Ottimo, allora metto in calendario e avviso gli altri.",
+        "Hai ragione, non ci avevo pensato. Correggo la proposta.",
+        "Abbiamo fatto una cosa simile due anni fa, ti giro il materiale.",
+        "Se serve, il nostro club puo mettere a disposizione la sala.",
+        "Segnalo al referente distrettuale e vi faccio sapere.",
+        "Confermo la disponibilita anche per l anno prossimo.",
+    ]
+
     def _create_forum_comments(self, posts, members):
         comment_texts = [
             "Ottima iniziativa, sarebbe utile coinvolgere anche i club gemellati.",
             "Condivido pienamente, possiamo replicare il modello in altri distretti.",
             "Mi interessa partecipare al prossimo incontro, resto disponibile.",
             "Suggerisco di aggiungere un momento formativo per i giovani rotariani.",
-            "Possiamo integrare una survey per misurare l'impatto a sei mesi.",
+            "Possiamo integrare una survey per misurare l impatto a sei mesi.",
             "Abbiamo una rete di volontari che potrebbe supportare la logistica.",
-            "Propongo di coinvolgere universita' e incubatori locali.",
+            "Propongo di coinvolgere universita e incubatori locali.",
             "Disponibile a condividere materiali e template per la pianificazione.",
             "Serve un coordinamento con le amministrazioni locali, posso aiutare.",
             "Molto utile, potremmo allargare il target anche alle scuole tecniche.",
+            "Nel nostro distretto abbiamo provato una formula simile: funziona.",
+            "Attenzione ai tempi: con le scuole bisogna muoversi entro settembre.",
+            "Quanto costa in tutto? Chiedo per capire se e sostenibile da noi.",
+            "Io porterei il tema in assemblea, merita una discussione piu ampia.",
+            "Bella idea ma servirebbe un referente fisso, altrimenti si perde.",
+            "Possiamo chiedere un contributo alla Fondazione per la parte formativa.",
+            "Mi offro per la parte di comunicazione, ho esperienza con i social.",
+            "Abbiamo gia i contatti con la Protezione Civile, se puo servire.",
+            "Domanda pratica: chi tiene i rapporti con le famiglie ospitanti?",
+            "Segnalo che il bando regionale scade a fine mese, vale la pena provarci.",
         ]
 
         for post in posts:
             top_level = []
-            for _ in range(5):
+            for _ in range(random.randint(3, 8)):
                 comment = Comment.objects.create(
                     post=post,
                     author=random.choice(members),
@@ -924,16 +1075,23 @@ class Command(BaseCommand):
                 )
                 top_level.append(comment)
 
+            # Non tutti i commenti ricevono risposta: un thread in cui ogni
+            # messaggio ha esattamente una replica si riconosce a colpo d occhio.
             for parent in top_level:
-                Comment.objects.create(
-                    post=post,
-                    parent=parent,
-                    author=random.choice(members),
-                    text=(
-                        "Grazie per il feedback, possiamo coordinarci nel gruppo dedicato "
-                        "e definire una timeline condivisa."
-                    ),
-                )
+                for _ in range(random.choice([0, 0, 1, 1, 2])):
+                    Comment.objects.create(
+                        post=post,
+                        parent=parent,
+                        author=random.choice(members),
+                        text=random.choice(self.RISPOSTE),
+                    )
+
+    GRUPPI = [
+        ("Community Rota-Space", "Canale generale per aggiornamenti e annunci."),
+        ("Commissione Azione Internazionale", "Coordinamento dei progetti oltre confine."),
+        ("Scambio giovani 2026", "Organizzazione delle ospitalita e dei rientri."),
+        ("Turismo delle radici", "Chi accoglie chi torna, e come."),
+    ]
 
     def _create_chats(self, clubs, members):
         # Su una copia: `shuffle` riordina sul posto, e la lista e' la stessa
@@ -941,10 +1099,8 @@ class Command(BaseCommand):
         # faceva cambiare l'account documentato a ogni esecuzione.
         sorteggiati = list(clubs)
         random.shuffle(sorteggiati)
-        gemellaggi = [
-            (sorteggiati[0], sorteggiati[1]),
-            (sorteggiati[2], sorteggiati[3]),
-        ]
+        gemellaggi = [(sorteggiati[i], sorteggiati[i + 1])
+                      for i in range(0, min(8, len(sorteggiati) - 1), 2)]
 
         for club_a, club_b in gemellaggi:
             chat = Chat.create_group(
@@ -956,34 +1112,95 @@ class Command(BaseCommand):
             )
             self._seed_messages(chat, [club_a, club_b], members)
 
-        # Direct chats between members
-        for member in members[:5]:
+        # Chat dirette fra soci: abbastanza da riempire un elenco.
+        for member in members[:14]:
             peer = random.choice([m for m in members if m != member])
             chat = Chat.get_or_create_direct_chat(member, peer)
             self._seed_messages(chat, [member, peer], members)
 
-        # General group chat
-        group = Chat.create_group(
-            name="Community Rota-Space",
-            creator=random.choice(members),
-            description="Canale generale per aggiornamenti e annunci.",
-            chat_type="general_group",
-            participant_ids=[m.id for m in random.sample(members, k=6)],
-        )
-        self._seed_messages(group, members, members)
+        for nome, descrizione in self.GRUPPI:
+            partecipanti = random.sample(members, k=random.randint(5, 9))
+            group = Chat.create_group(
+                name=nome,
+                creator=partecipanti[0],
+                description=descrizione,
+                chat_type="general_group",
+                participant_ids=[m.id for m in partecipanti],
+            )
+            self._seed_messages(group, partecipanti, members)
+
+    # Conversazioni intere invece di frasi sciolte: quattro battute a caso non
+    # sembrano una chat, e la dimostrazione serve a far vedere com'e' usarla.
+    CONVERSAZIONI = [
+        [
+            "Ciao a tutti, facciamo il punto sul progetto?",
+            "Volentieri. Le adesioni sono chiuse: siamo a diciotto famiglie.",
+            "Piu di quante ne aspettavamo. Riusciamo a ospitarli tutti?",
+            "Dodici in citta, le altre sei nei comuni vicini. Serve il pulmino.",
+            "Me ne occupo io, ho un contatto in parrocchia.",
+            "Perfetto. Fisso una riunione per giovedi sera?",
+            "Per me va bene. In sede o online?",
+            "In sede, cosi vediamo anche la sala per la cena finale.",
+            "Ci sono. Porto il preventivo del catering.",
+            "Allora giovedi alle 21. Mando il promemoria domani.",
+        ],
+        [
+            "Buongiorno, ho ricevuto la documentazione del gemellaggio.",
+            "Ottimo. Avete visto la parte sui fondi della Foundation?",
+            "Si, ma non mi e chiaro chi presenta la domanda.",
+            "La presenta il club ospitante, noi firmiamo come partner.",
+            "Allora tocca a voi. Noi prepariamo la lettera di sostegno.",
+            "Entro quando vi serve?",
+            "La scadenza e il 31 marzo, meglio avere tutto due settimane prima.",
+            "Fattibile. Vi mando una bozza entro venerdi.",
+            "Grazie. Intanto giro il tutto al tesoriere.",
+        ],
+        [
+            "Qualcuno ha gia usato la piattaforma per pubblicare un itinerario?",
+            "Io ne ho messo uno la settimana scorsa, e stato piu semplice del previsto.",
+            "Le foto le hai caricate direttamente o passate da qualcuno?",
+            "Direttamente, si trascinano dentro l editor.",
+            "Buono a sapersi. E le traduzioni?",
+            "Vengono da sole. Io ho scritto in italiano e compare anche in inglese.",
+            "Allora provo a caricare quello del Pollino.",
+            "Fai pure, se ti blocchi scrivimi.",
+        ],
+        [
+            "Vi segnalo che domenica siamo al mercatino con il banco.",
+            "A che ora si monta?",
+            "Dalle sette e mezza. Servirebbero due persone in piu.",
+            "Io ci sono, arrivo per le otto.",
+            "Anche io, ma solo fino a mezzogiorno.",
+            "Benissimo, cosi copriamo tutta la mattina.",
+            "Porto il gazebo, l anno scorso e piovuto.",
+            "Ottima idea. Ci vediamo domenica allora.",
+        ],
+        [
+            "Ho parlato con la scuola: sono interessati al progetto sull orto.",
+            "Che classi coinvolgono?",
+            "Tre quarte e due quinte, circa novanta bambini.",
+            "Serve un agronomo per gli incontri.",
+            "Ne conosco uno disponibile, socio del club di fianco.",
+            "Chiediamo un preventivo per le serre?",
+            "Fatto. Sono milleduecento euro, montaggio compreso.",
+            "Nel budget ci stiamo. Portiamolo al direttivo.",
+            "Lo metto all ordine del giorno del prossimo consiglio.",
+        ],
+    ]
 
     def _seed_messages(self, chat, participants, members):
-        messages = [
-            "Ciao a tutti, condividiamo lo stato del progetto?",
-            "Abbiamo già raccolto le adesioni principali.",
-            "Propongo un meeting la prossima settimana per definire le attività.",
-            "Ottimo, prepariamo una timeline condivisa.",
-        ]
-        for idx in range(4):
-            sender = random.choice(participants)
+        conversazione = random.choice(self.CONVERSAZIONI)
+        # Si alternano, come parlerebbero davvero due persone, e ogni tanto
+        # qualcuno scrive due volte di fila.
+        indice = 0
+        for passo, testo in enumerate(conversazione):
+            if random.random() > 0.25:
+                indice = (indice + 1) % len(participants)
             Message.objects.create(
                 chat=chat,
-                sender=sender,
-                body=messages[idx],
-                created_at=timezone.now() - timedelta(days=4 - idx),
+                sender=participants[indice],
+                body=testo,
+                created_at=timezone.now() - timedelta(
+                    days=6 - passo * 6 // len(conversazione),
+                    minutes=random.randint(0, 600)),
             )

@@ -16,6 +16,7 @@ from .serializers import (
     PostTranslationSerializer,
 )
 from common.richtext import sanitize_rich_text
+from common.throttling import SoloInScrittura
 
 
 class PostPagination(PageNumberPagination):
@@ -32,7 +33,7 @@ class CommentPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class PostViewSet(viewsets.ModelViewSet):
+class PostViewSet(SoloInScrittura, viewsets.ModelViewSet):
     """ViewSet for forum posts."""
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = PostPagination
@@ -147,7 +148,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(SoloInScrittura, viewsets.ModelViewSet):
     """ViewSet for comments (for individual comment operations)."""
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer

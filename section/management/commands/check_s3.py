@@ -26,10 +26,13 @@ class Command(BaseCommand):
                 'In produzione spariscono al primo riavvio.'))
             return
 
+        firmati = getattr(settings, 'AWS_QUERYSTRING_AUTH', False)
         self.stdout.write(f'bucket   {settings.AWS_STORAGE_BUCKET_NAME}')
-        self.stdout.write(f'regione  {settings.AWS_S3_REGION_NAME}')
+        self.stdout.write(f'dove     {getattr(settings, "AWS_S3_ENDPOINT_URL", None) or f"AWS {settings.AWS_S3_REGION_NAME}"}')
         self.stdout.write(f'storage  {type(default_storage).__name__}')
-        self.stdout.write(f'media    {settings.MEDIA_URL}')
+        self.stdout.write('accesso  ' + (
+            f'URL firmati, validi {settings.AWS_QUERYSTRING_EXPIRE // 3600} ore'
+            if firmati else 'URL pubblici'))
 
         salvato = None
         try:
@@ -42,19 +45,22 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('rilettura  contenuto identico'))
 
             url = default_storage.url(salvato)
-            if '?' in url:
+            if firmati and '?' not in url:
                 self.stdout.write(self.style.WARNING(
-                    f'lettura    l\'URL e\' firmato e scade: {url.split("?")[0]}\n'
-                    '           metti AWS_QUERYSTRING_AUTH=False, altrimenti le immagini\n'
-                    '           smettono di caricarsi dopo qualche ora.'))
+                    'lettura    ci si aspettava un URL firmato e non lo e\'.'))
             risposta = requests.get(url, timeout=10)
             if risposta.status_code == 200 and risposta.content == CONTENUTO:
                 self.stdout.write(self.style.SUCCESS(f'lettura    200 da {url}'))
             else:
-                self.stdout.write(self.style.ERROR(
-                    f'lettura    {risposta.status_code} da {url}\n'
+                spiegazione = (
+                    '           la firma non viene accettata: controlla che\n'
+                    '           AWS_S3_ENDPOINT_URL e la regione siano quelli del bucket.'
+                    if firmati else
                     '           il bucket non e\' leggibile pubblicamente: nessuna\n'
-                    '           immagine si vedra\' sul sito. Controlla la bucket policy.'))
+                    '           immagine si vedra\' sul sito. Controlla la bucket policy,\n'
+                    '           oppure attiva AWS_QUERYSTRING_AUTH=True.')
+                self.stdout.write(self.style.ERROR(
+                    f'lettura    {risposta.status_code} da {url.split("?")[0]}\n' + spiegazione))
         except Exception as exc:
             self.stdout.write(self.style.ERROR(f'errore     {exc}'))
         finally:
