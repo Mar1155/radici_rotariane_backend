@@ -13,8 +13,8 @@ from cms.models import HomePage, StandardPage
 
 # Le pagine a cui la homepage rimanda.
 RIMANDI = [
-    'adotta-un-progetto', 'storie-e-radici', 'eccellenze-calabresi',
-    'calendario-delle-radici', 'scopri-la-calabria', 'scambi-e-mobilita',
+    'adotta-un-progetto', 'storie-e-radici', 'eccellenze-italiane',
+    'calendario-delle-radici', 'scopri-l-italia', 'scambi-e-mobilita',
     'archivio', 'progetto', 'cip', 'partner',
 ]
 

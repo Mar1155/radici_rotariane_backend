@@ -32,8 +32,8 @@ ESPLORA = [
     ('Calendario delle Radici', 'calendario-delle-radici', 'Calendar'),
     ('Comitati Inter-Paese', 'cip', 'Handshake'),
     ('Storie e Radici', 'storie-e-radici', 'BookOpen'),
-    ('Scopri la Calabria', 'scopri-la-calabria', 'MapPin'),
-    ('Eccellenze Calabresi', 'eccellenze-calabresi', 'Award'),
+    ("Scopri l'Italia", 'scopri-l-italia', 'MapPin'),
+    ('Eccellenze Italiane', 'eccellenze-italiane', 'Award'),
     ('Archivio', 'archivio', 'Bookmark'),
     ('Partner', 'partner', 'Handshake'),
 ]

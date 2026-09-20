@@ -17,8 +17,14 @@ from cms.models import ArticleType, ArticleTypeInfoElement, ArticleTypeTag, GeoA
 from section.legacy import legacy_config
 
 # (sezione, tab) -> (chiave, nome singolare, nome plurale, descrizione)
-# I nomi sono deliberatamente generici: il progetto passa dalla Calabria a
+# I nomi sono deliberatamente generici: il progetto e' passato dalla Calabria a
 # tutta l'Italia, quindi "Eccellenza" e non "Eccellenza calabrese".
+#
+# ATTENZIONE alle chiavi a sinistra: non sono slug di pagina, sono le coppie
+# (sezione, tab) con cui la vecchia configurazione e' registrata dentro
+# `section/legacy/config_snapshot.json`, che e' congelato. Le pagine oggi si
+# chiamano /eccellenze-italiane e /scopri-l-italia, ma qui si continua a
+# cercare con i nomi di allora: rinominarle spezza il test di copertura.
 NOMI = {
     ('adotta-un-progetto', 'main'): (
         'progetto', 'Progetto', 'Progetti',

@@ -62,17 +62,18 @@ SEZIONI = [
         'slug': 'storie-e-radici',
         'title': 'Storie e Radici',
         'accent': 'sky',
-        'tag': 'Identità Calabrese',
-        'description': "L'archivio multimediale dedicato alla cultura calabrese: racconti "
-                       'autentici che intrecciano memoria, identità e appartenenza.',
+        'tag': 'Identità e Memoria',
+        'description': "L'archivio multimediale dedicato alle culture dei territori "
+                       'italiani: racconti autentici che intrecciano memoria, identità '
+                       'e appartenenza.',
         'spiegazione': {
             'title': 'Condividi la tua storia',
             'description': 'Condividi foto, video e documenti relativi ad esperienze personali, '
-                           'viaggi alle origini, storie di rotariani nel mondo e tradizioni calabresi.',
+                           'viaggi alle origini, storie di rotariani nel mondo e tradizioni locali.',
             'steps': [
                 ('Globe', 'Foto e Video', 'Condividi foto e video di esperienze autentiche'),
                 ('Flag', 'Racconti', 'Racconta storie di rotariani di successo nel mondo'),
-                ('Award', 'Tradizioni', 'Condividi aneddoti, ricette, tradizioni calabresi'),
+                ('Award', 'Tradizioni', 'Condividi aneddoti, ricette, tradizioni del tuo territorio'),
             ],
         },
         'corpo': [('tabbed_article_list', {
@@ -86,18 +87,18 @@ SEZIONI = [
         })],
     },
     {
-        'slug': 'eccellenze-calabresi',
-        'title': 'Eccellenze Calabresi',
+        'slug': 'eccellenze-italiane',
+        'title': 'Eccellenze Italiane',
         'accent': 'teal',
         'tag': 'Convenzioni e sconti',
-        'description': 'Scopri le migliori attività calabresi a prezzi agevolati: Ristoranti, '
+        'description': 'Scopri le migliori attività italiane a prezzi agevolati: ristoranti, '
                        'hotel, aziende e professionisti di qualità, con sconti dedicati ai '
-                       'Rotariani in visita in Calabria.',
+                       'Rotariani in visita.',
         'spiegazione': {
             'title': 'Vuoi aderire?',
             'description': "Hai un'attività o conosci un'attività che vorrebbe aderire al "
-                           'progetto offrendo sconti esclusivi ai rotariani in visita in '
-                           'Calabria? Contattaci',
+                           'progetto offrendo sconti esclusivi ai rotariani di passaggio? '
+                           'Contattaci',
             'steps': [],
             'contact_email': 'info@rotary2102.org',
         },
@@ -115,13 +116,13 @@ SEZIONI = [
         'corpo': [elenco('evento', layout='calendar', columns='1', accent='amber')],
     },
     {
-        'slug': 'scopri-la-calabria',
-        'title': 'Scopri la Calabria',
+        'slug': 'scopri-l-italia',
+        'title': "Scopri l'Italia",
         'accent': 'rose',
         'tag': 'Turismo delle Radici',
-        'description': 'La guida completa alla scoperta delle meraviglie del territorio '
-                       'calabrese: Mare cristallino, montagne maestose, storia millenaria '
-                       'e sapori autentici.',
+        'description': 'La guida alla scoperta dei territori italiani: coste e isole, '
+                       'montagne e borghi, storia millenaria e sapori che cambiano '
+                       'a ogni provincia.',
         'spiegazione': None,
         'corpo': [('tabbed_article_list', {
             'heading': '', 'accent': 'rose',
@@ -129,7 +130,7 @@ SEZIONI = [
             'tabs': [
                 tab('Itinerari', 'itinerario', '2'),
                 tab('Esperienze', 'esperienza', '3'),
-                tab('Casa Calabria International', 'consiglio', '1'),
+                tab('Consigli', 'consiglio', '1'),
             ],
         })],
     },

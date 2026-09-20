@@ -12,8 +12,8 @@ from wagtail.models import Locale, Page, Site
 from cms.models import ArticleType, HomePage, StandardPage
 
 SLUG_ATTESI = [
-    'adotta-un-progetto', 'storie-e-radici', 'eccellenze-calabresi',
-    'calendario-delle-radici', 'scopri-la-calabria', 'scambi-e-mobilita',
+    'adotta-un-progetto', 'storie-e-radici', 'eccellenze-italiane',
+    'calendario-delle-radici', 'scopri-l-italia', 'scambi-e-mobilita',
     'archivio',
 ]
 

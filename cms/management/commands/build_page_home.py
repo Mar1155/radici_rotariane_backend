@@ -33,7 +33,7 @@ ACCESSO_RAPIDO = [
      'Spazio virtuale per chat, videoconferenze e collaborazioni',
      'Entra nello Space', '/rota-space'),
     ('Heart', 'Adotta un Progetto',
-     'Scopri i progetti dei Club Rotary calabresi',
+     'Scopri i progetti dei Club Rotary italiani',
      'Scopri i progetti', pagina('adotta-un-progetto')),
     ('Globe', 'Rotariani nel Mondo',
      'Esplora la mappa dei club registrati su Radici Rotariani nel Mondo',
@@ -50,8 +50,8 @@ PASSI = [
 # (icona, etichetta, accento, destinazione)
 RIQUADRI = [
     ('BookOpen', 'Storie e Radici', 'sky', pagina('storie-e-radici')),
-    ('MapPin', 'Scopri la Calabria', 'teal', pagina('scopri-la-calabria')),
-    ('Award', 'Eccellenze Calabresi', 'emerald', pagina('eccellenze-calabresi')),
+    ('MapPin', "Scopri l'Italia", 'teal', pagina('scopri-l-italia')),
+    ('Award', 'Eccellenze Italiane', 'emerald', pagina('eccellenze-italiane')),
     ('Users', 'Scambi e Mobilità', 'rose', pagina('scambi-e-mobilita')),
     ('Bookmark', 'Archivio', 'slate', pagina('archivio')),
     ('Briefcase', 'Skills Network', 'brand-secondary', '/skills'),
@@ -62,7 +62,7 @@ RIQUADRI = [
 ]
 
 NUMERI = [
-    ('clubs', 'Club Calabresi', '50+'),
+    ('clubs', 'Club Italiani', '50+'),
     ('rotarians', 'Rotariani Connessi', '1000+'),
     ('countries', 'Paesi Coinvolti', '25+'),
     ('projects', 'Progetti Attivi', '100+'),
@@ -102,11 +102,11 @@ class Command(BaseCommand):
                 'subtitle': 'Il ponte digitale tra identità, memoria e futuro',
                 'note_title': 'Benvenuti su Radici Rotariane nel Mondo',
                 'note_body': (
-                    "La piattaforma digitale ideata dal Distretto Rotary 2102 per "
-                    "valorizzare le radici calabresi dei rotariani all'estero e "
-                    "promuovere l'Azione internazionale. Qui puoi connetterti, creare "
-                    "nuove collaborazioni, avviare nuovi gemellaggi tra Club e "
-                    "scoprire il territorio calabrese.\n\n"
+                    "La piattaforma digitale nata nel Distretto Rotary 2102 e aperta a "
+                    "tutta Italia, per valorizzare le radici italiane dei rotariani "
+                    "all'estero e promuovere l'Azione internazionale. Qui puoi "
+                    "connetterti, creare nuove collaborazioni, avviare nuovi gemellaggi "
+                    "tra Club e riscoprire i territori da cui parte la tua storia.\n\n"
                     'Accedi con la tua email MyRotary e inizia il viaggio!'),
                 # "Registrati" non si mostra a chi ha gia' un account: prima la
                 # regola stava nel JSX, ora viaggia col collegamento.
@@ -114,7 +114,7 @@ class Command(BaseCommand):
                 'secondary_cta': link('Scopri di più', pagina('progetto')),
                 'video_url': '',
                 'video_title': 'Video Introduttivo',
-                'video_subtitle': 'Scopri la Calabria e il Rotary',
+                'video_subtitle': "Scopri l'Italia e il Rotary",
             }),
             ('icon_card_grid', {
                 'title': 'Accesso Rapido',
@@ -150,8 +150,9 @@ class Command(BaseCommand):
             ('cta_banner', {
                 'title': 'Pronto a riscoprire le tue radici?',
                 'description': (
-                    'Unisciti alla community globale di rotariani calabresi e inizia a '
-                    'costruire ponti tra culture, progetti e amicizie che durano una vita.'),
+                    'Unisciti alla community globale dei rotariani di origine italiana '
+                    'e inizia a costruire ponti tra culture, progetti e amicizie che '
+                    'durano una vita.'),
                 'surface': 'brand-secondary',
                 'primary_cta': link('Registrati con MyRotary', '/register', 'anonymous'),
                 'secondary_cta': link('Scopri di Più', pagina('progetto')),

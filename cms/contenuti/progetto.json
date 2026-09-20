@@ -6,7 +6,7 @@
    "tag": "Distretto Rotary 2102",
    "title": "Radici Rotariane nel Mondo",
    "surface": "brand-gradient",
-   "description": "Un'iniziativa del Distretto Rotary 2102 per potenziare l'Azione internazionale e promuovere al contempo il territorio calabrese.",
+   "description": "Un'iniziativa nata nel Distretto Rotary 2102 e aperta a tutta Italia, per potenziare l'Azione internazionale e promuovere al contempo i territori italiani.",
    "scroll_to_id": "contenuto"
   }
  },
@@ -28,7 +28,7 @@
       "icon": "Target",
       "title": "Mission",
       "accent": "brand-primary",
-      "description": "Creare una rete globale interattiva, che partendo dalla Calabria, connetta il Distretto 2102 con i Rotariani di tutto il mondo, promuovendo e facilitando progetti di service transnazionali, scambi d'amicizia rotariana e gemellaggi."
+      "description": "Creare una rete globale interattiva che connetta i Club italiani con i Rotariani di tutto il mondo, promuovendo e facilitando progetti di service transnazionali, scambi d'amicizia rotariana e gemellaggi."
      }
     },
     {
@@ -44,14 +44,14 @@
       "icon": "Compass",
       "title": "Vision",
       "accent": "sky",
-      "description": "Diventare un punto di riferimento per i Rotariani nel mondo, creando opportunità di crescita personale e professionale, promuovendo l'eccellenza Calabrese e contribuendo allo sviluppo sostenibile delle comunità locali e globali."
+      "description": "Diventare un punto di riferimento per i Rotariani nel mondo, creando opportunità di crescita personale e professionale, promuovendo le eccellenze italiane e contribuendo allo sviluppo sostenibile delle comunità locali e globali."
      }
     }
    ],
    "title": "Cos'è la Piattaforma?",
    "columns": "2",
    "surface": "white",
-   "subtitle": "Radici Rotariane nel Mondo è un progetto che nasce con l'intento iniziale di rafforzare i legami tra i Rotariani di origine Calabrese residenti all'estero e la loro terra d'origine, per poi trasformarsi in uno strumento interattivo innovativo capace di rendere l'Azione Internazionale più connessa e significativa.\nLa WebApp RRNM offre la possibilità di creare nuovi contatti e promuovere scambi d'amicizia Rotariana, gemellaggi e progetti comuni, valorizzando al contempo l'identità Calabrese e facilitando la connessione tra Rotariani di tutto il mondo, in linea con i valori del Rotary."
+   "subtitle": "Radici Rotariane nel Mondo è un progetto che nasce con l'intento iniziale di rafforzare i legami tra i Rotariani di origine italiana residenti all'estero e le loro terre d'origine, per poi trasformarsi in uno strumento interattivo innovativo capace di rendere l'Azione Internazionale più connessa e significativa.\nLa WebApp RRNM offre la possibilità di creare nuovi contatti e promuovere scambi d'amicizia Rotariana, gemellaggi e progetti comuni, valorizzando al contempo le identità dei territori italiani e facilitando la connessione tra Rotariani di tutto il mondo, in linea con i valori del Rotary."
   }
  },
  {
@@ -88,7 +88,7 @@
       "icon": "Handshake",
       "title": "Gemellaggi",
       "accent": "emerald",
-      "description": "Incentivare gemellaggi tra Club del Distretto 2102 e Club internazionali"
+      "description": "Incentivare gemellaggi tra Club italiani e Club internazionali"
      }
     },
     {
@@ -118,9 +118,9 @@
        "external_url": ""
       },
       "icon": "Award",
-      "title": "Eccellenza Calabrese",
+      "title": "Eccellenza Italiana",
       "accent": "amber",
-      "description": "Promuovere l'identità e l'eccellenza calabrese in tutti i settori, mantenendo vive le specificità culturali e salvaguardando le tradizioni locali."
+      "description": "Promuovere l'identità e le eccellenze italiane in tutti i settori, mantenendo vive le specificità culturali e salvaguardando le tradizioni locali."
      }
     },
     {
@@ -241,7 +241,7 @@
    "title": "Prospettiva Futura",
    "columns": "3",
    "surface": "brand-gradient",
-   "subtitle": "La piattaforma \"Radici Rotariane nel mondo\" mira a superare i confini del Distretto 2102 diventando uno strumento completo a supporto dell'Azione Internazionale del Rotary, con l'obiettivo di favorire connessioni, networking e la nascita di nuovi gemellaggi tra Club geograficamente distanti, creando così un ponte digitale tra culture diverse.\nGrazie alla versatilità delle sue numerose sezioni e funzionalità, rappresenta un progetto innovativo ad alto potenziale di scalabilità, con la possibilità di diventare un modello replicabile a livello internazionale."
+   "subtitle": "La piattaforma \"Radici Rotariane nel mondo\" ha superato i confini del Distretto 2102 e punta a diventare uno strumento completo a supporto dell'Azione Internazionale del Rotary, con l'obiettivo di favorire connessioni, networking e la nascita di nuovi gemellaggi tra Club geograficamente distanti, creando così un ponte digitale tra culture diverse.\nGrazie alla versatilità delle sue numerose sezioni e funzionalità, rappresenta un progetto innovativo ad alto potenziale di scalabilità, con la possibilità di diventare un modello replicabile a livello internazionale."
   }
  },
  {
