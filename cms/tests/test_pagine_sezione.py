@@ -78,3 +78,46 @@ class PagineSezioneTest(TestCase):
     def test_le_pagine_sono_pubblicate(self):
         for pagina in StandardPage.objects.all():
             self.assertTrue(pagina.live, f'/{pagina.slug} non e pubblicata')
+
+
+class RinominaSezioneTest(TestCase):
+    """Una sezione rinominata si porta dietro la pagina che aveva gia'.
+
+    In locale si riparte sempre da un database vuoto, quindi il caso non si
+    presenta mai: `build_pages_sezioni` trova la pagina per slug, non la
+    trova, e la crea. In produzione il database c'e' gia', e senza questo la
+    pagina nuova nascerebbe accanto alla vecchia — che resterebbe pubblicata,
+    raggiungibile, con i testi di prima.
+    """
+
+    def test_la_pagina_viene_rinominata_non_duplicata(self):
+        from cms.bootstrap import assicura_homepage
+        from cms.management.commands.build_pages_sezioni import SEZIONI
+
+        rinominate = [s for s in SEZIONI if s.get('slug_precedenti')]
+        self.assertTrue(rinominate, 'nessuna sezione dichiara un nome precedente')
+
+        locale = Locale.get_default()
+        home = assicura_homepage()
+        for s in rinominate:
+            vecchia = StandardPage(title='Nome di prima',
+                                   slug=s['slug_precedenti'][0], locale=locale)
+            home.add_child(instance=vecchia)
+            vecchia.save_revision().publish()
+        prima = StandardPage.objects.count()
+
+        call_command('seed_geo', verbosity=0)
+        call_command('seed_article_types', verbosity=0)
+        call_command('build_pages_sezioni', verbosity=0)
+
+        for s in rinominate:
+            self.assertFalse(
+                StandardPage.objects.filter(slug=s['slug_precedenti'][0]).exists(),
+                f'/{s["slug_precedenti"][0]} e\' rimasta in piedi')
+            pagina = StandardPage.objects.get(slug=s['slug'], locale=locale)
+            self.assertEqual(pagina.title, s['title'])
+            self.assertEqual(pagina.url_path, f'{home.url_path}{s["slug"]}/')
+
+        # Le altre sezioni nascono, le due rinominate no: nessun duplicato.
+        self.assertEqual(StandardPage.objects.count(),
+                         prima + len(SEZIONI) - len(rinominate))

@@ -88,6 +88,7 @@ SEZIONI = [
     },
     {
         'slug': 'eccellenze-italiane',
+        'slug_precedenti': ['eccellenze-calabresi'],
         'title': 'Eccellenze Italiane',
         'accent': 'teal',
         'tag': 'Convenzioni e sconti',
@@ -117,6 +118,7 @@ SEZIONI = [
     },
     {
         'slug': 'scopri-l-italia',
+        'slug_precedenti': ['scopri-la-calabria'],
         'title': "Scopri l'Italia",
         'accent': 'rose',
         'tag': 'Turismo delle Radici',
@@ -213,6 +215,15 @@ class Command(BaseCommand):
 
             pagina = StandardPage.objects.filter(slug=s['slug'], locale=locale).first()
             if pagina is None:
+                # Se la sezione e' stata rinominata, la pagina c'e' gia' con il
+                # nome di prima: va rinominata, non duplicata. Senza questo un
+                # database esistente si ritroverebbe la pagina nuova accanto
+                # alla vecchia, pubblicata, con i testi di allora.
+                pagina = self._con_nome_precedente(s, locale)
+                if pagina is not None:
+                    self.stdout.write(f'  /{pagina.slug} rinominata in /{s["slug"]}')
+                    pagina.slug = s['slug']
+            if pagina is None:
                 pagina = StandardPage(title=s['title'], slug=s['slug'], locale=locale)
                 home.add_child(instance=pagina)
             pagina.title = s['title']
@@ -222,6 +233,13 @@ class Command(BaseCommand):
             self.stdout.write(f'  /{s["slug"]:26} {len(corpo)} blocchi')
 
         self.stdout.write(self.style.SUCCESS(f'{len(SEZIONI)} pagine sezione pubblicate.'))
+
+    def _con_nome_precedente(self, s, locale):
+        for precedente in s.get('slug_precedenti', ()):
+            pagina = StandardPage.objects.filter(slug=precedente, locale=locale).first()
+            if pagina is not None:
+                return pagina
+        return None
 
     def _tipo(self, chiave, tipi, slug):
         if chiave not in tipi:
