@@ -1,7 +1,7 @@
 # serializers.py
 from traduzione.lettura import InLinguaDelLettore
 from rest_framework import serializers
-from .models import Card, CardAttachment, CardTranslation
+from .models import Card, CardAttachment
 
 
 class SavedByUserSerializer(serializers.Serializer):
@@ -18,36 +18,9 @@ class CardAttachmentSerializer(serializers.ModelSerializer):
         fields = ['id', 'file', 'file_type', 'original_name', 'uploaded_at']
 
 
-class CardTranslationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CardTranslation
-        fields = [
-            'id',
-            'card',
-            'target_language',
-            'translated_title',
-            'translated_subtitle',
-            'translated_location',
-            'translated_body',
-            'translated_info_values',
-            'needs_review',
-            'human_locked',
-            'provider',
-            'detected_source_language',
-            'created_at',
-        ]
-
-
 class CardSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     """Un articolo, nella lingua del lettore."""
 
-    campi_tradotti = {
-        'title': 'translated_title',
-        'subtitle': 'translated_subtitle',
-        'location': 'translated_location',
-        'body': 'translated_body',
-        'info_values': 'translated_info_values',
-    }
 
     display_date = serializers.CharField(source='get_display_date', read_only=True)
     is_past = serializers.BooleanField(source='is_past_event', read_only=True)

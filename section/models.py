@@ -3,9 +3,18 @@ from django.utils.text import slugify
 from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Card(models.Model):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     
     DATE_TYPE_CHOICES = [
         ('single', 'Data Singola'),
@@ -374,60 +383,6 @@ class CardReport(models.Model):
 
     def __str__(self):
         return f"Report #{self.pk} for {self.card_id}"
-
-
-class CardTranslation(models.Model):
-    """La versione di un articolo in un'altra lingua.
-
-    Una riga per lingua: aggiungerne una non richiede migrazioni, che e' cio'
-    che rende vero "aggiungere una lingua costa tre righe di configurazione".
-    """
-
-    PROVIDER_CHOICES = [
-        ('claude', 'Modello linguistico'),
-        ('deepl', 'DeepL'),
-        ('google', 'Google Cloud Translation'),
-        ('identita', 'Nessuna traduzione (testo originale)'),
-        ('umano', 'Scritta da una persona'),
-    ]
-
-    card = models.ForeignKey(Card, on_delete=models.CASCADE, related_name='translations')
-    target_language = models.CharField(max_length=10)
-    # TextField, non CharField(255): una traduzione IT→DE si espande del 10-30%
-    # e update_or_create non chiama full_clean(), quindi l'eccesso arriverebbe
-    # a Postgres come errore 'value too long' invece che come ValidationError.
-    translated_title = models.TextField()
-    translated_subtitle = models.TextField(blank=True)
-    translated_location = models.TextField(blank=True)
-    # Il corpo tradotto e' un documento, non testo: i nodi di testo si
-    # sostituiscono al loro posto e la formattazione non passa dal traduttore.
-    translated_body = models.JSONField(null=True, blank=True)
-    translated_info_values = models.JSONField(default=dict, blank=True)
-
-    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
-    detected_source_language = models.CharField(max_length=10, blank=True, null=True)
-
-    # Una correzione fatta a mano non va sovrascritta dalla ri-traduzione
-    # automatica: chi l'ha scritta ne sapeva piu' della macchina.
-    human_locked = models.BooleanField(
-        default=False, verbose_name='corretta a mano')
-    # Tradotta senza un motore vero, o con un motore che non garantisce il
-    # glossario: e' la coda di revisione.
-    needs_review = models.BooleanField(
-        default=False, db_index=True, verbose_name='da rivedere')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('card', 'target_language')
-        indexes = [
-            models.Index(fields=['card', 'target_language']),
-            models.Index(fields=['target_language']),
-        ]
-
-    def __str__(self):
-        return f"CardTranslation({self.card_id}, {self.target_language})"
 
 
 class SavedCard(models.Model):

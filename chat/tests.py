@@ -15,7 +15,7 @@ from django.test import TestCase, TransactionTestCase
 from rest_framework.test import APIClient, APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Chat, ChatParticipant, Message, MessageTranslation
+from .models import Chat, ChatParticipant, Message
 
 User = get_user_model()
 

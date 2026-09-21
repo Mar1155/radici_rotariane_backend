@@ -26,9 +26,18 @@ from wagtail.search import index
 
 from cms import vocabularies as vocab
 from cms.forms import ArticleTypeForm
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     key = models.SlugField(
         max_length=64, verbose_name='chiave',
         help_text="Identificatore tecnico, usato nelle API e negli URL. "
@@ -172,6 +181,14 @@ class ArticleTypeInfoElement(TranslatableMixin, Orderable):
     tutti gli articoli gia' scritti.
     """
 
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
+
     article_type = ParentalKey(ArticleType, on_delete=models.CASCADE,
                                related_name='info_elements')
     key = models.SlugField(max_length=40, verbose_name='chiave')
@@ -194,6 +211,14 @@ class ArticleTypeTag(TranslatableMixin, Orderable):
     La geografia NON passa di qui: ha una tassonomia gerarchica propria, perche'
     una lista piatta non regge 20 regioni e oltre 100 province.
     """
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
 
     article_type = ParentalKey(ArticleType, on_delete=models.CASCADE,
                                related_name='allowed_tags')

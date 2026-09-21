@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Card, CardAttachment, CardReport, CardTranslation, SavedCard
+from .models import Card, CardAttachment, CardReport, SavedCard
 
 
 @admin.register(Card)
@@ -23,14 +23,6 @@ class CardReportAdmin(admin.ModelAdmin):
 	list_display = ('card', 'reporter', 'created_at')
 	list_filter = ('created_at',)
 	search_fields = ('card__title', 'reporter__email', 'reporter__first_name', 'reporter__last_name')
-	ordering = ('-created_at',)
-
-
-@admin.register(CardTranslation)
-class CardTranslationAdmin(admin.ModelAdmin):
-	list_display = ('card', 'target_language', 'provider', 'created_at')
-	list_filter = ('target_language', 'provider')
-	search_fields = ('card__title',)
 	ordering = ('-created_at',)
 
 

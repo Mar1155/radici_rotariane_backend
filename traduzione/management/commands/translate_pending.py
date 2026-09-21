@@ -1,27 +1,27 @@
-"""Traduce cio' che non ha ancora tutte le lingue: articoli, post, commenti,
-messaggi.
+"""Traduce cio' che non ha ancora tutte le lingue.
 
 Perche' un comando e non un lavoro dentro la richiesta: tradurre un articolo
 lungo richiede secondi, e nessuno deve aspettarli premendo "Pubblica". Non
-esiste una coda di lavori nel progetto — Redis c'e' ma e' il canale di Channels,
-senza persistenza ne' ritentativi — quindi il posto giusto e' un comando su
-cron, che si puo' rilanciare senza danni.
+esiste una coda di lavori nel progetto — Redis c'e' ma e' il canale di
+Channels, senza persistenza ne' ritentativi — quindi il posto giusto e' un
+comando su cron, che si puo' rilanciare senza danni.
 
     python manage.py translate_pending
     python manage.py translate_pending --lingua en --forza
+    python manage.py translate_pending --solo cms.StandardPage
+
+Prima girava su quattro generi cablati nel codice. Ora gira su cio' che e'
+dichiarato in `traducibili.py`, quindi copre anche le pagine del CMS, i menu e
+le etichette dei tag — che prima non erano coperti affatto.
 """
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from chat.models import Message, MessageTranslation
-from forum.models import Comment, CommentTranslation, Post, PostTranslation
-from section.models import Card, CardTranslation
-from traduzione.articoli import lingue_di_destinazione, traduci_articolo
-from traduzione.conversazioni import (lingue_per, traduci_commento,
-                                      traduci_messaggio, traduci_post)
 from traduzione import lingue
 from traduzione.motori import motore
+from traduzione.percorsi import estrai
+from traduzione.servizio import lingua_di_stesura, traduci, traduzione_di
+from traduzione.traducibili import TRADUCIBILI, etichetta, modelli
 
 
 class Command(BaseCommand):
@@ -33,10 +33,8 @@ class Command(BaseCommand):
                             help='Ritraduce anche cio che e gia tradotto '
                                  '(le correzioni a mano restano intatte).')
         parser.add_argument('--limite', type=int, default=0,
-                            help='Al massimo N oggetti per genere, per provare.')
-        parser.add_argument('--solo', choices=['articoli', 'post', 'commenti',
-                                               'messaggi'],
-                            help='Un genere solo.')
+                            help='Al massimo N oggetti per modello, per provare.')
+        parser.add_argument('--solo', help='Un modello solo, es. section.Card.')
 
     def handle(self, *args, **options):
         m = motore()
@@ -48,58 +46,59 @@ class Command(BaseCommand):
         registrate = lingue.codici_attivi()
         if options['lingua'] and options['lingua'] not in registrate:
             self.stderr.write(self.style.ERROR(
-                f'Lingua {options["lingua"]} non registrata. Ci sono: {registrate}'))
+                f'Lingua {options["lingua"]} non attiva. Ci sono: {registrate}'))
             return
 
-        # (nome, queryset, funzione, modello-traduzione, campo-di-collegamento)
-        GENERI = [
-            ('articoli', Card.objects.filter(is_published=True).order_by('id'),
-             traduci_articolo, CardTranslation, 'card'),
-            ('post', Post.objects.order_by('id'),
-             traduci_post, PostTranslation, 'post'),
-            ('commenti', Comment.objects.order_by('created_at'),
-             traduci_commento, CommentTranslation, 'comment'),
-            ('messaggi', Message.objects.exclude(body='').order_by('id'),
-             traduci_messaggio, MessageTranslation, 'message'),
-        ]
+        da_fare = modelli()
+        if options['solo']:
+            da_fare = [x for x in da_fare if etichetta(x) == options['solo']]
+            if not da_fare:
+                self.stderr.write(self.style.ERROR(
+                    f'{options["solo"]} non e dichiarato. Ci sono: '
+                    f'{", ".join(sorted(TRADUCIBILI))}'))
+                return
 
-        totali = {'fatte': 0, 'saltate': 0, 'fallite': 0}
-        for nome, queryset, funzione, modello, campo in GENERI:
-            if options['solo'] and options['solo'] != nome:
-                continue
-            if options['limite']:
-                queryset = queryset[:options['limite']]
+        totale = 0
+        for modello in da_fare:
+            fatte = self._traduci_modello(modello, m, options)
+            totale += fatte
+            if fatte:
+                self.stdout.write(f'  {etichetta(modello):32} {fatte}')
 
-            for oggetto in queryset:
-                origine = getattr(oggetto, 'source_locale', 'it') or 'it'
-                da_fare = ([options['lingua']] if options['lingua']
-                           else lingue_per(origine))
-                for lingua in da_fare:
-                    if lingua == origine:
+        self.stdout.write(self.style.SUCCESS(f'{totale} tradotte.'))
+
+        from traduzione.models import Traduzione
+        in_coda = Traduzione.objects.filter(needs_review=True).count()
+        if in_coda:
+            self.stdout.write(self.style.WARNING(
+                f'In coda di revisione: {in_coda}. Si vedono da /cms/traduzioni/.'))
+
+    def _traduci_modello(self, modello, m, options):
+        qs = modello.objects.all().order_by('pk')
+        # Gli articoli non pubblicati non si servono a nessuno: tradurli sarebbe
+        # spesa per un testo che forse non vedra' mai la luce.
+        if hasattr(modello, 'is_published'):
+            qs = qs.filter(is_published=True)
+        qs = qs.prefetch_related('traduzioni')
+        if options['limite']:
+            qs = qs[:options['limite']]
+
+        fatte = 0
+        for oggetto in qs:
+            origine = lingua_di_stesura(oggetto)
+            bersagli = ([options['lingua']] if options['lingua']
+                        else lingue.altre_lingue(origine))
+            for lingua in bersagli:
+                if lingua == origine:
+                    continue
+                try:
+                    prima = traduzione_di(oggetto, lingua)
+                    if (prima is not None and not options['forza']
+                            and prima.e_aggiornata(estrai(oggetto))):
                         continue
-                    if not options['forza'] and modello.objects.filter(
-                            **{campo: oggetto, 'target_language': lingua}).exists():
-                        totali['saltate'] += 1
-                        continue
-                    try:
-                        if funzione(oggetto, lingua, m):
-                            totali['fatte'] += 1
-                    except Exception as e:
-                        totali['fallite'] += 1
-                        self.stderr.write(self.style.ERROR(
-                            f'  {nome} #{oggetto.pk} -> {lingua}: {e}'))
-            self.stdout.write(f'  {nome}: fatto')
-
-        riga = f"{totali['fatte']} tradotte"
-        if totali['saltate']:
-            riga += f", {totali['saltate']} gia presenti"
-        if totali['fallite']:
-            riga += f", {totali['fallite']} non riuscite"
-        self.stdout.write(self.style.SUCCESS(riga + '.'))
-
-        rimaste = sum(m_.objects.filter(needs_review=True).count()
-                      for m_ in (CardTranslation, PostTranslation,
-                                 CommentTranslation, MessageTranslation))
-        if rimaste:
-            self.stdout.write(
-                f'In coda di revisione: {rimaste}. Si vedono da /admin/.')
+                    if traduci(oggetto, lingua, m, forza=options['forza']):
+                        fatte += 1
+                except Exception as exc:
+                    self.stderr.write(self.style.ERROR(
+                        f'  {etichetta(modello)} #{oggetto.pk} -> {lingua}: {exc}'))
+        return fatte

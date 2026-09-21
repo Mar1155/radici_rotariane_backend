@@ -10,15 +10,17 @@ import json
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from wagtail.models import Locale, Page, Site
 
 from cms.models import ArticleType, HomePage
-from section.models import Card, CardTranslation
+from section.models import Card
 from section.schema import estrai_testi, reinserisci_testi
-from traduzione.articoli import lingue_di_destinazione, traduci_articolo
 from traduzione import lingue
-from traduzione.models import Lingua
+from traduzione.models import Lingua, Traduzione
+from traduzione.percorsi import applica, estrai
+from traduzione.servizio import traduci, traduci_tutto
 from traduzione.motori import (MotoreClaude, MotoreIdentita, MotoreTraduzione,
                                TraduzioneNonConfigurata, motore)
 
@@ -138,47 +140,63 @@ class TraduzioneArticoloTest(TestCase):
 
     def test_si_traduce_in_tutte_le_lingue_tranne_la_propria(self):
         card = self.crea()
-        self.assertEqual(lingue_di_destinazione(card), ['en'])
+        self.assertEqual([t.target_language for t in traduci_tutto(card, MotoreFinto())],
+                         ['en'])
 
     def test_titolo_corpo_e_informazioni_viaggiano_insieme(self):
         """Il traduttore vede tutto l'articolo in una volta, quindi puo' essere
         coerente fra il titolo e il testo."""
         finto = MotoreFinto()
-        traduci_articolo(self.crea(), 'en', finto)
+        traduci(self.crea(), 'en', finto)
         inviati, da, a = finto.chiamate[0]
         self.assertEqual((da, a), ('it', 'en'))
-        self.assertIn('campo:title', inviati)
-        self.assertIn('corpo:0.1', inviati)
-        self.assertIn('info:giorni', inviati)
+        self.assertIn('title', inviati)
+        self.assertIn('body:0.1', inviati)
+        self.assertIn('info_values:giorni', inviati)
 
     def test_la_struttura_sopravvive_alla_traduzione(self):
-        t = traduci_articolo(self.crea(), 'en', MotoreFinto())
-        para = t.translated_body['content'][0]['content']
+        """La formattazione non passa mai dal traduttore, quindi non torna rotta."""
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        t = card.traduzioni.get(target_language='en')
+
+        dati = applica(card, t.texts)
+        para = dati['body']['content'][0]['content']
         self.assertEqual(para[1]['text'], 'GRASSETTO')
         self.assertEqual(para[1]['marks'], [{'type': 'bold'}])
         self.assertEqual(para[2]['marks'][0]['attrs']['href'], 'https://rotary.org')
-        self.assertEqual(t.translated_body['content'][1]['attrs']['assetId'], 7)
-        self.assertEqual(t.translated_title, 'IL TITOLO')
-        self.assertEqual(t.translated_info_values, {'giorni': '3'})
+        self.assertEqual(dati['body']['content'][1]['attrs']['assetId'], 7)
+        self.assertEqual(dati['title'], 'IL TITOLO')
+        self.assertEqual(dati['info_values'], {'giorni': '3'})
 
     def test_una_correzione_a_mano_non_viene_sovrascritta(self):
-        """Chi l'ha scritta ne sapeva piu' della macchina."""
+        """Chi l'ha scritta ne sapeva piu' della macchina.
+
+        E il blocco e' per percorso, non per oggetto: il resto dell'articolo
+        continua a rinfrescarsi.
+        """
         card = self.crea()
-        CardTranslation.objects.create(
-            card=card, target_language='en', translated_title='Scritto da una persona',
-            provider='umano', human_locked=True)
-        traduci_articolo(card, 'en', MotoreFinto())
-        t = CardTranslation.objects.get(card=card, target_language='en')
-        self.assertEqual(t.translated_title, 'Scritto da una persona')
+        Traduzione.objects.create(
+            content_type=ContentType.objects.get_for_model(card),
+            object_id=str(card.pk), target_language='en', source_language='it',
+            texts={'title': 'Scritto da una persona'},
+            locked_paths=['title'], provider='umano')
+
+        traduci(card, 'en', MotoreFinto())
+
+        t = card.traduzioni.get(target_language='en')
+        self.assertEqual(t.texts['title'], 'Scritto da una persona')
+        self.assertEqual(t.texts['subtitle'], 'IL SOTTOTITOLO',
+                         'il resto deve essersi tradotto lo stesso')
 
     def test_col_motore_di_identita_finisce_in_revisione(self):
-        t = traduci_articolo(self.crea(), 'en', MotoreIdentita())
+        t = traduci(self.crea(), 'en', MotoreIdentita())
         self.assertTrue(t.needs_review)
         self.assertEqual(t.provider, 'identita')
 
     def test_l_api_serve_la_lingua_richiesta(self):
         card = self.crea()
-        traduci_articolo(card, 'en', MotoreFinto())
+        traduci(card, 'en', MotoreFinto())
         originale = self.client.get(f'/api/section/cards/{card.slug}').json()
         self.assertEqual(originale['title'], 'Il titolo')
         self.assertIsNone(originale['translated_from'])
@@ -191,11 +209,38 @@ class TraduzioneArticoloTest(TestCase):
 
     def test_il_comando_non_ritraduce_cio_che_c_e_gia(self):
         card = self.crea()
-        traduci_articolo(card, 'en', MotoreFinto())
-        prima = CardTranslation.objects.get(card=card, target_language='en').updated_at
+        traduci(card, 'en', MotoreFinto())
+        prima = card.traduzioni.get(target_language='en').updated_at
         call_command('translate_pending', verbosity=0)
-        dopo = CardTranslation.objects.get(card=card, target_language='en').updated_at
+        dopo = card.traduzioni.get(target_language='en').updated_at
         self.assertEqual(prima, dopo)
+
+    def test_ma_ritraduce_se_l_originale_e_cambiato(self):
+        """Il buco che c'era prima: modificare un articolo lasciava l'inglese
+        fermo per sempre, perche' bastava che una traduzione esistesse."""
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        self.assertEqual(card.traduzioni.get(target_language='en').texts['title'],
+                         'IL TITOLO')
+
+        card.title = 'Un titolo nuovo'
+        card.save()
+        traduci(card, 'en', MotoreFinto())
+
+        self.assertEqual(card.traduzioni.get(target_language='en').texts['title'],
+                         'UN TITOLO NUOVO')
+
+    def test_una_frase_cancellata_sparisce_dalla_traduzione(self):
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        self.assertIn('subtitle', card.traduzioni.get(target_language='en').texts)
+
+        card.subtitle = ''
+        card.save()
+        traduci(card, 'en', MotoreFinto())
+
+        self.assertNotIn('subtitle', card.traduzioni.get(target_language='en').texts,
+                         'una traduzione non conserva frasi che l autore ha tolto')
 
 
 class RegistroLingueTest(TestCase):
@@ -254,3 +299,173 @@ class RegistroLingueTest(TestCase):
         self.assertEqual(lingue.altre_lingue('it'), ['en', 'es'])
         self.assertEqual(lingue.altre_lingue('en'), ['it', 'es'])
         self.assertEqual(lingue.altre_lingue(None), ['en', 'es'], 'senza origine vale la sorgente')
+
+
+class FlussoTest(TestCase):
+    """Le pagine del CMS: uno StreamField non e' una stringa.
+
+    Questi tre test coprono i modi in cui il lavoro puo' fallire **in
+    silenzio**: il testo resta in italiano, e in italiano assomiglia molto a
+    una traduzione non ancora fatta, quindi nessuno lo segnala.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command('seed_lingue', verbosity=0)
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        cls.home = home
+
+    def pagina(self, corpo):
+        from cms.models import StandardPage
+        p = StandardPage(title='Prova', slug='prova', locale=Locale.get_default(),
+                         body=corpo)
+        self.home.add_child(instance=p)
+        p.save_revision().publish()
+        return StandardPage.objects.get(pk=p.pk)
+
+    def corpo_di_prova(self):
+        return [
+            ('hero', {'title': 'Il titolo', 'description': 'La descrizione',
+                      'tag': 'etichetta', 'surface': 'white',
+                      'scroll_to_id': 'ancora-che-non-si-traduce'}),
+            ('quote', {'quote': 'Una citazione', 'author': 'Chi l ha detta'}),
+        ]
+
+    def test_gli_identificatori_non_si_traducono(self):
+        """Tradurre `ancora-che-non-si-traduce` romperebbe il collegamento
+        che ci punta, e lo romperebbe in silenzio."""
+        p = self.pagina(self.corpo_di_prova())
+        testi = estrai(p)
+
+        self.assertTrue(any(v == 'Il titolo' for v in testi.values()))
+        self.assertNotIn('ancora-che-non-si-traduce', testi.values())
+
+    def test_riordinare_i_blocchi_non_perde_la_traduzione(self):
+        """I percorsi sono gli id dei blocchi, non la loro posizione."""
+        p = self.pagina(self.corpo_di_prova())
+        traduci(p, 'en', MotoreFinto())
+        prima = applica(p, p.traduzioni.get(target_language='en').texts)['body']
+        titolo_tradotto = [b for b in prima if b['type'] == 'hero'][0]['value']['title']
+        self.assertEqual(titolo_tradotto, 'IL TITOLO')
+
+        # Si scambiano i due blocchi, tenendo i loro id.
+        grezzo = list(p.body.raw_data)
+        p.body = [grezzo[1], grezzo[0]]
+        p.save()
+
+        dopo = applica(p, p.traduzioni.get(target_language='en').texts)['body']
+        self.assertEqual(dopo[0]['type'], 'quote', 'i blocchi sono davvero scambiati')
+        self.assertEqual([b for b in dopo if b['type'] == 'hero'][0]['value']['title'],
+                         'IL TITOLO', 'la traduzione e rimasta attaccata al suo blocco')
+
+    def test_un_blocco_nuovo_compare_nella_lingua_originale(self):
+        """Non omesso: in italiano dentro una pagina inglese, finche' il cron
+        non passa. Un paragrafo che sparisce sarebbe peggio."""
+        p = self.pagina(self.corpo_di_prova())
+        traduci(p, 'en', MotoreFinto())
+
+        grezzo = list(p.body.raw_data)
+        grezzo.append({'type': 'quote', 'id': 'nuovo-blocco',
+                       'value': {'quote': 'Aggiunta dopo', 'author': 'X'}})
+        p.body = grezzo
+        p.save()
+
+        corpo = applica(p, p.traduzioni.get(target_language='en').texts)['body']
+        nuovo = [b for b in corpo if b.get('id') == 'nuovo-blocco'][0]
+        self.assertEqual(nuovo['value']['quote'], 'Aggiunta dopo')
+
+    def test_ogni_blocco_del_catalogo_e_classificato(self):
+        """Il controllo di sistema, eseguito come test.
+
+        Un blocco con un tipo di campo mai visto non verrebbe ne tradotto ne
+        saltato: cadrebbe fuori, e il suo testo non arriverebbe mai al motore.
+        """
+        from traduzione.checks import controlla_catalogo_blocchi
+        self.assertEqual(controlla_catalogo_blocchi(None), [])
+
+
+class RiccoTest(TestCase):
+    """L'HTML: i tag non passano dal traduttore, quindi non tornano rotti."""
+
+    def test_i_tag_restano_dove_sono(self):
+        from traduzione.generi import RICCO
+        html = '<p>Ciao <b>mondo</b> e <a href="https://rotary.org">link</a></p>'
+
+        testi = RICCO.estrai(html)
+        tradotto = RICCO.reinserisci(html, {k: v.upper() for k, v in testi.items()})
+
+        self.assertIn('<b>MONDO</b>', tradotto)
+        self.assertIn('href="https://rotary.org"', tradotto)
+        self.assertIn('CIAO', tradotto)
+
+    def test_il_corpo_di_un_post_si_traduce(self):
+        """Prima no: in inglese si leggevano titolo e sommario tradotti e il
+        corpo in italiano."""
+        from traduzione.traducibili import TRADUCIBILI
+        from traduzione.generi import RICCO
+        self.assertIs(TRADUCIBILI['forum.Post']['content_html'], RICCO)
+
+
+class SenzaUnaQueryPerRiga(TestCase):
+    """Servire una lista tradotta non deve costare una query per articolo.
+
+    E' il modo piu' facile di peggiorare le cose senza accorgersene: tutto
+    funziona, e il sito diventa lento solo quando i contenuti crescono.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command('seed_lingue', verbosity=0)
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        call_command('seed_article_types', verbosity=0)
+        autore = User.objects.create_user(
+            username='q', email='q@prova.it', password='prova12345')
+        tipo = ArticleType.objects.get(key='itinerario')
+        for i in range(12):
+            card = Card.objects.create(
+                slug=f'articolo-{i}', title=f'Titolo {i}', subtitle='Sottotitolo',
+                body=documento(), article_type=tipo, author=autore,
+                is_published=True, source_locale='it')
+            traduci(card, 'en', MotoreFinto())
+
+    def query_di_traduzione(self):
+        """Quante volte si interroga la tabella delle traduzioni.
+
+        Si contano solo quelle: il resto della vista ha un N+1 suo, su allegati
+        e salvataggi, che c'era gia' prima e non riguarda questo lavoro.
+        """
+        import re
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as c:
+            r = self.client.get('/api/section/articles/',
+                                {'type': 'itinerario', 'locale': 'en'})
+            self.assertEqual(r.status_code, 200)
+        return sum(1 for q in c.captured_queries
+                   if re.search(r'FROM "traduzione_traduzione"', q['sql']))
+
+    def test_una_query_sola_per_tutte_le_traduzioni(self):
+        """Non una per articolo: e' il senso del prefetch."""
+        self.assertEqual(self.query_di_traduzione(), 1)
+
+        # E resta una anche con quattro volte gli articoli.
+        Card.objects.filter(slug__startswith='articolo-').update(is_published=True)
+        self.assertEqual(self.query_di_traduzione(), 1)
+
+    def test_la_lista_e_davvero_tradotta(self):
+        r = self.client.get('/api/section/articles/',
+                            {'type': 'itinerario', 'locale': 'en'})
+        titoli = [c['title'] for c in r.json()]
+        self.assertTrue(titoli, 'la lista non deve essere vuota')
+        self.assertTrue(all(t == t.upper() for t in titoli),
+                        f'qualche titolo non e tradotto: {titoli[:3]}')

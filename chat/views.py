@@ -1,4 +1,4 @@
-from traduzione.conversazioni import traduci_in_sottofondo
+from traduzione.servizio import traduci_in_sottofondo
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -7,13 +7,13 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from traduzione.lettura import con_traduzioni, lingua_di
 from common.throttling import SoloInScrittura
-from .models import Chat, ChatParticipant, Message, MessageTranslation
+from .models import Chat, ChatParticipant, Message
 from .serializers import (
     ChatSerializer,
     CreateGroupChatSerializer,
     MessageSerializer,
-    MessageTranslationSerializer,
 )
 
 class ChatViewSet(viewsets.ModelViewSet):
@@ -231,13 +231,15 @@ class MessageViewSet(SoloInScrittura, viewsets.ModelViewSet):
 
     def get_queryset(self):
         chat = self.get_chat()
-        return Message.objects.filter(chat=chat).select_related("sender").order_by("-created_at")
+        return con_traduzioni(
+            Message.objects.filter(chat=chat).select_related("sender").order_by("-created_at"),
+            lingua_di(self.request))
 
     def perform_create(self, serializer):
         chat = self.get_chat()
         messaggio = serializer.save(sender=self.request.user, chat=chat)
         # In sottofondo: il messaggio parte subito, la traduzione arriva dopo.
-        traduci_in_sottofondo('messaggio', messaggio)
+        traduci_in_sottofondo(messaggio)
 
     def list(self, request, *args, **kwargs):
         chat = self.get_chat()

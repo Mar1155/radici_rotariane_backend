@@ -17,10 +17,19 @@ from wagtail.models import Page
 from wagtail_headless_preview.models import HeadlessPreviewMixin
 
 from cms.blocks import PageBodyBlock
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class BasePage(HeadlessPreviewMixin, Page):
     """Base comune: anteprima headless verso il frontend Next.js."""
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
 
     body = StreamField(PageBodyBlock(), blank=True, verbose_name='contenuto')
 

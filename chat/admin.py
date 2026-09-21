@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Chat, Message, ChatParticipant, MessageTranslation
+from .models import Chat, Message, ChatParticipant
 
 
 class ChatParticipantInline(admin.TabularInline):
@@ -45,11 +45,3 @@ class ChatParticipantAdmin(admin.ModelAdmin):
     readonly_fields = ['joined_at']
     raw_id_fields = ['chat', 'user']
 
-
-@admin.register(MessageTranslation)
-class MessageTranslationAdmin(admin.ModelAdmin):
-    list_display = ['message', 'target_language', 'provider', 'created_at']
-    search_fields = ['message__body', 'target_language']
-    list_filter = ['provider', 'target_language', 'created_at']
-    readonly_fields = ['created_at']
-    raw_id_fields = ['message']

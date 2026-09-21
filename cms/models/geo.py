@@ -22,11 +22,20 @@ tassonomie (users.Skill, users.FocusArea).
 from django.db import models
 from wagtail.admin.panels import FieldPanel
 from wagtail.search import index
+from django.contrib.contenttypes.fields import GenericRelation
 
 SEPARATORE = '/'
 
 
 class GeoArea(index.Indexed, models.Model):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     class Livello(models.TextChoices):
         COUNTRY = 'country', 'Nazione'
         REGION = 'region', 'Regione'

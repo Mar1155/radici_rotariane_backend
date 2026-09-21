@@ -37,6 +37,16 @@ ACCENT_CHOICES = [
 ]
 
 
+class IdentificatoreBlock(blocks.CharBlock):
+    """Una stringa che non e' prosa: un'ancora, un indirizzo, un simbolo.
+
+    Esiste perche' il traduttore decide cosa tradurre guardando la classe del
+    blocco, non il nome del campo. Un `CharBlock` qualunque contiene testo da
+    tradurre; questo no — tradurre `main-sponsors` o `/rota-space` romperebbe
+    il collegamento che ci punta, e in silenzio.
+    """
+
+
 class LinkBlock(blocks.StructBlock):
     """Un collegamento: a una pagina del sito, a una rotta o all'esterno.
 
@@ -49,7 +59,7 @@ class LinkBlock(blocks.StructBlock):
 
     label = blocks.CharBlock(required=False, label='etichetta')
     page = blocks.PageChooserBlock(required=False, label='pagina del sito')
-    route = blocks.CharBlock(required=False, label='percorso interno',
+    route = IdentificatoreBlock(required=False, label='percorso interno',
                              help_text='Es. /rota-space')
     external_url = blocks.URLBlock(required=False, label='indirizzo esterno')
     visibility = blocks.ChoiceBlock(choices=vocab.VISIBILITY_CHOICES, default='always',

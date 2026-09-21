@@ -18,9 +18,18 @@ from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable, TranslatableMixin
 
 from cms import vocabularies as vocab
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class Menu(TranslatableMixin, ClusterableModel):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     key = models.SlugField(
         max_length=64, verbose_name='chiave',
         help_text='Identificatore usato dal frontend. Non cambiarlo se il menu '
@@ -50,6 +59,14 @@ class Menu(TranslatableMixin, ClusterableModel):
 
 
 class MenuItem(TranslatableMixin, Orderable):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     class Visibilita(models.TextChoices):
         """Le stesse tre scelte di `vocab.VISIBILITY_CHOICES`, che valgono anche
         per i pulsanti dentro le pagine."""

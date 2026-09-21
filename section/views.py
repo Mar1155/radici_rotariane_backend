@@ -3,12 +3,13 @@ from rest_framework import status
 from rest_framework.decorators import (api_view, parser_classes,
                                        permission_classes, throttle_classes)
 from common.throttling import Caricamento, Scrittura
+from traduzione.lettura import con_traduzioni, lingua_di
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.permissions import ruolo_applicativo
 from .media import ImmagineNonValida, normalizza
-from .models import (Card, CardAttachment, CardReport, CardTranslation,
+from .models import (Card, CardAttachment, CardReport,
                      MediaAsset, SavedCard)
 from .serializers import CardSerializer, CardListSerializer
 from .schema import CorpoNonValido, pulisci_corpo, testo_semplice
@@ -314,6 +315,7 @@ def list_articles(request):
     if limite and limite.isdigit():
         cards = cards[:int(limite)]
 
+    cards = con_traduzioni(cards, lingua_di(request))
     serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -564,8 +566,11 @@ def list_saved_cards(request):
     
     # Estrai solo le card pubblicate, ordinate per data di salvataggio
     saved_qs = saved_qs.filter(card__is_published=True).order_by('-created_at')
+    # Il prefetch sta sul queryset dei salvataggi, non sulla lista che ne
+    # esce: su una lista `prefetch_related` non esiste.
+    saved_qs = con_traduzioni(saved_qs, lingua_di(request), dentro='card')
     cards = [saved.card for saved in saved_qs]
-    
+
     serializer = CardListSerializer(cards, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -625,6 +630,7 @@ def list_user_cards(request):
     # scrivendo, non quella che si è cominciata per prima.
     cards_qs = cards_qs.order_by('-updated_at', '-created_at')
 
+    cards_qs = con_traduzioni(cards_qs, lingua_di(request))
     serializer = CardListSerializer(cards_qs, many=True, context={'request': request})
     return Response(serializer.data)
 

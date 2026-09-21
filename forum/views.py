@@ -1,4 +1,4 @@
-from traduzione.conversazioni import traduci_in_sottofondo
+from traduzione.servizio import traduci_in_sottofondo
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,17 +6,17 @@ from rest_framework.pagination import PageNumberPagination
 from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.utils import timezone
-from .models import Post, Comment, PostTranslation
+from .models import Post, Comment
 from .serializers import (
     PostListSerializer,
     PostDetailSerializer,
     PostCreateSerializer,
     CommentSerializer,
     CommentCreateSerializer,
-    PostTranslationSerializer,
 )
 from common.richtext import sanitize_rich_text
 from common.throttling import SoloInScrittura
+from traduzione.lettura import con_traduzioni, lingua_di
 
 
 class PostPagination(PageNumberPagination):
@@ -79,7 +79,7 @@ class PostViewSet(SoloInScrittura, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
         # Tradotto appena pubblicato, in sottofondo: chi scrive non aspetta.
-        traduci_in_sottofondo('post', post)
+        traduci_in_sottofondo(post)
 
     def destroy(self, request, *args, **kwargs):
         post = self.get_object()
@@ -140,7 +140,7 @@ class PostViewSet(SoloInScrittura, viewsets.ModelViewSet):
         serializer = CommentCreateSerializer(data=request.data, context={'request': request, 'post': post})
         if serializer.is_valid():
             comment = serializer.save(post=post, author=request.user)
-            traduci_in_sottofondo('commento', comment)
+            traduci_in_sottofondo(comment)
             return Response(
                 CommentSerializer(comment, context=self.get_serializer_context()).data,
                 status=status.HTTP_201_CREATED
@@ -159,7 +159,10 @@ class CommentViewSet(SoloInScrittura, viewsets.ModelViewSet):
             'replies',
             queryset=Comment.objects.select_related('author').order_by('created_at')
         )
-        return Comment.objects.select_related('author', 'post', 'parent').prefetch_related(replies_prefetch).order_by('created_at')
+        return con_traduzioni(
+            Comment.objects.select_related('author', 'post', 'parent')
+            .prefetch_related(replies_prefetch).order_by('created_at'),
+            lingua_di(self.request))
 
     def destroy(self, request, *args, **kwargs):
         comment = self.get_object()

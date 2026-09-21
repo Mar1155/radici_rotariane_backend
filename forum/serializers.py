@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.utils.html import strip_tags
 from rest_framework import serializers
-from .models import Post, Comment, PostTranslation
+from .models import Post, Comment
 from common.richtext import sanitize_rich_text
 from traduzione.lettura import InLinguaDelLettore
 
@@ -20,7 +20,6 @@ class AuthorSerializer(serializers.ModelSerializer):
 class CommentSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     """Un commento, nella lingua del lettore."""
 
-    campi_tradotti = {'text': 'translated_text'}
 
     author = AuthorSerializer(read_only=True)
     post_id = serializers.UUIDField(read_only=True)
@@ -86,8 +85,6 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 class PostListSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     """Serializer for listing posts (without full description). Nella lingua del lettore."""
 
-    campi_tradotti = {'title': 'translated_title',
-                      'description': 'translated_description'}
 
     author = AuthorSerializer(read_only=True)
     comment_count = serializers.IntegerField(read_only=True)
@@ -114,8 +111,6 @@ class PostListSerializer(InLinguaDelLettore, serializers.ModelSerializer):
 class PostDetailSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     """Serializer for post detail view with nested comments. Nella lingua del lettore."""
 
-    campi_tradotti = {'title': 'translated_title',
-                      'description': 'translated_description'}
 
     author = AuthorSerializer(read_only=True)
     comments = serializers.SerializerMethodField()
@@ -181,18 +176,3 @@ class PostCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'description': 'Il contenuto non può essere vuoto.'})
 
         return super().validate(attrs)
-
-
-class PostTranslationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PostTranslation
-        fields = [
-            'id',
-            'post',
-            'target_language',
-            'translated_title',
-            'translated_description',
-            'provider',
-            'detected_source_language',
-            'created_at',
-        ]

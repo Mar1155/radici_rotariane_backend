@@ -4,7 +4,8 @@ from wagtail import blocks
 
 
 from cms import vocabularies as vocab
-from .common import (ACCENT_CHOICES, SURFACE_CHOICES, ImmagineBlock,
+from .common import (ACCENT_CHOICES, SURFACE_CHOICES, IdentificatoreBlock,
+                     ImmagineBlock,
                      LinkBlock, TipoArticoloBlock)
 
 RICH_TEXT_FEATURES = [
@@ -26,7 +27,7 @@ class HeroBlock(blocks.StructBlock):
                                 label='colore della sezione',
                                 help_text="Usato solo se lo sfondo e' "
                                           "'Colore della sezione'.")
-    scroll_to_id = blocks.CharBlock(
+    scroll_to_id = IdentificatoreBlock(
         required=False, label='scorri fino a',
         help_text="Identificativo del blocco a cui portare l'utente. Lascia vuoto "
                   'per non mostrare la freccia.')
@@ -55,7 +56,7 @@ class PartnerItemBlock(blocks.StructBlock):
     name = blocks.CharBlock(label='nome')
     description = blocks.TextBlock(required=False, label='descrizione')
     logo = ImmagineBlock(required=False, label='logo')
-    emoji = blocks.CharBlock(
+    emoji = IdentificatoreBlock(
         required=False, max_length=8, label='emoji',
         help_text="Alternativa al logo per chi non ne ha uno.")
     link = blocks.URLBlock(required=False, label='sito')
@@ -220,7 +221,7 @@ class SectionTilesBlock(blocks.StructBlock):
 class StatBlock(blocks.StructBlock):
     source = blocks.ChoiceBlock(choices=vocab.STAT_CHOICES, label='dato')
     label = blocks.CharBlock(label='etichetta')
-    fallback = blocks.CharBlock(required=False, label='valore di ripiego',
+    fallback = IdentificatoreBlock(required=False, label='valore di ripiego',
                                 help_text='Mostrato se il dato non arriva.')
 
     class Meta:

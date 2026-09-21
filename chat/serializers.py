@@ -1,6 +1,6 @@
 from traduzione.lettura import InLinguaDelLettore
 from rest_framework import serializers
-from .models import Chat, Message, ChatParticipant, MessageTranslation
+from .models import Chat, Message, ChatParticipant
 from .services.presence import is_user_online
 from django.contrib.auth import get_user_model
 
@@ -9,7 +9,6 @@ User = get_user_model()
 class MessageSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     """Un messaggio, nella lingua del lettore."""
 
-    campi_tradotti = {'body': 'translated_text'}
 
 
     sender_username = serializers.CharField(source='sender.username', read_only=True)
@@ -108,18 +107,3 @@ class CreateGroupChatSerializer(serializers.Serializer):
             if clubs.count() != len(club_ids):
                 raise serializers.ValidationError({"club_ids": "Some IDs are not valid clubs."})
         return data
-
-
-class MessageTranslationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MessageTranslation
-        fields = [
-            'id',
-            'message',
-            'target_language',
-            'translated_text',
-            'provider',
-            'detected_source_language',
-            'created_at',
-        ]
-        read_only_fields = fields

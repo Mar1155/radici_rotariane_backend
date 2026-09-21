@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 import uuid
+from django.contrib.contenttypes.fields import GenericRelation
 
 class Chat(models.Model):
     """
@@ -169,6 +170,14 @@ class ChatParticipant(models.Model):
 
 
 class Message(models.Model):
+
+    # Le traduzioni di questa riga. La GenericRelation non serve solo a
+    # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
+    # visto che `object_id` e' testuale e il database non puo' tenere una
+    # chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
     id = models.BigAutoField(primary_key=True)
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -180,34 +189,3 @@ class Message(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["chat", "id"])]
-
-
-class MessageTranslation(models.Model):
-    """Un messaggio in un'altra lingua, tenuto in cache."""
-
-    PROVIDER_CHOICES = [
-        ('claude', 'Modello linguistico'),
-        ('identita', 'Nessuna traduzione (testo originale)'),
-        ('umano', 'Scritta da una persona'),
-    ]
-
-    id = models.BigAutoField(primary_key=True)
-    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='translations')
-    target_language = models.CharField(max_length=10)
-    translated_text = models.TextField()
-    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
-    detected_source_language = models.CharField(max_length=10, blank=True, null=True)
-    needs_review = models.BooleanField(default=False, db_index=True)
-    human_locked = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ('message', 'target_language')
-        indexes = [
-            models.Index(fields=['message', 'target_language']),
-            models.Index(fields=['target_language']),
-        ]
-
-    def __str__(self):
-        return f"Translation({self.message_id}, {self.target_language})"
