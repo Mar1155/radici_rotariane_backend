@@ -12,6 +12,8 @@ from __future__ import annotations
 import logging
 
 from django.conf import settings
+
+from traduzione import lingue
 from django.db import transaction
 
 from section.models import Card, CardTranslation
@@ -33,8 +35,7 @@ PREFISSO_CORPO = 'corpo:'
 
 def lingue_di_destinazione(card: Card) -> list[str]:
     """Le lingue in cui questo articolo va tradotto: tutte tranne la sua."""
-    registrate = [c for c, _ in settings.WAGTAIL_CONTENT_LANGUAGES]
-    return [c for c in registrate if c != (card.source_locale or 'it')]
+    return lingue.altre_lingue(card.source_locale)
 
 
 def _da_tradurre(card: Card) -> dict[str, str]:

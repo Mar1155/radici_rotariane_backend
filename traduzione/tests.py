@@ -9,6 +9,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from django.conf import settings
 from django.test import TestCase, override_settings
 from wagtail.models import Locale, Page, Site
 
@@ -16,6 +17,8 @@ from cms.models import ArticleType, HomePage
 from section.models import Card, CardTranslation
 from section.schema import estrai_testi, reinserisci_testi
 from traduzione.articoli import lingue_di_destinazione, traduci_articolo
+from traduzione import lingue
+from traduzione.models import Lingua
 from traduzione.motori import (MotoreClaude, MotoreIdentita, MotoreTraduzione,
                                TraduzioneNonConfigurata, motore)
 
@@ -108,10 +111,12 @@ class MotoriTest(TestCase):
             MotoreClaude._estrai_json('non e json')
 
 
-@override_settings(WAGTAIL_CONTENT_LANGUAGES=[('it', 'Italiano'), ('en', 'English')])
 class TraduzioneArticoloTest(TestCase):
     @classmethod
     def setUpTestData(cls):
+        # Le lingue non stanno piu' nelle impostazioni: sono righe, e un
+        # database di test parte senza.
+        call_command('seed_lingue', verbosity=0)
         locale = Locale.get_default()
         home = HomePage(title='Casa', slug='casa', locale=locale)
         Page.objects.get(depth=1).add_child(instance=home)
@@ -191,3 +196,61 @@ class TraduzioneArticoloTest(TestCase):
         call_command('translate_pending', verbosity=0)
         dopo = CardTranslation.objects.get(card=card, target_language='en').updated_at
         self.assertEqual(prima, dopo)
+
+
+class RegistroLingueTest(TestCase):
+    """Le lingue sono righe, non impostazioni.
+
+    E' la differenza che rende "aggiungere una lingua" un gesto dal pannello
+    invece di un deploy.
+    """
+
+    def setUp(self):
+        lingue.svuota_cache()
+
+    def tearDown(self):
+        lingue.svuota_cache()
+
+    def test_senza_righe_si_ripiega_sulla_lingua_di_stesura(self):
+        """Un database vuoto non deve far esplodere il sito, solo servirlo in italiano."""
+        Lingua.objects.all().delete()
+        lingue.svuota_cache()
+        self.assertEqual(lingue.codici_attivi(), [settings.LANGUAGE_CODE])
+
+    def test_aggiungere_una_riga_basta(self):
+        call_command('seed_lingue', verbosity=0)
+        self.assertEqual(lingue.codici_attivi(), ['it', 'en'])
+
+        Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
+
+        # Nessuno ha svuotato la cache a mano: lo fa il segnale.
+        self.assertEqual(lingue.codici_attivi(), ['it', 'en', 'es'])
+
+    def test_spegnere_una_lingua_la_toglie_dal_giro(self):
+        call_command('seed_lingue', verbosity=0)
+        inglese = Lingua.objects.get(codice='en')
+        inglese.attiva = False
+        inglese.save()
+
+        self.assertEqual(lingue.codici_attivi(), ['it'])
+        self.assertEqual(lingue.altre_lingue('it'), [])
+
+    def test_il_codice_si_normalizza(self):
+        Lingua.objects.all().delete()
+        Lingua.objects.create(codice='  ES  ', nome='Espanol')
+        self.assertEqual(Lingua.objects.get().codice, 'es')
+
+    def test_la_variante_regionale_non_conta(self):
+        call_command('seed_lingue', verbosity=0)
+        self.assertEqual(lingue.normalizza('en-GB'), 'en')
+        self.assertEqual(lingue.normalizza('EN'), 'en')
+        self.assertIsNone(lingue.normalizza('de'), 'una lingua non attiva non si serve')
+        self.assertIsNone(lingue.normalizza(''))
+
+    def test_si_traduce_verso_tutte_tranne_la_propria(self):
+        call_command('seed_lingue', verbosity=0)
+        Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
+
+        self.assertEqual(lingue.altre_lingue('it'), ['en', 'es'])
+        self.assertEqual(lingue.altre_lingue('en'), ['it', 'es'])
+        self.assertEqual(lingue.altre_lingue(None), ['en', 'es'], 'senza origine vale la sorgente')

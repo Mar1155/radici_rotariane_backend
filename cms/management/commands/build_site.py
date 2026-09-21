@@ -23,6 +23,9 @@ PASSI = [
     # sono in realta' luoghi confrontandoli con l'albero geografico, e senza
     # l'albero li tratta come tag normali. E' cosi' che `itinerario` finiva con
     # i tag obbligatori e nessun tag ammesso: impossibile da pubblicare.
+    # Le lingue per prime: senza, non si traduce niente e i comandi che
+    # seguono non saprebbero verso cosa tradurre.
+    ('seed_lingue', 'lingue'),
     ('seed_geo', 'aree geografiche'),
     ('seed_article_types', 'tipi di articolo'),
     # Le immagini prima delle pagine che le citano: le pagine le cercano per

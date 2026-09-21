@@ -218,19 +218,13 @@ SIMPLE_JWT = {
 # Wagtail crea un Locale e un albero pagine 'en-us' scomodo da annullare.
 LANGUAGE_CODE = 'it'
 
-# Le lingue in cui il contenuto può essere pubblicato. Aggiungerne una è una
-# voce in più in questa variabile d'ambiente (più la stessa lista lato frontend
-# in intlayer.config.ts): nessuna migrazione, perché ogni contenuto tradotto è
-# una riga per locale, non una colonna per locale.
-CONTENT_LANGUAGES = config('CONTENT_LANGUAGES', default='it,en', cast=Csv())
-
-_LANGUAGE_LABELS = {
-    'it': 'Italiano', 'en': 'English', 'es': 'Español',
-    'fr': 'Français', 'de': 'Deutsch', 'pt': 'Português',
-}
-LANGUAGES = [(c, _LANGUAGE_LABELS.get(c, c)) for c in CONTENT_LANGUAGES]
-WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
-WAGTAIL_I18N_ENABLED = True
+# Le lingue in cui il contenuto si legge NON stanno piu' qui: stanno nella
+# tabella `traduzione.Lingua`, e si aggiungono dal pannello. Averle in una
+# variabile d'ambiente significava due elenchi — questo e i Locale di Wagtail —
+# che potevano divergere, e un deploy per aggiungere una lingua.
+#
+# Qui resta solo la lingua dell'interfaccia di amministrazione.
+LANGUAGES = [(LANGUAGE_CODE, 'Italiano')]
 
 TIME_ZONE = 'Europe/Rome'
 

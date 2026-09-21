@@ -15,6 +15,7 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
 from cms.models import ArticleType, GeoArea, Menu
+from traduzione.models import Lingua
 
 
 class ArticleTypeViewSet(SnippetViewSet):
@@ -53,8 +54,28 @@ class MenuViewSet(SnippetViewSet):
     menu_order = 300
 
 
+class LinguaViewSet(SnippetViewSet):
+    """Le lingue in cui il sito si legge.
+
+    Aggiungerne una qui basta per il contenuto: al primo giro di
+    `translate_pending` tutto cio' che non ce l'ha viene tradotto. Le etichette
+    dell'app (bottoni, form, errori) restano nel codice e arrivano con il
+    deploy successivo: e' il confine fra cio' che scrive l'admin e cio' che
+    scrive lo sviluppatore.
+    """
+
+    model = Lingua
+    icon = 'globe'
+    menu_label = 'Lingue'
+    menu_name = 'lingue'
+    list_display = ['nome', 'codice', 'attiva', 'ordine']
+    search_fields = ['nome', 'codice']
+    ordering = ['ordine', 'codice']
+    add_to_admin_menu = False
+
+
 class StrutturaGroup(SnippetViewSetGroup):
-    items = (ArticleTypeViewSet, GeoAreaViewSet)
+    items = (ArticleTypeViewSet, GeoAreaViewSet, LinguaViewSet)
     menu_icon = 'cogs'
     menu_label = 'Struttura'
     menu_name = 'struttura'

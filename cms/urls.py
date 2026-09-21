@@ -5,6 +5,7 @@ from cms import api
 app_name = 'cms'
 
 urlpatterns = [
+    path('languages/', api.languages, name='languages'),
     path('article-types/', api.article_types, name='article-types'),
     path('geo/', api.geo_areas, name='geo-areas'),
     path('navigation/', api.navigation, name='navigation'),

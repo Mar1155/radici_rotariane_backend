@@ -16,6 +16,8 @@ from __future__ import annotations
 import logging
 
 from django.conf import settings
+
+from traduzione import lingue
 from django.db import close_old_connections, transaction
 
 from .motori import MotoreTraduzione, motore
@@ -25,8 +27,7 @@ logger = logging.getLogger(__name__)
 
 def lingue_per(lingua_origine: str) -> list[str]:
     """Tutte le lingue registrate tranne quella di partenza."""
-    registrate = [c for c, _ in settings.WAGTAIL_CONTENT_LANGUAGES]
-    return [c for c in registrate if c != (lingua_origine or 'it')]
+    return lingue.altre_lingue(lingua_origine)
 
 
 def _traduci_campi(testi: dict[str, str], da: str, a: str, m: MotoreTraduzione):

@@ -19,25 +19,22 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from wagtail.models import Locale
 
+from traduzione import lingue
+
 from cms import vocabularies as vocab
 from cms.models import ArticleType, GeoArea, Menu
 from cms.blocks import percorso_pagina
 
 
 def _codice_lingua(request) -> str:
-    """Codice della lingua richiesta, validato sulle lingue configurate.
+    """Codice della lingua richiesta, se e' una lingua che serviamo.
 
-    Diverso da `_risolvi_locale`: quello serve ai contenuti legati a una riga
-    Locale di Wagtail (che esiste solo dopo che la lingua e' stata aggiunta in
-    admin). Le traduzioni della tassonomia geografica stanno invece in un
-    JSONField, quindi basta il codice — e funzionano appena la lingua e'
-    configurata, senza aspettare che qualcuno crei il Locale.
+    Le lingue attive stanno in `traduzione.Lingua`, una riga per lingua,
+    aggiunta dal pannello: non serve piu' che qualcuno crei anche un Locale di
+    Wagtail perche' un contenuto si veda tradotto.
     """
-    ammesse = {c for c, _ in settings.WAGTAIL_CONTENT_LANGUAGES}
-    richiesta = (request.GET.get('locale') or get_language() or '').split('-')[0]
-    if richiesta in ammesse:
-        return richiesta
-    return settings.LANGUAGE_CODE.split('-')[0]
+    richiesta = request.GET.get('locale') or get_language() or ''
+    return lingue.normalizza(richiesta) or settings.LANGUAGE_CODE.split('-')[0]
 
 
 def _risolvi_locale(request):
@@ -80,6 +77,23 @@ def serializza_tipo(t: ArticleType) -> dict:
             'phone': t.external_phone or None,
         },
     }
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def languages(request):
+    """Le lingue in cui il sito si legge.
+
+    Il selettore del frontend ne mostra l'intersezione con quelle di cui
+    esistono anche le etichette dell'app: una lingua compare quando entrambe le
+    meta' ci sono, e mai prima.
+    """
+    from traduzione.models import Lingua
+    attive = Lingua.objects.filter(attiva=True).order_by('ordine', 'codice')
+    return Response({
+        'languages': [{'code': l.codice, 'name': l.nome} for l in attive],
+        'default': settings.LANGUAGE_CODE.split('-')[0],
+    })
 
 
 @api_view(['GET'])

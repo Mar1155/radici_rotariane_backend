@@ -20,6 +20,7 @@ from section.models import Card, CardTranslation
 from traduzione.articoli import lingue_di_destinazione, traduci_articolo
 from traduzione.conversazioni import (lingue_per, traduci_commento,
                                       traduci_messaggio, traduci_post)
+from traduzione import lingue
 from traduzione.motori import motore
 
 
@@ -44,7 +45,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(
                 'Le traduzioni prodotte finiranno nella coda di revisione.'))
 
-        registrate = [c for c, _ in settings.WAGTAIL_CONTENT_LANGUAGES]
+        registrate = lingue.codici_attivi()
         if options['lingua'] and options['lingua'] not in registrate:
             self.stderr.write(self.style.ERROR(
                 f'Lingua {options["lingua"]} non registrata. Ci sono: {registrate}'))
@@ -71,9 +72,9 @@ class Command(BaseCommand):
 
             for oggetto in queryset:
                 origine = getattr(oggetto, 'source_locale', 'it') or 'it'
-                lingue = ([options['lingua']] if options['lingua']
-                          else lingue_per(origine))
-                for lingua in lingue:
+                da_fare = ([options['lingua']] if options['lingua']
+                           else lingue_per(origine))
+                for lingua in da_fare:
                     if lingua == origine:
                         continue
                     if not options['forza'] and modello.objects.filter(
