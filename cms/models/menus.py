@@ -15,13 +15,13 @@ from django.db import models
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.models import Orderable, TranslatableMixin
+from wagtail.models import Orderable
 
 from cms import vocabularies as vocab
 from django.contrib.contenttypes.fields import GenericRelation
 
 
-class Menu(TranslatableMixin, ClusterableModel):
+class Menu(ClusterableModel):
 
     # Le traduzioni di questa riga. La GenericRelation non serve solo a
     # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
@@ -31,7 +31,7 @@ class Menu(TranslatableMixin, ClusterableModel):
                                  content_type_field='content_type',
                                  object_id_field='object_id')
     key = models.SlugField(
-        max_length=64, verbose_name='chiave',
+        max_length=64, unique=True, verbose_name='chiave',
         help_text='Identificatore usato dal frontend. Non cambiarlo se il menu '
                   'e gia in uso.',
     )
@@ -46,19 +46,16 @@ class Menu(TranslatableMixin, ClusterableModel):
         InlinePanel('items', label='Voce'),
     ]
 
-    class Meta(TranslatableMixin.Meta):
+    class Meta:
         verbose_name = 'menu'
         verbose_name_plural = 'menu'
         ordering = ['name']
-        constraints = [
-            models.UniqueConstraint(fields=['key', 'locale'], name='uniq_menu_key_locale'),
-        ]
 
     def __str__(self):
         return self.name
 
 
-class MenuItem(TranslatableMixin, Orderable):
+class MenuItem(Orderable):
 
     # Le traduzioni di questa riga. La GenericRelation non serve solo a
     # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
@@ -119,7 +116,7 @@ class MenuItem(TranslatableMixin, Orderable):
         ], heading='Aspetto e visibilita', classname='collapsed'),
     ]
 
-    class Meta(TranslatableMixin.Meta, Orderable.Meta):
+    class Meta(Orderable.Meta):
         verbose_name = 'voce di menu'
         verbose_name_plural = 'voci di menu'
 

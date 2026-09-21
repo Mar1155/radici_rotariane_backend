@@ -10,13 +10,12 @@ un menu a tendina, insieme a "enogastronomia" e "artigianato". Separare le due
 cose permette di filtrare per regione e vedere anche gli articoli delle sue
 province, cosa che una lista piatta non sa fare.
 
-**Perche' le traduzioni sono un JSONField e non TranslatableMixin.** I nomi
-geografici sono un vocabolario di riferimento fisso, non contenuto editoriale
-con un flusso di revisione: con TranslatableMixin l'intero albero andrebbe
-duplicato per lingua, con i parent che puntano dentro il proprio locale.
-Aggiungere una lingua resta comunque senza migrazione, perche' e' una chiave in
-piu' nel JSON. E' anche il modo in cui questo progetto tratta gia' le altre
-tassonomie (users.Skill, users.FocusArea).
+**Le traduzioni stanno dove stanno tutte le altre.** Prima erano un JSONField
+qui dentro, perche' l'alternativa era `TranslatableMixin` e avrebbe duplicato
+l'intero albero per lingua, con i parent che puntano dentro il proprio locale.
+Quell'argomento e' caduto: con una tabella di traduzione sola, il nome inglese
+di una provincia e' una riga a lato, non un albero parallelo. Un vocabolario di
+riferimento in meno da trattare in modo speciale.
 """
 
 from django.db import models
@@ -49,11 +48,6 @@ class GeoArea(index.Indexed, models.Model):
     level = models.CharField(max_length=12, choices=Livello.choices, verbose_name='livello')
     key = models.SlugField(max_length=80, verbose_name='chiave')
     name = models.CharField(max_length=120, verbose_name='nome')
-    translations = models.JSONField(
-        default=dict, blank=True, verbose_name='traduzioni',
-        help_text='Nomi in altre lingue, es. {"en": "Apulia"}. '
-                  'Se manca si usa il nome italiano.',
-    )
     code = models.CharField(
         max_length=8, blank=True, verbose_name='sigla',
         help_text='Sigla della provincia (BA, MI) o codice della nazione (IT).',
@@ -68,7 +62,7 @@ class GeoArea(index.Indexed, models.Model):
 
     panels = [
         FieldPanel('parent'), FieldPanel('level'), FieldPanel('key'),
-        FieldPanel('name'), FieldPanel('code'), FieldPanel('translations'),
+        FieldPanel('name'), FieldPanel('code'),
         FieldPanel('is_active'),
     ]
 
@@ -101,7 +95,14 @@ class GeoArea(index.Indexed, models.Model):
 
     # --- comodita' ----------------------------------------------------------
     def label(self, locale: str = 'it') -> str:
-        return (self.translations or {}).get(locale) or self.name
+        """Il nome nella lingua richiesta, o quello italiano."""
+        from traduzione.percorsi import applica
+        from traduzione.servizio import traduzione_di
+        from django.conf import settings
+        if not locale or locale == settings.LANGUAGE_CODE.split('-')[0]:
+            return self.name
+        t = traduzione_di(self, locale)
+        return (applica(self, t.texts).get('name') if t else None) or self.name
 
     def discendenti(self):
         return GeoArea.objects.filter(path__startswith=f'{self.path}{SEPARATORE}')

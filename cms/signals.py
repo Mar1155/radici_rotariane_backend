@@ -48,6 +48,10 @@ def su_pagina_pubblicata(sender, instance, **kwargs):
 
 def _tag_per_modello(modello) -> list[str] | None:
     nome = modello.__name__
+    if nome == 'Traduzione':
+        # Una traduzione corretta a mano deve comparire subito. Senza, si
+        # aspetta un minuto — ed e' il problema per cui questo file esiste.
+        return ['cms-page', 'article-types', 'navigation', 'geo-areas']
     return {
         'ArticleType': ['article-types'],
         'ArticleTypeInfoElement': ['article-types'],

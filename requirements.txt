@@ -21,5 +21,4 @@ django-jazzmin>=3.0.2
 
 # CMS — composizione pagine, tipi di articolo, traduzioni
 wagtail>=7.4,<8.0
-wagtail-localize>=1.13,<2.0
 wagtail-headless-preview>=0.9,<1.0

@@ -130,7 +130,7 @@ class Command(BaseCommand):
                     continue
 
                 tipo, creato = ArticleType.objects.update_or_create(
-                    key=key, locale=locale, defaults=valori)
+                    key=key, defaults=valori)
                 creati += creato
                 aggiornati += (not creato)
 
@@ -139,8 +139,7 @@ class Command(BaseCommand):
                     k = ie['title']
                     ArticleTypeInfoElement.objects.create(
                         article_type=tipo, sort_order=i, key=k, icon=ie['icon'],
-                        label=etichette_info.get(k, {}).get('it', k.replace('_', ' ').title()),
-                        locale=locale)
+                        label=etichette_info.get(k, {}).get('it', k.replace('_', ' ').title()))
 
                 # I tag che sono in realta' luoghi non diventano tag: li assorbe
                 # la tassonomia geografica. Riconosciuti confrontandoli con
@@ -164,8 +163,7 @@ class Command(BaseCommand):
                 for i, t in enumerate(rimasti):
                     ArticleTypeTag.objects.create(
                         article_type=tipo, sort_order=i, key=t,
-                        label=etichette_tag.get(t, {}).get('it', t.replace('-', ' ').capitalize()),
-                        locale=locale)
+                        label=etichette_tag.get(t, {}).get('it', t.replace('-', ' ').capitalize()))
 
                 # Se i tag erano TUTTI luoghi, il campo non esiste piu' per
                 # questo tipo: il concetto e' passato alla geografia. Lasciarlo

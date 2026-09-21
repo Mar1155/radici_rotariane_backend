@@ -37,38 +37,49 @@ def _codice_lingua(request) -> str:
     return lingue.normalizza(richiesta) or settings.LANGUAGE_CODE.split('-')[0]
 
 
-def _risolvi_locale(request):
-    """Locale richiesto, con fallback su quello di default."""
-    codice = (request.GET.get('locale') or get_language() or '').split('-')[0]
-    if codice:
-        loc = Locale.objects.filter(language_code=codice).first()
-        if loc:
-            return loc
-    return Locale.get_default()
+
+def tradotto(oggetto, lingua: str | None) -> dict:
+    """I campi dell'oggetto nella lingua richiesta, o vuoto.
+
+    Si ricade sull'originale per costruzione: cio' che non e' tradotto non
+    compare qui, e il chiamante usa il valore che ha gia'. E' la differenza
+    con il filtro per locale di prima, che non trovando la riga nella lingua
+    giusta restituiva il vuoto invece dell'italiano.
+    """
+    if not lingua:
+        return {}
+    from traduzione.percorsi import applica
+    from traduzione.servizio import lingua_di_stesura, traduzione_di
+    if lingua == lingua_di_stesura(oggetto):
+        return {}
+    t = traduzione_di(oggetto, lingua)
+    return applica(oggetto, t.texts) if t is not None else {}
 
 
-def serializza_tipo(t: ArticleType) -> dict:
+def serializza_tipo(t: ArticleType, lingua: str | None = None) -> dict:
+    tr = tradotto(t, lingua)
     return {
         'key': t.key,
-        'name': t.name,
-        'namePlural': t.name_plural,
-        'description': t.description,
+        'name': tr.get('name') or t.name,
+        'namePlural': tr.get('name_plural') or t.name_plural,
+        'description': tr.get('description') or t.description,
         'fields': {
             'active': list(t.active_fields or []),
             'required': list(t.required_fields or []),
         },
         'infoElements': [
-            {'key': i.key, 'icon': i.icon, 'label': i.label}
+            {'key': i.key, 'icon': i.icon,
+             'label': tradotto(i, lingua).get('label') or i.label}
             for i in t.info_elements.all()
         ],
         'tags': [
-            {'key': g.key, 'label': g.label}
+            {'key': g.key, 'label': tradotto(g, lingua).get('label') or g.label}
             for g in t.allowed_tags.all()
         ],
         'buttons': list(t.buttons or []),
         'columns': t.default_columns,
         'canPublish': list(t.can_publish or []),
-        'newArticleLabel': t.create_label,
+        'newArticleLabel': tr.get('new_article_label') or t.create_label,
         'bodyBlocks': list(t.body_blocks or []),
         'usesGeo': t.uses_geo,
         'external': {
@@ -99,14 +110,15 @@ def languages(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def article_types(request):
-    locale = _risolvi_locale(request)
-    qs = (ArticleType.objects.filter(locale=locale)
-          .prefetch_related('info_elements', 'allowed_tags')
+    lingua = _codice_lingua(request)
+    qs = (ArticleType.objects
+          .prefetch_related('info_elements', 'allowed_tags', 'traduzioni',
+                            'info_elements__traduzioni', 'allowed_tags__traduzioni')
           .order_by('name'))
 
     payload = {
-        'locale': locale.language_code,
-        'articleTypes': [serializza_tipo(t) for t in qs],
+        'locale': lingua,
+        'articleTypes': [serializza_tipo(t, lingua) for t in qs],
         # I vocabolari viaggiano con la risposta cosi' il frontend non li
         # ridichiara: sono un contratto, e un contratto con due copie diverge.
         'vocabularies': {
@@ -170,9 +182,9 @@ def geo_areas(request):
     return resp
 
 
-def _serializza_voce(voce, menu_per_id, profondita=0):
+def _serializza_voce(voce, menu_per_id, profondita=0, lingua=None):
     dati = {
-        'label': voce.label,
+        'label': tradotto(voce, lingua).get('label') or voce.label,
         'href': voce.href,
         'icon': voce.icon or None,
         'visibility': voce.visibility,
@@ -202,17 +214,19 @@ def navigation(request):
     "Esplora" e' un menu a se' referenziato da un altro, ne' fare una seconda
     chiamata per averlo.
     """
-    locale = _risolvi_locale(request)
-    menus = (Menu.objects.filter(locale=locale)
-             .prefetch_related('items', 'items__page'))
+    lingua = _codice_lingua(request)
+    menus = (Menu.objects
+             .prefetch_related('items', 'items__page', 'traduzioni',
+                               'items__traduzioni'))
     per_id = {m.pk: m for m in menus}
 
     payload = {
-        'locale': locale.language_code,
+        'locale': lingua,
         'menus': {
             m.key: {
-                'name': m.name,
-                'items': [_serializza_voce(v, per_id) for v in m.items.all()],
+                'name': tradotto(m, lingua).get('name') or m.name,
+                'items': [_serializza_voce(v, per_id, lingua=lingua)
+                          for v in m.items.all()],
             }
             for m in menus
         },
@@ -226,25 +240,38 @@ def navigation(request):
     return resp
 
 
-def serializza_pagina(pagina, anteprima=False) -> dict:
+def serializza_pagina(pagina, anteprima=False, lingua=None) -> dict:
     """Una pagina nella forma che il frontend sa disegnare.
 
     Il corpo e' una lista di blocchi {type, id, value}: il renderer React
     smista per `type` e passa `value` al componente corrispondente. Non viene
     mai generato HTML di impaginazione — solo dati — ed e' questo che tiene il
     design system fuori dalla portata di chi compone le pagine.
+
+    Una bozza in anteprima non ha traduzioni: si serve l'originale, perche' chi
+    sta componendo deve vedere quello che sta scrivendo.
     """
+    from traduzione.servizio import lingua_di_stesura
+    tr = {} if anteprima else tradotto(pagina, lingua)
     corpo = pagina.body
+    if 'body' in tr:
+        # I testi tornano dentro i **dati grezzi**, che poi si riconvertono:
+        # reinserirli nella rappresentazione API non funzionerebbe, perche'
+        # quella butta via gli id degli item di lista e i percorsi non
+        # coinciderebbero piu'.
+        corpo = pagina.body.stream_block.to_python(tr['body'])
     return {
         'id': pagina.id,
-        'title': pagina.title,
+        'title': tr.get('title') or pagina.title,
         'slug': pagina.slug,
         'path': percorso_pagina(pagina),
-        'locale': pagina.locale.language_code,
+        'locale': lingua or pagina.locale.language_code,
+        'translated_from': (lingua_di_stesura(pagina)
+                            if tr and lingua != lingua_di_stesura(pagina) else None),
         'type': pagina.__class__.__name__,
         'seo': {
-            'title': pagina.seo_title or pagina.title,
-            'description': pagina.search_description or '',
+            'title': tr.get('seo_title') or pagina.seo_title or tr.get('title') or pagina.title,
+            'description': tr.get('search_description') or pagina.search_description or '',
         },
         # La rappresentazione API la produce il BLOCCO, non il valore: e' il
         # blocco a sapere come si traduce ogni suo figlio.
@@ -266,25 +293,25 @@ def page_by_path(request):
     percorso = (request.GET.get('path') or '/').strip()
     if not percorso.startswith('/'):
         percorso = '/' + percorso
-    locale = _risolvi_locale(request)
+    lingua = _codice_lingua(request)
 
     sito = Site.objects.filter(is_default_site=True).first()
     if not sito:
         return Response({'detail': 'Nessun sito configurato.'}, status=500)
 
-    radice = sito.root_page.localized if hasattr(sito.root_page, 'localized') else sito.root_page
+    radice = sito.root_page
     if percorso == '/':
         pagina = radice
     else:
+        # Una sola pagina per percorso: non c'e' piu' un albero per lingua, la
+        # traduzione sta a lato della riga.
         url_path = radice.url_path.rstrip('/') + percorso + '/'
-        pagina = Page.objects.filter(url_path=url_path, locale=locale).first()
-        if pagina is None:
-            pagina = Page.objects.filter(url_path=url_path).first()
+        pagina = Page.objects.filter(url_path=url_path).first()
 
     if pagina is None or not pagina.live:
         return Response({'detail': 'Pagina non trovata.'}, status=404)
 
-    return Response(serializza_pagina(pagina.specific))
+    return Response(serializza_pagina(pagina.specific, lingua=lingua))
 
 
 @api_view(['GET'])

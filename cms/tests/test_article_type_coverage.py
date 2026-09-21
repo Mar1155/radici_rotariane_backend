@@ -142,7 +142,6 @@ class ArticleTypeCoverageTest(TestCase):
 
     def test_obbligatorio_non_attivo_e_rifiutato(self):
         t = ArticleType(key='prova', name='Prova', name_plural='Prove',
-                        locale=Locale.get_default(),
                         active_fields=['title'], required_fields=['title', 'subtitle'])
         with self.assertRaises(ValidationError) as ctx:
             t.full_clean()

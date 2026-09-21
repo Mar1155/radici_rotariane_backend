@@ -21,7 +21,7 @@ from django.db import models
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
-from wagtail.models import Orderable, TranslatableMixin
+from wagtail.models import Orderable
 from wagtail.search import index
 
 from cms import vocabularies as vocab
@@ -29,7 +29,7 @@ from cms.forms import ArticleTypeForm
 from django.contrib.contenttypes.fields import GenericRelation
 
 
-class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
+class ArticleType(ClusterableModel, index.Indexed):
 
     # Le traduzioni di questa riga. La GenericRelation non serve solo a
     # leggerle comodamente: e' cio' che le fa sparire quando l'oggetto sparisce,
@@ -39,7 +39,7 @@ class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
                                  content_type_field='content_type',
                                  object_id_field='object_id')
     key = models.SlugField(
-        max_length=64, verbose_name='chiave',
+        max_length=64, unique=True, verbose_name='chiave',
         help_text="Identificatore tecnico, usato nelle API e negli URL. "
                   "Non cambiarlo dopo che esistono articoli di questo tipo.",
     )
@@ -116,13 +116,10 @@ class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
         ], heading='Contatti esterni', classname='collapsed'),
     ]
 
-    class Meta(TranslatableMixin.Meta):
+    class Meta:
         verbose_name = 'tipo di articolo'
         verbose_name_plural = 'tipi di articolo'
         ordering = ['name']
-        constraints = [
-            models.UniqueConstraint(fields=['key', 'locale'], name='uniq_articletype_key_locale'),
-        ]
 
     def __str__(self):
         return self.name
@@ -172,7 +169,7 @@ class ArticleType(TranslatableMixin, ClusterableModel, index.Indexed):
         return self.new_article_label or f'Nuovo {self.name.lower()}'
 
 
-class ArticleTypeInfoElement(TranslatableMixin, Orderable):
+class ArticleTypeInfoElement(Orderable):
     """Un dato sintetico mostrato sulla card (Importo, Durata, Scadenza...).
 
     `key` e' l'identita' stabile del dato: e' con quella che il valore viene
@@ -197,7 +194,7 @@ class ArticleTypeInfoElement(TranslatableMixin, Orderable):
 
     panels = [FieldPanel('key'), FieldPanel('icon'), FieldPanel('label')]
 
-    class Meta(TranslatableMixin.Meta, Orderable.Meta):
+    class Meta(Orderable.Meta):
         verbose_name = 'elemento informativo'
         verbose_name_plural = 'elementi informativi'
 
@@ -205,7 +202,7 @@ class ArticleTypeInfoElement(TranslatableMixin, Orderable):
         return f'{self.label} ({self.key})'
 
 
-class ArticleTypeTag(TranslatableMixin, Orderable):
+class ArticleTypeTag(Orderable):
     """Un tag tematico ammesso su questo tipo.
 
     La geografia NON passa di qui: ha una tassonomia gerarchica propria, perche'
@@ -227,7 +224,7 @@ class ArticleTypeTag(TranslatableMixin, Orderable):
 
     panels = [FieldPanel('key'), FieldPanel('label')]
 
-    class Meta(TranslatableMixin.Meta, Orderable.Meta):
+    class Meta(Orderable.Meta):
         verbose_name = 'tag'
         verbose_name_plural = 'tag'
 

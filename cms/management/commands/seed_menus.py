@@ -69,7 +69,7 @@ class Command(BaseCommand):
 
         def menu(key, nome, descrizione):
             m, _ = Menu.objects.update_or_create(
-                key=key, locale=locale, defaults={'name': nome, 'description': descrizione})
+                key=key, defaults={'name': nome, 'description': descrizione})
             m.items.all().delete()
             return m
 
@@ -79,7 +79,7 @@ class Command(BaseCommand):
                        'una volta sola.')
         for i, (etichetta, percorso, icona) in enumerate(ESPLORA):
             MenuItem.objects.create(menu=esplora, sort_order=i, label=etichetta,
-                                    icon=icona or '', locale=locale,
+                                    icon=icona or '',
                                     **destinazione(percorso))
 
         servizi = menu('servizi', 'Servizi',
@@ -87,7 +87,7 @@ class Command(BaseCommand):
                        'colonna del footer.')
         for i, (etichetta, percorso, icona, vis) in enumerate(SERVIZI):
             MenuItem.objects.create(menu=servizi, sort_order=i, label=etichetta,
-                                    icon=icona or '', visibility=vis, locale=locale,
+                                    icon=icona or '', visibility=vis,
                                     **destinazione(percorso))
 
         for m in (esplora, servizi):

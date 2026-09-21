@@ -12,6 +12,24 @@ from cms.data.italia import COMUNI_INIZIALI, REGIONI
 from cms.models import GeoArea
 
 
+def _nome_inglese(area, nome: str):
+    """Il nome inglese di un'area, bloccato perche' e' scritto da una persona.
+
+    `locked_paths` impedisce a `translate_pending` di riscriverlo: nessuno deve
+    trovarsi "Apulia" ritradotto in "Puglia" dal modello linguistico.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from traduzione.models import Traduzione
+
+    Traduzione.objects.update_or_create(
+        content_type=ContentType.objects.get_for_model(area),
+        object_id=str(area.pk), target_language='en',
+        defaults=dict(source_language='it', texts={'name': nome},
+                      locked_paths=['name'], provider='umano',
+                      needs_review=False),
+    )
+
+
 class Command(BaseCommand):
     help = "Crea nazione, regioni, province e i comuni gia' in uso."
 
@@ -20,17 +38,19 @@ class Command(BaseCommand):
         italia, _ = GeoArea.objects.update_or_create(
             parent=None, key='it',
             defaults=dict(level=GeoArea.Livello.COUNTRY, name='Italia',
-                          code='IT', translations={'en': 'Italy'}, sort_order=0),
+                          code='IT', sort_order=0),
         )
+        _nome_inglese(italia, 'Italy')
 
         n_reg = n_prov = 0
         for i, (nome, chiave, nome_en, province) in enumerate(REGIONI):
             regione, _ = GeoArea.objects.update_or_create(
                 parent=italia, key=chiave,
                 defaults=dict(level=GeoArea.Livello.REGION, name=nome,
-                              translations={'en': nome_en} if nome_en else {},
                               sort_order=i),
             )
+            if nome_en:
+                _nome_inglese(regione, nome_en)
             n_reg += 1
             for j, (nome_p, sigla) in enumerate(province):
                 GeoArea.objects.update_or_create(

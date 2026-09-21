@@ -178,7 +178,7 @@ class Command(BaseCommand):
 
         # Il blocco riferisce l'istanza, non la chiave: la chiave la espone poi
         # l'API. Qui si risolve una volta sola.
-        tipi = {t.key: t for t in ArticleType.objects.filter(locale=locale)}
+        tipi = {t.key: t for t in ArticleType.objects.all()}
 
         for s in SEZIONI:
             corpo = [('hero', {

@@ -31,7 +31,6 @@ INSTALLED_APPS += ['rest_framework', 'rest_framework_simplejwt.token_blacklist',
                    'traduzione', 'storages', 'common']
 
 # --- CMS (Wagtail) -----------------------------------------------------------
-# wagtail_localize.locales sostituisce wagtail.locales: non vanno messi entrambi.
 INSTALLED_APPS += [
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
@@ -44,8 +43,6 @@ INSTALLED_APPS += [
     'wagtail.search',
     'wagtail.admin',
     'wagtail',
-    'wagtail_localize',
-    'wagtail_localize.locales',
     'wagtail_headless_preview',
     'modelcluster',
     'taggit',

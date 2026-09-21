@@ -54,10 +54,10 @@ class MenuItemTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.locale = Locale.get_default()
-        cls.menu = Menu.objects.create(key='prova', name='Prova', locale=cls.locale)
+        cls.menu = Menu.objects.create(key='prova', name='Prova')
 
     def _voce(self, **kw):
-        return MenuItem(menu=self.menu, label='X', locale=self.locale, **kw)
+        return MenuItem(menu=self.menu, label='X', **kw)
 
     def test_serve_una_destinazione(self):
         with self.assertRaises(ValidationError):
@@ -79,7 +79,7 @@ class MenuItemTest(TestCase):
                          'https://rotary.org')
         # una voce che apre un sottomenu non porta da nessuna parte
         self.assertIsNone(self._voce(submenu=Menu.objects.create(
-            key='altro', name='Altro', locale=self.locale)).href)
+            key='altro', name='Altro')).href)
 
 
 class NavigationApiTest(TestCase):
@@ -102,8 +102,8 @@ class NavigationApiTest(TestCase):
     def test_sottomenu_espanso_in_linea(self):
         """Chi consuma l'API non deve sapere che un menu ne referenzia un altro."""
         locale = Locale.get_default()
-        contenitore = Menu.objects.create(key='barra', name='Barra', locale=locale)
-        MenuItem.objects.create(menu=contenitore, label='Esplora', locale=locale,
+        contenitore = Menu.objects.create(key='barra', name='Barra')
+        MenuItem.objects.create(menu=contenitore, label='Esplora',
                                 submenu=Menu.objects.get(key='esplora'))
         dati = self.client.get('/api/cms/v1/navigation/').json()
         voce = dati['menus']['barra']['items'][0]
