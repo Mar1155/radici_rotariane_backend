@@ -71,7 +71,7 @@ class Command(BaseCommand):
         in_coda = Traduzione.objects.filter(needs_review=True).count()
         if in_coda:
             self.stdout.write(self.style.WARNING(
-                f'In coda di revisione: {in_coda}. Si vedono da /cms/traduzioni/.'))
+                f'In coda di revisione: {in_coda}. Si vedono da /cms/snippets/traduzione/traduzione/.'))
 
     def _traduci_modello(self, modello, m, options):
         qs = modello.objects.all().order_by('pk')

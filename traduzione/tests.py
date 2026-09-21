@@ -469,3 +469,88 @@ class SenzaUnaQueryPerRiga(TestCase):
         self.assertTrue(titoli, 'la lista non deve essere vuota')
         self.assertTrue(all(t == t.upper() for t in titoli),
                         f'qualche titolo non e tradotto: {titoli[:3]}')
+
+
+class CodaDiRevisioneTest(TestCase):
+    """La correzione a mano, e cosa le succede dopo.
+
+    E' il punto in cui una persona sa piu' della macchina, e la macchina deve
+    smettere di insistere — ma solo sulla frase che la persona ha toccato.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command('seed_lingue', verbosity=0)
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        call_command('seed_article_types', verbosity=0)
+        cls.autore = User.objects.create_user(
+            username='rev', email='rev@prova.it', password='prova12345')
+
+    def articolo(self):
+        return Card.objects.create(
+            slug='da-rivedere', title='Il titolo', subtitle='Il sottotitolo',
+            article_type=ArticleType.objects.get(key='itinerario'),
+            author=self.autore, is_published=True, source_locale='it')
+
+    def test_il_form_mostra_una_riga_per_frase_con_l_originale(self):
+        from cms.forms import form_traduzione
+        card = self.articolo()
+        traduci(card, 'en', MotoreFinto())
+
+        form = form_traduzione()(instance=card.traduzioni.get(target_language='en'))
+
+        campi = [n for n in form.fields if n.startswith('testo__')]
+        self.assertIn('testo__title', campi)
+        self.assertIn('testo__subtitle', campi)
+        # L'aiuto e' il testo di partenza: e' l'unica cosa che serve per correggere.
+        self.assertEqual(form.fields['testo__title'].help_text, 'Il titolo')
+        self.assertEqual(form.fields['testo__title'].initial, 'IL TITOLO')
+
+    def test_correggere_una_frase_blocca_quella_e_non_le_altre(self):
+        from cms.forms import form_traduzione
+        card = self.articolo()
+        traduci(card, 'en', MotoreFinto())
+        t = card.traduzioni.get(target_language='en')
+
+        form = form_traduzione()(
+            instance=t,
+            data={'testo__title': 'A proper English title',
+                  'testo__subtitle': t.texts['subtitle'],
+                  'needs_review': False})
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+
+        t.refresh_from_db()
+        self.assertEqual(t.locked_paths, ['title'])
+        self.assertTrue(t.human_locked)
+        self.assertFalse(t.needs_review)
+
+        # E la correzione sopravvive a una ritraduzione forzata, mentre il
+        # resto si rinfresca.
+        card.subtitle = 'Un sottotitolo nuovo'
+        card.save()
+        traduci(card, 'en', MotoreFinto(), forza=True)
+
+        t.refresh_from_db()
+        self.assertEqual(t.texts['title'], 'A proper English title')
+        self.assertEqual(t.texts['subtitle'], 'UN SOTTOTITOLO NUOVO')
+
+    def test_svuotare_un_campo_lo_sblocca(self):
+        """Ripensarci deve essere possibile quanto correggere."""
+        from cms.forms import form_traduzione
+        card = self.articolo()
+        traduci(card, 'en', MotoreFinto())
+        t = card.traduzioni.get(target_language='en')
+        form_traduzione()(instance=t, data={'testo__title': 'Mio', 'needs_review': False}).save()
+        self.assertIn('title', t.locked_paths)
+
+        form_traduzione()(instance=t, data={'testo__title': '', 'needs_review': False}).save()
+
+        t.refresh_from_db()
+        self.assertNotIn('title', t.locked_paths)
+        self.assertNotIn('title', t.texts)

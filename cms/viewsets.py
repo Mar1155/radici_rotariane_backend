@@ -15,7 +15,7 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet, SnippetViewSetGroup
 
 from cms.models import ArticleType, GeoArea, Menu
-from traduzione.models import Lingua
+from traduzione.models import Lingua, Traduzione
 
 
 class ArticleTypeViewSet(SnippetViewSet):
@@ -74,6 +74,33 @@ class LinguaViewSet(SnippetViewSet):
     add_to_admin_menu = False
 
 
+class TraduzioneViewSet(SnippetViewSet):
+    """Le traduzioni da rivedere.
+
+    Sta nel menu principale e non dentro "Struttura" perche' rivedere una
+    traduzione e' lavoro quotidiano, mentre definire un tipo di articolo non lo
+    e' — la stessa distinzione gia' fatta per i menu.
+
+    Le righe con `da rivedere` acceso vengono prima: sono quelle che una
+    macchina ha prodotto e nessuno ha ancora guardato.
+    """
+
+    model = Traduzione
+    icon = 'globe'
+    menu_label = 'Traduzioni'
+    menu_name = 'traduzioni'
+    list_display = ['__str__', 'target_language', 'provider',
+                    'needs_review', 'human_locked', 'updated_at']
+    list_filter = ['target_language', 'provider', 'needs_review', 'human_locked']
+    ordering = ['-needs_review', '-updated_at']
+    add_to_admin_menu = True
+    menu_order = 400
+
+    def get_form_class(self, for_update=False):
+        from cms.forms import form_traduzione
+        return form_traduzione()
+
+
 class StrutturaGroup(SnippetViewSetGroup):
     items = (ArticleTypeViewSet, GeoAreaViewSet, LinguaViewSet)
     menu_icon = 'cogs'
@@ -83,4 +110,5 @@ class StrutturaGroup(SnippetViewSetGroup):
 
 
 register_snippet(MenuViewSet)
+register_snippet(TraduzioneViewSet)
 register_snippet(StrutturaGroup)

@@ -62,6 +62,11 @@ class Command(BaseCommand):
         # Il menu e' roba del cliente: e' la prima cosa che deve poter
         # cambiare da se'. I tipi di articolo e la geografia no.
         proprie = permessi('cms', ['menu', 'menuitem'])
+        # Rivedere le traduzioni e' lavoro della redazione: e' chi conosce i
+        # contenuti a sapere quando una macchina ha sbagliato un nome.
+        # Solo 'change': le righe le crea il comando, non una persona.
+        proprie += permessi('traduzione', ['traduzione'], azioni=('change',))
+        proprie += permessi('traduzione', ['lingua'])
         redazione.permissions.set(proprie + ([accesso] if accesso else []))
 
         # Immagini e documenti seguono le COLLEZIONI, come le pagine seguono
