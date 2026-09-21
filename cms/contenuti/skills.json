@@ -1,0 +1,73 @@
+[
+  {
+    "id": "ab470b87-98d2-4de8-9984-48e46880b1c6",
+    "type": "hero",
+    "value": {
+      "tag": "SKILLS",
+      "title": "Skills Network",
+      "description": "Rete delle Risorse Rotariane e Distrettuali (DNR)",
+      "surface": "brand-secondary",
+      "accent": "brand-secondary",
+      "scroll_to_id": "skills-list",
+      "visibility": "always",
+      "highlights": [],
+      "primary_cta": {
+        "label": "",
+        "route": "",
+        "page": null,
+        "external_url": ""
+      }
+    }
+  },
+  {
+    "id": "705d2029-57cb-452c-a422-d8fbbac036e0",
+    "type": "explanation_steps",
+    "value": {
+      "title": "Come accedere alla Rete delle Competenze",
+      "description": "Una rete che mette a disposizione dei Club competenze professionali e rotariane, validate e organizzate secondo le Aree Focus del Rotary International, per sostenere progetti, eventi e iniziative di servizio.",
+      "accent": "brand-primary",
+      "contact_email": "",
+      "visibility": "always",
+      "steps": [
+        {
+          "id": "b57e000c-2610-4d2e-b28a-876f900e4db9",
+          "type": "item",
+          "value": {
+            "icon": "Briefcase",
+            "title": "Inserisci le tue competenze",
+            "description": "Dal tuo profilo, cosi gli altri Club possono trovarti."
+          }
+        },
+        {
+          "id": "cb3174e2-4d42-4334-a716-6e1d8811f404",
+          "type": "item",
+          "value": {
+            "icon": "Search",
+            "title": "Diventa risorsa DNR",
+            "description": "Le competenze validate entrano nella rete distrettuale."
+          }
+        },
+        {
+          "id": "eb3ae7b6-2c7d-4a1a-9911-f3a597b882be",
+          "type": "item",
+          "value": {
+            "icon": "Users",
+            "title": "Supporta i Club",
+            "description": "Chi ha bisogno di te ti contatta direttamente."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "22b129be-6457-40d6-8383-1fa9f4bf0a1c",
+    "type": "member_list",
+    "value": {
+      "heading": "",
+      "accent": "brand-secondary",
+      "show_search": true,
+      "show_focus_filter": true,
+      "show_profession_filter": true
+    }
+  }
+]

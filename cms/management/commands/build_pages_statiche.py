@@ -49,12 +49,21 @@ def risolvi_immagini(nodo, immagini, mancanti):
 PAGINE = [
     ('partner', 'Partner e Sponsor'),
     ('cip', 'Comitati Inter-Paese'),
-    ('progetto', 'Radici Rotariane nel Mondo'),
+    # Si chiamava "Radici Rotariane nel Mondo", che e' il nome del progetto
+    # intero e confliggeva con la pagina della mappa: tre nomi per la stessa
+    # cosa (menu, titolo, indirizzo) e nessuno la riconosceva.
+    ('progetto', 'Chi siamo'),
+    # Le tre pagine che erano codice. Stanno qui e non in un comando nuovo
+    # perche' il JSON porta gli id dei blocchi: ricostruirle non butta via le
+    # traduzioni, cosa che invece fa un corpo generato da tuple Python.
+    ('rota-space', 'Rota-Space'),
+    ('skills', 'Skills Network'),
+    ('rotariani-nel-mondo', 'Rotariani nel Mondo'),
 ]
 
 
 class Command(BaseCommand):
-    help = 'Crea (o aggiorna) /partner, /cip e /progetto dai contenuti versionati.'
+    help = 'Crea (o aggiorna) le pagine a contenuto versionato in cms/contenuti/.'
 
     @transaction.atomic
     def handle(self, *args, **options):

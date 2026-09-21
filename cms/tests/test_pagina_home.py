@@ -16,6 +16,8 @@ RIMANDI = [
     'adotta-un-progetto', 'storie-e-radici', 'eccellenze-italiane',
     'calendario-delle-radici', 'scopri-l-italia', 'scambi-e-mobilita',
     'archivio', 'progetto', 'cip', 'partner',
+    # Erano rotte del frontend, adesso sono pagine componibili.
+    'skills', 'rotariani-nel-mondo',
 ]
 
 
@@ -59,11 +61,11 @@ class PaginaHomeTest(TestCase):
         """Se il cliente rinomina una pagina, i riquadri la seguono."""
         riquadri = next(b for b in self.home.body if b.block_type == 'section_tiles')
         tiles = riquadri.value['tiles']
-        verso_pagine = [t for t in tiles if t['link']['page']]
-        # Nove su dieci: solo Skills Network e' una rotta dell'app, non una pagina.
-        self.assertEqual(len(verso_pagine), 9)
-        self.assertEqual([t['label'] for t in tiles if not t['link']['page']],
-                         ['Skills Network'])
+        verso_rotte = [t['label'] for t in tiles if not t['link']['page']]
+        # Adesso tutti: anche Skills Network e' diventata una pagina componibile,
+        # quindi non resta un solo riquadro legato a un indirizzo scritto a mano.
+        self.assertEqual(verso_rotte, [],
+                         'un riquadro punta ancora a una rotta invece che a una pagina')
 
     def test_i_numeri_dichiarano_il_dato_non_il_valore(self):
         fascia = next(b for b in self.home.body if b.block_type == 'stats_bar')

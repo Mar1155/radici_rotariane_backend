@@ -27,7 +27,7 @@ from cms.models import Menu, MenuItem, StandardPage
 ESPLORA = [
     ('Homepage', '/', 'Compass'),
     ('Chi siamo', 'progetto', 'Info'),
-    ('Skills Network', '/skills', 'Users'),
+    ('Skills Network', 'skills', 'Users'),
     ('Scambi e Mobilità', 'scambi-e-mobilita', 'Globe'),
     ('Calendario delle Radici', 'calendario-delle-radici', 'Calendar'),
     ('Comitati Inter-Paese', 'cip', 'Handshake'),
@@ -41,8 +41,8 @@ ESPLORA = [
 # Niente voce "Accedi": la barra di navigazione ha gia' il suo pulsante di
 # accesso in fondo, e averlo due volte confonde.
 SERVIZI = [
-    ('Rota-Space', '/rota-space', 'Users', MenuItem.Visibilita.SEMPRE),
-    ('Rotariani nel Mondo', '/rotariani-nel-mondo', 'Globe', MenuItem.Visibilita.SEMPRE),
+    ('Rota-Space', 'rota-space', 'Users', MenuItem.Visibilita.SEMPRE),
+    ('Rotariani nel Mondo', 'rotariani-nel-mondo', 'Globe', MenuItem.Visibilita.SEMPRE),
     ('Adotta un Progetto', 'adotta-un-progetto', 'Heart', MenuItem.Visibilita.SEMPRE),
 ]
 

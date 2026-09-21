@@ -1,0 +1,253 @@
+[
+  {
+    "id": "ff8ab269-8f42-4341-8019-666ea9d37911",
+    "type": "hero",
+    "value": {
+      "tag": "Area Riservata Rotariani",
+      "title": "Rota-Space",
+      "description": "La piattaforma interattiva dove scambiare idee, condividere esperienze e promuovere scambi d'amicizia e gemellaggi.\nChat private, gruppi, forum tematici e videochiamate in un solo spazio digitale.",
+      "surface": "brand-gradient",
+      "accent": "brand-primary",
+      "scroll_to_id": "funzionalita",
+      "visibility": "always",
+      "primary_cta": {
+        "label": "",
+        "route": "",
+        "page": null,
+        "external_url": ""
+      },
+      "highlights": [
+        {
+          "id": "d947abc0-ce9f-47f6-9a3c-f7f1674c1f4c",
+          "type": "item",
+          "value": {
+            "icon": "CheckCircle",
+            "label": "Accesso Verificato"
+          }
+        },
+        {
+          "id": "3caef66c-9ffa-4d6f-9968-7649b64cb170",
+          "type": "item",
+          "value": {
+            "icon": "Globe",
+            "label": "Traduzione Automatica"
+          }
+        },
+        {
+          "id": "259a7d91-0266-463a-8eb7-fe308912f4fb",
+          "type": "item",
+          "value": {
+            "icon": "Users",
+            "label": "Connessione Globale"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "c04c304f-6ef8-4a5e-b2b1-6a08b83959a5",
+    "type": "cta_banner",
+    "value": {
+      "title": "Accesso Riservato",
+      "description": "Per accedere al Rota-Space e necessario essere un rotariano verificato. Entra con la tua email e il tuo ID MyRotary.",
+      "surface": "light",
+      "icon": "Lock",
+      "visibility": "anonymous",
+      "primary_cta": {
+        "label": "Accedi",
+        "route": "/login",
+        "page": null,
+        "external_url": ""
+      },
+      "secondary_cta": {
+        "label": "Scopri di piu",
+        "route": "/progetto",
+        "page": null,
+        "external_url": ""
+      }
+    }
+  },
+  {
+    "id": "1c1454ec-ea9b-4450-ad51-4257a4b39901",
+    "type": "cta_banner",
+    "value": {
+      "title": "Bentornato nel Rota-Space",
+      "description": "Le tue chat, i gruppi e i forum sono pronti.",
+      "surface": "light",
+      "icon": "MessageCircle",
+      "visibility": "authenticated",
+      "primary_cta": {
+        "label": "Vai al Rota-Space",
+        "route": "/rota-space/app",
+        "page": null,
+        "external_url": ""
+      },
+      "secondary_cta": {
+        "label": "",
+        "route": "",
+        "page": null,
+        "external_url": ""
+      }
+    }
+  },
+  {
+    "id": "42cf5b0d-a955-4726-892c-fafc688e7a39",
+    "type": "icon_card_grid",
+    "value": {
+      "title": "Funzionalita del Rota-Space",
+      "subtitle": "Una community rotariana con strumenti veri per collaborare",
+      "columns": "4",
+      "surface": "white",
+      "visibility": "always",
+      "items": [
+        {
+          "id": "03979683-5584-4c65-8744-26e13c2df235",
+          "type": "item",
+          "value": {
+            "icon": "MessageCircle",
+            "title": "Chat Private",
+            "description": "Conversazioni riservate fra soci, tradotte in tutte le lingue del sito.",
+            "accent": "brand-primary",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        },
+        {
+          "id": "4d57d8a9-d3e8-4f06-b869-e19aee4de948",
+          "type": "item",
+          "value": {
+            "icon": "Users",
+            "title": "Gruppi di Progetto",
+            "description": "Uno spazio per ogni service: chi partecipa, a che punto e, cosa manca.",
+            "accent": "emerald",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        },
+        {
+          "id": "c7cac9bf-70b8-48df-a039-6584e703696e",
+          "type": "item",
+          "value": {
+            "icon": "Globe",
+            "title": "Forum Tematici",
+            "description": "Discussioni aperte a tutti, divise per argomento.",
+            "accent": "sky",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        },
+        {
+          "id": "9b73cfd9-4415-499b-9181-fa07aad69391",
+          "type": "item",
+          "value": {
+            "icon": "Info",
+            "title": "Traduzione Automatica",
+            "description": "Si scrive nella propria lingua e si legge nella propria: nessuno resta fuori da una conversazione.",
+            "accent": "amber",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "034ca798-8428-4f4c-a321-39eff4c6a58d",
+    "type": "icon_card_grid",
+    "value": {
+      "title": "Perche usare il Rota-Space",
+      "subtitle": "",
+      "columns": "3",
+      "surface": "light",
+      "visibility": "always",
+      "items": [
+        {
+          "id": "115dcd18-bee0-4408-b3e8-1265fee32014",
+          "type": "item",
+          "value": {
+            "icon": "Globe",
+            "title": "Connessione Globale",
+            "description": "Club di tutta Italia e rotariani di origine italiana nel mondo, nello stesso posto.",
+            "accent": "brand-primary",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        },
+        {
+          "id": "6fa923da-dff9-4748-a03f-8a652f263c9c",
+          "type": "item",
+          "value": {
+            "icon": "Heart",
+            "title": "Nessuna Barriera",
+            "description": "La lingua non e piu un ostacolo: ognuno scrive nella sua.",
+            "accent": "rose",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        },
+        {
+          "id": "e06d557d-8092-4224-a3d0-9071d4896c1b",
+          "type": "item",
+          "value": {
+            "icon": "CheckCircle",
+            "title": "Sicurezza Garantita",
+            "description": "Si entra solo da rotariani verificati, con email e ID MyRotary.",
+            "accent": "emerald",
+            "cta": {
+              "label": "",
+              "route": "",
+              "page": null,
+              "external_url": ""
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "3982b2c7-e2d9-4eff-bcbb-06abbdcd6c0b",
+    "type": "cta_banner",
+    "value": {
+      "title": "Pronto a entrare nel Rota-Space?",
+      "description": "Registrati con la tua email MyRotary e inizia a costruire ponti.",
+      "surface": "brand-secondary",
+      "visibility": "anonymous",
+      "primary_cta": {
+        "label": "Registrati Ora",
+        "route": "/register",
+        "page": null,
+        "external_url": ""
+      },
+      "secondary_cta": {
+        "label": "",
+        "route": "",
+        "page": null,
+        "external_url": ""
+      }
+    }
+  }
+]

@@ -4,7 +4,8 @@ from wagtail import blocks
 
 
 from cms import vocabularies as vocab
-from .common import (ACCENT_CHOICES, SURFACE_CHOICES, IdentificatoreBlock,
+from .common import (ACCENT_CHOICES, SURFACE_CHOICES, BloccoVisibile,
+                     IdentificatoreBlock,
                      ImmagineBlock,
                      LinkBlock, TipoArticoloBlock)
 
@@ -14,7 +15,7 @@ RICH_TEXT_FEATURES = [
 ]
 
 
-class HeroBlock(blocks.StructBlock):
+class HeroBlock(BloccoVisibile):
     """Intestazione di pagina — app/components/CardHero.tsx"""
 
     title = blocks.CharBlock(label='titolo')
@@ -31,13 +32,22 @@ class HeroBlock(blocks.StructBlock):
         required=False, label='scorri fino a',
         help_text="Identificativo del blocco a cui portare l'utente. Lascia vuoto "
                   'per non mostrare la freccia.')
+    # Facoltativi, aggiunti per la landing di Rota-Space: lasciati vuoti,
+    # l'intestazione e' esattamente quella di prima.
+    highlights = blocks.ListBlock(
+        blocks.StructBlock([
+            ('icon', blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')),
+            ('label', blocks.CharBlock(label='testo')),
+        ]), required=False, label='punti in evidenza',
+        help_text="Piccole voci con icona sotto la descrizione.")
+    primary_cta = LinkBlock(required=False, label='pulsante')
 
     class Meta:
         icon = 'title'
         label = 'intestazione'
 
 
-class CtaBannerBlock(blocks.StructBlock):
+class CtaBannerBlock(BloccoVisibile):
     """Fascia di invito all'azione — finalCta della home, cta di /partner."""
 
     title = blocks.CharBlock(label='titolo')
@@ -47,6 +57,8 @@ class CtaBannerBlock(blocks.StructBlock):
     primary_cta = LinkBlock(label='pulsante principale')
     secondary_cta = LinkBlock(required=False, label='pulsante secondario')
 
+    icon = blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, required=False,
+                              label='icona')
     class Meta:
         icon = 'plus-inverse'
         label = 'invito all azione'
@@ -98,7 +110,7 @@ class IconCardBlock(blocks.StructBlock):
         label = 'scheda'
 
 
-class IconCardGridBlock(blocks.StructBlock):
+class IconCardGridBlock(BloccoVisibile):
     """Griglia di schede con icona — quickAccess della home, pillars di /progetto."""
 
     title = blocks.CharBlock(required=False, label='titolo')
@@ -126,7 +138,7 @@ class QuoteBlock(blocks.StructBlock):
         label = 'citazione'
 
 
-class SplitHeroBlock(blocks.StructBlock):
+class SplitHeroBlock(BloccoVisibile):
     """Intestazione su due colonne — l'apertura della homepage.
 
     Distinta da `hero` perche' non e' una variante grafica: ha un testo di
@@ -280,7 +292,7 @@ class ExplanationStepBlock(blocks.StructBlock):
         label = 'passo'
 
 
-class ExplanationStepsBlock(blocks.StructBlock):
+class ExplanationStepsBlock(BloccoVisibile):
     """Passi numerati che spiegano una sezione — SectionExplanation.tsx.
 
     Distinto da `icon_card_grid` perche' i passi sono numerati e ordinati: sono
@@ -361,7 +373,7 @@ class TabbedArticleListBlock(blocks.StructBlock):
         label = 'elenco articoli a tab'
 
 
-class TextBandBlock(blocks.StructBlock):
+class TextBandBlock(BloccoVisibile):
     """Fascia di testo centrata — app/cip/components/WhatIsCIP.tsx"""
 
     title = blocks.CharBlock(label='titolo')
@@ -458,6 +470,44 @@ class TierCardsBlock(blocks.StructBlock):
         icon = 'pick'
         label = 'livelli'
 
+class MemberListBlock(blocks.StructBlock):
+    """L'elenco dei soci con le loro competenze — la parte viva di /skills.
+
+    I dati arrivano dalle API degli utenti, come l'elenco articoli prende i
+    suoi: il blocco dice **come** mostrarli, non quali sono.
+    """
+
+    heading = blocks.CharBlock(required=False, label='titolo')
+    accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-secondary',
+                                label='colore')
+    show_search = blocks.BooleanBlock(required=False, default=True,
+                                      label='campo di ricerca')
+    show_focus_filter = blocks.BooleanBlock(required=False, default=True,
+                                            label='filtro per aree focus')
+    show_profession_filter = blocks.BooleanBlock(required=False, default=True,
+                                                 label='filtro per professione')
+
+    class Meta:
+        icon = 'group'
+        label = 'elenco soci'
+
+
+class ClubMapBlock(blocks.StructBlock):
+    """La mappa dei club — la parte viva di /rotariani-nel-mondo."""
+
+    heading = blocks.CharBlock(required=False, label='titolo')
+    show_search = blocks.BooleanBlock(required=False, default=True,
+                                      label='campo di ricerca')
+    show_list = blocks.BooleanBlock(required=False, default=True,
+                                    label='elenco sotto la mappa')
+    list_columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3, 4)],
+                                      default='3', label='colonne dell elenco')
+
+    class Meta:
+        icon = 'site'
+        label = 'mappa dei club'
+
+
 class PageBodyBlock(blocks.StreamBlock):
     hero = HeroBlock()
     split_hero = SplitHeroBlock()
@@ -477,6 +527,8 @@ class PageBodyBlock(blocks.StreamBlock):
     cta_banner = CtaBannerBlock()
     article_list = ArticleListBlock()
     tabbed_article_list = TabbedArticleListBlock()
+    member_list = MemberListBlock()
+    club_map = ClubMapBlock()
     image = ImmagineBlock(label='immagine')
 
     class Meta:

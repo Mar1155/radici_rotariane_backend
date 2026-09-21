@@ -1,0 +1,54 @@
+[
+  {
+    "id": "4dcb5d21-1200-4b75-a433-7887a28ed615",
+    "type": "hero",
+    "value": {
+      "tag": "La rete",
+      "title": "Rotariani nel Mondo",
+      "description": "Esplora la mappa interattiva e connettiti con la rete globale di Radici Rotariane nel Mondo. Trova un club, contattalo, crea nuovi legami.",
+      "surface": "brand-secondary",
+      "accent": "brand-secondary",
+      "scroll_to_id": "card-list",
+      "visibility": "always",
+      "highlights": [],
+      "primary_cta": {
+        "label": "",
+        "route": "",
+        "page": null,
+        "external_url": ""
+      }
+    }
+  },
+  {
+    "id": "918acd14-a32c-41df-a78c-41832ee3c5e5",
+    "type": "club_map",
+    "value": {
+      "heading": "",
+      "show_search": true,
+      "show_list": true,
+      "list_columns": "3"
+    }
+  },
+  {
+    "id": "9e430619-c0de-4947-a57c-739b2557324f",
+    "type": "cta_banner",
+    "value": {
+      "title": "Il tuo Club non fa ancora parte della rete?",
+      "description": "Registra il tuo Rotary Club e unisciti alla famiglia globale di Radici Rotariane nel Mondo.",
+      "surface": "white",
+      "visibility": "always",
+      "primary_cta": {
+        "label": "Registra il Tuo Club",
+        "route": "/register?type=club",
+        "page": null,
+        "external_url": ""
+      },
+      "secondary_cta": {
+        "label": "Richiedi Informazioni",
+        "route": "",
+        "page": null,
+        "external_url": "mailto:info@rotary2102.org"
+      }
+    }
+  }
+]

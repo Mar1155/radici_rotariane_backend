@@ -37,7 +37,7 @@ ACCESSO_RAPIDO = [
      'Scopri i progetti', pagina('adotta-un-progetto')),
     ('Globe', 'Rotariani nel Mondo',
      'Esplora la mappa dei club registrati su Radici Rotariani nel Mondo',
-     'Esplora la mappa', '/rotariani-nel-mondo'),
+     'Esplora la mappa', pagina('rotariani-nel-mondo')),
 ]
 
 PASSI = [
@@ -54,7 +54,7 @@ RIQUADRI = [
     ('Award', 'Eccellenze Italiane', 'emerald', pagina('eccellenze-italiane')),
     ('Users', 'Scambi e Mobilità', 'rose', pagina('scambi-e-mobilita')),
     ('Bookmark', 'Archivio', 'slate', pagina('archivio')),
-    ('Briefcase', 'Skills Network', 'brand-secondary', '/skills'),
+    ('Briefcase', 'Skills Network', 'brand-secondary', pagina('skills')),
     ('Calendar', 'Calendario ed Eventi', 'amber', pagina('calendario-delle-radici')),
     ('Heart', 'Chi siamo', 'stone', pagina('progetto')),
     ('Globe', 'Comitati Inter-Paese', 'brand-primary', pagina('cip')),

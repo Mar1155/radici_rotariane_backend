@@ -37,6 +37,24 @@ ACCENT_CHOICES = [
 ]
 
 
+class BloccoVisibile(blocks.StructBlock):
+    """Base per i blocchi che possono riguardare solo una parte dei visitatori.
+
+    Stesso vocabolario dei collegamenti e delle voci di menu
+    (`vocab.VISIBILITY_CHOICES`): "a chi si mostra" e' la stessa domanda
+    ovunque, e tre risposte diverse sarebbero tre concetti da imparare.
+
+    Il filtro sta in un posto solo, `BlockRenderer` lato frontend: i componenti
+    dei blocchi non sanno di poter essere nascosti, e non devono saperlo.
+    """
+
+    visibility = blocks.ChoiceBlock(
+        choices=vocab.VISIBILITY_CHOICES, default='always', required=False,
+        label='a chi si mostra',
+        help_text='Per dire una cosa a chi ha fatto accesso e un altra a chi no, '
+                  'si mettono due blocchi.')
+
+
 class IdentificatoreBlock(blocks.CharBlock):
     """Una stringa che non e' prosa: un'ancora, un indirizzo, un simbolo.
 
