@@ -121,13 +121,18 @@ def article_types(request):
         'articleTypes': [serializza_tipo(t, lingua) for t in qs],
         # I vocabolari viaggiano con la risposta cosi' il frontend non li
         # ridichiara: sono un contratto, e un contratto con due copie diverge.
+        #
+        # Le CHIAVI sono il contratto; le ETICHETTE no. Prima viaggiavano qui,
+        # in italiano e basta, e in inglese si leggeva "Leggi articolo" su un
+        # sito per il resto tradotto. Non era una traduzione mancante: era
+        # testo dell'app nel posto sbagliato. Ora stanno in intlayer.
         'vocabularies': {
-            'fields': [{'key': k, 'label': l} for k, l in vocab.FIELD_CHOICES],
-            'buttons': [{'key': k, 'label': l} for k, l in vocab.BUTTON_CHOICES],
-            'roles': [{'key': k, 'label': l} for k, l in vocab.ROLE_CHOICES],
+            'fields': list(vocab.FIELD_KEYS),
+            'buttons': list(vocab.BUTTON_KEYS),
+            'roles': list(vocab.ROLE_KEYS),
             'icons': vocab.ICON_KEYS,
-            'layouts': [{'key': k, 'label': l} for k, l in vocab.LAYOUT_CHOICES],
-            'bodyBlocks': [{'key': k, 'label': l} for k, l in vocab.BODY_BLOCK_CHOICES],
+            'layouts': [k for k, _ in vocab.LAYOUT_CHOICES],
+            'bodyBlocks': [k for k, _ in vocab.BODY_BLOCK_CHOICES],
         },
     }
     # ETag calcolato sul contenuto: nessuna colonna in piu' sul modello, e
