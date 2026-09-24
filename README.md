@@ -10,6 +10,9 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 - `forum/` — App forum e contenuti.
 - `section/` — App articoli (i contenuti scritti da soci e club).
 - `cms/` — Wagtail: pagine, menu, tipi di articolo, geografia.
+- `traduzione/` — le lingue e **una sola** tabella di traduzione, per qualunque
+  contenuto stia nel database: articoli, post, commenti, messaggi, pagine,
+  menu, etichette. Cosa si traduce lo dichiara `traducibili.py`.
 - `manage.py` — Entry point Django.
 - `requirements.txt` — Dipendenze runtime.
 - `railpack.json` — Comando di avvio in produzione.
@@ -19,7 +22,7 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 
 ```bash
 python manage.py migrate
-python manage.py build_site     # pagine, menu, tipi di articolo, geografia
+python manage.py build_site     # lingue, pagine, menu, tipi di articolo, geografia
 python manage.py seed_demo      # account, articoli, forum, chat
 python manage.py translate_pending   # traduzioni (serve ANTHROPIC_API_KEY)
 ```
@@ -102,3 +105,17 @@ Su Railway e' un servizio cron separato che punta allo stesso repository, con
 
 Senza cron il sito funziona: chi pubblica vede il suo testo, gli altri lo
 vedono nella lingua d'origine con la nota che lo dice.
+
+
+## Le lingue
+
+Stanno in una tabella, non nelle impostazioni: si aggiungono da `/cms/` →
+Struttura → Lingue, e il contenuto si traduce da solo al primo giro del cron.
+
+Le **etichette dell'app** (bottoni, form, messaggi d'errore) sono un'altra cosa
+e stanno in intlayer, nel repository del frontend: una lingua nuova le vuole
+riempite con `npm run i18n:fill` e un commit. E' il confine che regge tutto il
+progetto — l'app la scrive lo sviluppatore, i contenuti l'admin — e il selettore
+mostra solo le lingue che hanno entrambe le meta'.
+
+La procedura completa e' in [DEPLOY.md](DEPLOY.md#8-aggiungere-una-lingua).

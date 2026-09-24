@@ -14,7 +14,12 @@ deploy:
 solo**, su entrambi gli hosting. Verificato: l'ultimo deploy e' nato due
 secondi dopo il push. Quindi il push e' l'ultimo passo, non il primo.
 
-> ⚠️ **Il database di produzione va azzerato, non migrato.** Le migrazioni sono
+> ⚠️ **Il database di produzione va azzerato, non migrato.** Vale ancora, e
+> ora c'e' un motivo in piu': wagtail-localize e' uscito dal progetto, e
+> togliere un'app lascia le sue tabelle orfane e `django_migrations` con righe
+> che non hanno piu' un'app a cui appartenere.
+>
+> (motivo originale) Le migrazioni sono
 > state compattate: la storia registrata nel database attuale non esiste piu' e
 > `migrate` fallirebbe. E' il passo 4.
 
@@ -163,8 +168,8 @@ git push origin main && git push front main     # <- il push su front pubblica
 Dalla shell del servizio backend su Railway:
 
 ```bash
-python manage.py migrate          # ~220 migrazioni, qualche minuto
-python manage.py build_site       # pagine, menu, tipi di articolo, geografia
+python manage.py migrate          # ~205 migrazioni, qualche minuto
+python manage.py build_site       # lingue, pagine, menu, tipi di articolo, geografia
 python manage.py seed_demo        # 23 club, 62 soci, 102 articoli, 20 discussioni
 python manage.py createsuperuser  # il tuo accesso a /cms/
 ```
@@ -195,7 +200,43 @@ Poi a mano:
 
 ---
 
-## 8. Il cron delle traduzioni
+## 8. Aggiungere una lingua
+
+E' un'operazione **a due mani**, e lo sara' sempre: e' la regola che tiene in
+piedi il progetto — l'app la scrive lo sviluppatore, i contenuti l'admin.
+
+**I contenuti**, subito, senza deploy:
+`/cms/` → Struttura → Lingue → aggiungi una riga. Al primo giro del cron tutto
+cio' che non ha quella lingua viene tradotto.
+
+**Le etichette dell'app** (bottoni, form, errori), con un commit:
+
+```bash
+# in radici-rotariane_front-end
+# 1. aggiungi la lingua a `locales` E a `requiredLocales` in intlayer.config.ts
+npm run i18n:fill -- --output-locales es
+# 2. rileggi il diff: e' l'unico momento in cui puoi fermare una traduzione
+#    sbagliata delle etichette
+git commit && git push
+```
+
+> ⚠️ `i18n:fill` **non va messo nel deploy**: riscrive i file sorgente, quindi
+> in un container si perde al riavvio, ogni deploy ripaga il modello, e il
+> testo cambierebbe fra un deploy e l'altro senza che nessuno abbia toccato
+> niente.
+
+Il selettore mostra solo le lingue che hanno **entrambe** le meta': finche' non
+hai fatto tutte e due, la lingua non compare a nessuno.
+
+## 9. La coda di revisione
+
+Le traduzioni prodotte da una macchina si rivedono da
+`/cms/snippets/traduzione/traduzione/`: un campo per frase, con accanto il
+testo di partenza. Correggerne una la **blocca**, e da li' in poi la
+ritraduzione automatica la lascia stare — per frase, non per articolo, quindi
+il resto continua a rinfrescarsi.
+
+## 10. Il cron delle traduzioni
 
 Su Railway, **+ New → Cron Job** sullo stesso repository, comando
 `python manage.py translate_pending`, ogni 5 minuti (`*/5 * * * *`).
@@ -213,3 +254,24 @@ nella lingua d'origine con la nota che lo dice.
   superuser, quando sara' il momento.
 - **Deploy successivi con migrazioni nuove**: `migrate` va rilanciato a mano
   prima di pubblicare, non parte da solo.
+
+
+---
+
+## Una nota su `build_site` e le traduzioni
+
+`build_pages_sezioni` e `build_page_home` ricostruiscono il corpo delle pagine
+da codice Python, e Wagtail assegna id nuovi ai blocchi a ogni salvataggio. Le
+traduzioni sono attaccate a quegli id: **rilanciare `build_site` le invalida**.
+
+Non e' un regresso — prima quelle pagine non erano tradotte affatto — ma e' una
+trappola. Dopo ogni `build_site` in produzione:
+
+```bash
+python manage.py translate_pending
+```
+
+Le pagine costruite da `cms/contenuti/*.json` (`/partner`, `/cip`, `/progetto`,
+`/rota-space`, `/skills`, `/rotariani-nel-mondo`) non hanno il problema: gli id
+sono versionati nel repository. Portare anche le altre due li' e' lavoro per
+un'altra volta.
