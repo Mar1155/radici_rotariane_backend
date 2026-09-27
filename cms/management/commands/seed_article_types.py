@@ -13,7 +13,8 @@ from django.db import transaction
 from wagtail.models import Locale
 
 from cms import vocabularies as vocab
-from cms.models import ArticleType, ArticleTypeInfoElement, ArticleTypeTag, GeoArea
+from cms.models import (ArticleType, ArticleTypeInfoElement, ArticleTypeTag,
+                        ArticleTypeTagCategory, GeoArea)
 from section.legacy import legacy_config
 
 # (sezione, tab) -> (chiave, nome singolare, nome plurale, descrizione)
@@ -65,6 +66,39 @@ NOMI = {
     ('archivio', 'main'): (
         'documento-archivio', 'Documento d archivio', 'Documenti d archivio',
         'Materiale storico con galleria di allegati.'),
+}
+
+
+# Tag che nella vecchia configurazione non c'erano. Lo snapshot in
+# `section/legacy/` e' congelato — e' la storia, non il presente — quindi cio'
+# che nasce da qui in poi si scrive qui.
+TAG_NUOVI = {
+    'progetto': [
+        ('progetto-di-club', 'Progetto di Club'),
+        ('progetto-distrettuale', 'Progetto distrettuale'),
+        ('progetto-nazionale', 'Progetto nazionale'),
+        ('global-grant', 'Global Grant'),
+    ],
+}
+
+# In quali gruppi si divide la tendina dei tag, tipo per tipo:
+#
+#     chiave del tipo -> [(chiave categoria, etichetta, [chiavi dei tag])]
+#
+# Ci sta solo cio' che si divide **davvero**. Su `progetto` "Attivo" e
+# "Educazione" rispondono a due domande diverse e stavano nello stesso mucchio
+# di dieci voci. Su `tradizione` i nove tag rispondono tutti alla stessa
+# domanda — che genere di tradizione e' — e spaccarli in gruppi inventati
+# sarebbe peggio dell'elenco piatto: un tipo che non compare qui resta com'era.
+CATEGORIE_TAG = {
+    'progetto': [
+        ('stato', 'Stato', ['attivo', 'completato', 'urgente']),
+        ('ambito', 'Ambito', ['educazione', 'sanità', 'ambiente', 'sviluppo',
+                              'comunità', 'infrastrutture', 'internazionale']),
+        ('localizzazione', 'Localizzazione del progetto',
+         ['progetto-di-club', 'progetto-distrettuale', 'progetto-nazionale',
+          'global-grant']),
+    ],
 }
 
 
@@ -159,11 +193,38 @@ class Command(BaseCommand):
                     tipo.save(update_fields=['uses_geo'])
 
                 tipo.allowed_tags.all().delete()
+                tipo.tag_categories.all().delete()
+
                 rimasti = [x for x in (tdata.get('tags') or []) if x not in chiavi_geo]
+                etichette_extra = {}
+                for chiave_tag, etichetta in TAG_NUOVI.get(key, ()):
+                    if chiave_tag not in rimasti:
+                        rimasti.append(chiave_tag)
+                    etichette_extra[chiave_tag] = etichetta
+
+                # Le categorie, e da quale categoria e' preso ogni tag.
+                di_categoria = {}
+                for i, (ck, etichetta, chiavi) in enumerate(CATEGORIE_TAG.get(key, ())):
+                    ArticleTypeTagCategory.objects.create(
+                        article_type=tipo, sort_order=i, key=ck, label=etichetta)
+                    for chiave_tag in chiavi:
+                        if chiave_tag not in rimasti:
+                            raise ValueError(
+                                f'La categoria "{ck}" di {key} elenca il tag '
+                                f'"{chiave_tag}", che il tipo non ammette.')
+                        di_categoria[chiave_tag] = ck
+
+                # Si riordinano per categoria: nel pannello i tag di uno stesso
+                # gruppo stanno vicini, come nella tendina che ne esce.
+                ordine = {ck: i for i, (ck, _, _) in enumerate(CATEGORIE_TAG.get(key, ()))}
+                rimasti.sort(key=lambda x: ordine.get(di_categoria.get(x, ''), len(ordine)))
+
                 for i, t in enumerate(rimasti):
                     ArticleTypeTag.objects.create(
                         article_type=tipo, sort_order=i, key=t,
-                        label=etichette_tag.get(t, {}).get('it', t.replace('-', ' ').capitalize()))
+                        category=di_categoria.get(t, ''),
+                        label=etichette_extra.get(t) or etichette_tag.get(t, {}).get(
+                            'it', t.replace('-', ' ').capitalize()))
 
                 # Se i tag erano TUTTI luoghi, il campo non esiste piu' per
                 # questo tipo: il concetto e' passato alla geografia. Lasciarlo

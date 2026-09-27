@@ -72,8 +72,16 @@ def serializza_tipo(t: ArticleType, lingua: str | None = None) -> dict:
              'label': tradotto(i, lingua).get('label') or i.label}
             for i in t.info_elements.all()
         ],
+        # I gruppi in cui si divide la tendina dei filtri, nell'ordine in cui
+        # l'admin li ha messi. Elenco vuoto = nessun gruppo, e il frontend
+        # disegna l'elenco piatto di sempre.
+        'tagCategories': [
+            {'key': c.key, 'label': tradotto(c, lingua).get('label') or c.label}
+            for c in t.tag_categories.all()
+        ],
         'tags': [
-            {'key': g.key, 'label': tradotto(g, lingua).get('label') or g.label}
+            {'key': g.key, 'label': tradotto(g, lingua).get('label') or g.label,
+             'category': g.category or None}
             for g in t.allowed_tags.all()
         ],
         'buttons': list(t.buttons or []),
@@ -112,8 +120,9 @@ def languages(request):
 def article_types(request):
     lingua = _codice_lingua(request)
     qs = (ArticleType.objects
-          .prefetch_related('info_elements', 'allowed_tags', 'traduzioni',
-                            'info_elements__traduzioni', 'allowed_tags__traduzioni')
+          .prefetch_related('info_elements', 'allowed_tags', 'tag_categories',
+                            'traduzioni', 'info_elements__traduzioni',
+                            'allowed_tags__traduzioni', 'tag_categories__traduzioni')
           .order_by('name'))
 
     payload = {

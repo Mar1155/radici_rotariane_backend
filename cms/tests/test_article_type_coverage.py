@@ -95,9 +95,15 @@ class ArticleTypeCoverageTest(TestCase):
                 attesi = cfg.get('tags') or []
                 geo = set(GeoArea.objects.filter(key__in=attesi)
                           .values_list('key', flat=True))
-                self.assertEqual(
-                    sorted(x.key for x in t.allowed_tags.all()),
-                    sorted(x for x in attesi if x not in geo))
+                # Contenimento, non uguaglianza: lo snapshot dice cosa la
+                # vecchia configurazione sapeva esprimere, e il test serve a
+                # garantire che non si sia perso niente. Non e' un tetto —
+                # i tag nati dopo (`TAG_NUOVI` nel seed) sono legittimi, e
+                # pretendere l'uguaglianza vorrebbe dire non poterne mai
+                # aggiungere uno senza toccare un file congelato.
+                self.assertLessEqual(
+                    {x for x in attesi if x not in geo},
+                    {x.key for x in t.allowed_tags.all()})
                 if geo:
                     self.assertTrue(t.uses_geo,
                                     'un tipo che aveva tag geografici deve usare la geografia')

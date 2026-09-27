@@ -57,6 +57,7 @@ TRADUCIBILI: dict[str, dict[str, object]] = {
     },
     'cms.ArticleTypeInfoElement': {'label': TESTO},
     'cms.ArticleTypeTag': {'label': TESTO},
+    'cms.ArticleTypeTagCategory': {'label': TESTO},
     'cms.Menu': {'name': TESTO},
     'cms.MenuItem': {'label': TESTO},
     'cms.GeoArea': {'name': TESTO},

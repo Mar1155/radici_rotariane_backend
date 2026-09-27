@@ -56,6 +56,7 @@ def _tag_per_modello(modello) -> list[str] | None:
         'ArticleType': ['article-types'],
         'ArticleTypeInfoElement': ['article-types'],
         'ArticleTypeTag': ['article-types'],
+        'ArticleTypeTagCategory': ['article-types'],
         'GeoArea': ['geo-areas'],
         'Menu': ['navigation'],
         'MenuItem': ['navigation'],

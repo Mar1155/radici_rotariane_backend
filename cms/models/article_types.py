@@ -20,7 +20,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, HelpPanel, InlinePanel, MultiFieldPanel
 from wagtail.models import Orderable
 from wagtail.search import index
 
@@ -102,6 +102,15 @@ class ArticleType(ClusterableModel, index.Indexed):
             FieldPanel('active_fields'), FieldPanel('required_fields'),
         ], heading='Campi dell articolo'),
         InlinePanel('info_elements', label='Elemento informativo'),
+        HelpPanel(content=(
+            '<p><b>Le categorie servono a dividere la tendina dei filtri.</b> '
+            'Crea prima le categorie (per esempio <i>stato</i> e <i>ambito</i>), '
+            'poi scrivi la chiave della categoria accanto a ogni tag.</p>'
+            '<p>Un tag senza categoria non sparisce: finisce in fondo, '
+            'in un gruppo senza titolo. Con una sola categoria, o con nessuna, '
+            'la tendina resta l elenco piatto di sempre.</p>'
+        ), heading='Come funzionano i tag'),
+        InlinePanel('tag_categories', label='Categoria di tag'),
         InlinePanel('allowed_tags', label='Tag'),
         MultiFieldPanel([
             FieldPanel('buttons'), FieldPanel('default_columns'),
@@ -148,6 +157,21 @@ class ArticleType(ClusterableModel, index.Indexed):
                     "nessuno potrebbe pubblicare. Aggiungi dei tag, oppure togli "
                     "'tags' dai campi obbligatori."
                 )
+            # Una categoria scritta a mano e non esistente non e' un errore
+            # visibile: i suoi tag finirebbero in un gruppo che non ha nome,
+            # accanto a quelli che una categoria non ce l'hanno per scelta.
+            # Meglio dirlo al salvataggio, con l'elenco di cosa si puo scrivere.
+            categorie = {c.key for c in self.tag_categories.all()}
+            sconosciute = sorted(
+                {t.category for t in self.allowed_tags.all() if t.category}
+                - categorie)
+            if sconosciute:
+                disponibili = ', '.join(sorted(categorie)) or 'nessuna'
+                errors['allowed_tags'] = (
+                    f"Queste categorie non esistono: {', '.join(sconosciute)}. "
+                    f"Categorie definite qui sopra: {disponibili}."
+                )
+
             if ('infoElements' in (self.required_fields or [])
                     and not self.info_elements.exists()):
                 errors['required_fields'] = (
@@ -202,6 +226,44 @@ class ArticleTypeInfoElement(Orderable):
         return f'{self.label} ({self.key})'
 
 
+class ArticleTypeTagCategory(Orderable):
+    """Un gruppo di tag: "Stato del progetto", "Ambito", "Localizzazione".
+
+    Serve a dividere la tendina dei filtri, che con dieci tag in fila non si
+    legge: "Attivo" e "Educazione" rispondono a due domande diverse e stavano
+    nello stesso mucchio.
+
+    I tag ci si agganciano **per chiave**, non con una chiave esterna. E' la
+    stessa scelta delle immagini nei contenuti versionati: le chiavi numeriche
+    non sopravvivono a un azzeramento del database, e soprattutto nel pannello
+    di Wagtail categorie e tag sono due elenchi figli dello stesso genitore —
+    un selettore non potrebbe puntare a una categoria che nella stessa
+    schermata non e' ancora stata salvata.
+    """
+
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
+
+    article_type = ParentalKey(ArticleType, on_delete=models.CASCADE,
+                               related_name='tag_categories')
+    key = models.SlugField(
+        max_length=60, verbose_name='chiave',
+        help_text='Identificatore tecnico, es. "stato". E quello che si scrive '
+                  'accanto a ogni tag.')
+    label = models.CharField(max_length=80, verbose_name='etichetta',
+                             help_text='Il titolo del gruppo nella tendina. Es. "Stato".')
+
+    panels = [FieldPanel('key'), FieldPanel('label')]
+
+    class Meta(Orderable.Meta):
+        verbose_name = 'categoria di tag'
+        verbose_name_plural = 'categorie di tag'
+
+    def __str__(self):
+        return self.label
+
+
 class ArticleTypeTag(Orderable):
     """Un tag tematico ammesso su questo tipo.
 
@@ -221,8 +283,12 @@ class ArticleTypeTag(Orderable):
                                related_name='allowed_tags')
     key = models.SlugField(max_length=60, verbose_name='chiave')
     label = models.CharField(max_length=80, verbose_name='etichetta')
+    category = models.SlugField(
+        max_length=60, blank=True, verbose_name='categoria',
+        help_text='La chiave di una delle categorie definite qui sopra. '
+                  'Lasciala vuota se il tag non appartiene a nessun gruppo.')
 
-    panels = [FieldPanel('key'), FieldPanel('label')]
+    panels = [FieldPanel('key'), FieldPanel('label'), FieldPanel('category')]
 
     class Meta(Orderable.Meta):
         verbose_name = 'tag'

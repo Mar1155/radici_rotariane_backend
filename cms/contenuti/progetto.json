@@ -330,7 +330,6 @@
   "value": {
    "title": "Il logo di Radici Rotariane",
    "surface": "light",
-   "icon": "Download",
    "description": "Cosa significano i simboli, i colori e le radici del marchio.",
    "primary_cta": {
     "page": null,
@@ -345,7 +344,8 @@
     "route": "",
     "external_url": "https://rotary2102.org/",
     "visibility": "always"
-   }
+   },
+   "visibility": "always"
   }
  }
 ]
