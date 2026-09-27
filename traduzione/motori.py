@@ -77,7 +77,7 @@ class MotoreClaude(MotoreTraduzione):
     def __init__(self, api_key: str, modello: str | None = None):
         self.api_key = api_key
         self.modello = modello or getattr(
-            settings, 'TRANSLATION_MODEL', 'claude-opus-5')
+            settings, 'TRANSLATION_MODEL', 'claude-sonnet-5')
 
     def traduci(self, testi: Testi, da: str, a: str) -> Testi:
         if not testi:

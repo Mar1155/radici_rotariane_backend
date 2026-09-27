@@ -148,13 +148,13 @@ class Command(BaseCommand):
                 'items': [{'source': s, 'label': l, 'fallback': f} for s, l, f in NUMERI],
             }),
             ('cta_banner', {
-                'title': 'Pronto a riscoprire le tue radici?',
+                'title': 'Registrati su Radici Rotariane',
                 'description': (
                     'Unisciti alla community globale dei rotariani di origine italiana '
                     'e inizia a costruire ponti tra culture, progetti e amicizie che '
                     'durano una vita.'),
                 'surface': 'brand-secondary',
-                'primary_cta': link('Registrati con MyRotary', '/register', 'anonymous'),
+                'primary_cta': link('Registrati con la mail MyRotary', '/register', 'anonymous'),
                 'secondary_cta': link('Scopri di Più', pagina('progetto')),
             }),
         ]

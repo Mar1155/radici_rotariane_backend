@@ -41,6 +41,19 @@ class MotoreFinto(MotoreTraduzione):
         return {k: v.upper() for k, v in testi.items()}
 
 
+def due_lingue():
+    """Italiano e inglese, e nient'altro.
+
+    I test non chiamano `seed_lingue`: quello crea le lingue che il **prodotto**
+    spedisce, e sono sei. Un test che ci si appoggia si rompe ogni volta che il
+    prodotto ne aggiunge una, e si rompe dicendo una cosa che non c'entra.
+    """
+    Lingua.objects.all().delete()
+    lingue.svuota_cache()
+    Lingua.objects.create(codice='it', nome='Italiano', ordine=0)
+    Lingua.objects.create(codice='en', nome='English', ordine=1)
+
+
 def documento():
     return {'type': 'doc', 'content': [
         {'type': 'paragraph', 'content': [
@@ -118,7 +131,7 @@ class TraduzioneArticoloTest(TestCase):
     def setUpTestData(cls):
         # Le lingue non stanno piu' nelle impostazioni: sono righe, e un
         # database di test parte senza.
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         locale = Locale.get_default()
         home = HomePage(title='Casa', slug='casa', locale=locale)
         Page.objects.get(depth=1).add_child(instance=home)
@@ -263,7 +276,7 @@ class RegistroLingueTest(TestCase):
         self.assertEqual(lingue.codici_attivi(), [settings.LANGUAGE_CODE])
 
     def test_aggiungere_una_riga_basta(self):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         self.assertEqual(lingue.codici_attivi(), ['it', 'en'])
 
         Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
@@ -272,7 +285,7 @@ class RegistroLingueTest(TestCase):
         self.assertEqual(lingue.codici_attivi(), ['it', 'en', 'es'])
 
     def test_spegnere_una_lingua_la_toglie_dal_giro(self):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         inglese = Lingua.objects.get(codice='en')
         inglese.attiva = False
         inglese.save()
@@ -286,14 +299,14 @@ class RegistroLingueTest(TestCase):
         self.assertEqual(Lingua.objects.get().codice, 'es')
 
     def test_la_variante_regionale_non_conta(self):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         self.assertEqual(lingue.normalizza('en-GB'), 'en')
         self.assertEqual(lingue.normalizza('EN'), 'en')
         self.assertIsNone(lingue.normalizza('de'), 'una lingua non attiva non si serve')
         self.assertIsNone(lingue.normalizza(''))
 
     def test_si_traduce_verso_tutte_tranne_la_propria(self):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
 
         self.assertEqual(lingue.altre_lingue('it'), ['en', 'es'])
@@ -311,7 +324,7 @@ class FlussoTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         locale = Locale.get_default()
         home = HomePage(title='Casa', slug='casa', locale=locale)
         Page.objects.get(depth=1).add_child(instance=home)
@@ -420,7 +433,7 @@ class SenzaUnaQueryPerRiga(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         locale = Locale.get_default()
         home = HomePage(title='Casa', slug='casa', locale=locale)
         Page.objects.get(depth=1).add_child(instance=home)
@@ -480,7 +493,7 @@ class CodaDiRevisioneTest(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        call_command('seed_lingue', verbosity=0)
+        due_lingue()
         locale = Locale.get_default()
         home = HomePage(title='Casa', slug='casa', locale=locale)
         Page.objects.get(depth=1).add_child(instance=home)
@@ -554,3 +567,44 @@ class CodaDiRevisioneTest(TestCase):
         t.refresh_from_db()
         self.assertNotIn('title', t.locked_paths)
         self.assertNotIn('title', t.texts)
+
+
+class SeedLingueTest(TestCase):
+    """Il comando che crea le lingue che il prodotto spedisce.
+
+    Sta a parte dagli altri test, che si costruiscono le lingue da soli: cosi'
+    aggiungerne una al prodotto rompe **questo** test, che parla di questo, e
+    non venti test che parlano d'altro.
+    """
+
+    def setUp(self):
+        Lingua.objects.all().delete()
+        lingue.svuota_cache()
+
+    def tearDown(self):
+        lingue.svuota_cache()
+
+    def test_crea_le_lingue_della_diaspora(self):
+        call_command('seed_lingue', verbosity=0)
+
+        # Italiano perche' e' la lingua in cui si scrive; le altre sono i paesi
+        # dove e' andata la diaspora italiana.
+        self.assertEqual(lingue.codici_attivi(),
+                         ['it', 'en', 'es', 'pt', 'fr', 'de'])
+
+    def test_rilanciarlo_non_duplica_niente(self):
+        call_command('seed_lingue', verbosity=0)
+        call_command('seed_lingue', verbosity=0)
+
+        self.assertEqual(Lingua.objects.count(), 6)
+
+    def test_non_sovrascrive_un_nome_cambiato_a_mano(self):
+        """Se l'admin rinomina una lingua dal pannello, il comando la rispetta."""
+        call_command('seed_lingue', verbosity=0)
+        inglese = Lingua.objects.get(codice='en')
+        inglese.nome = 'English (UK)'
+        inglese.save()
+
+        call_command('seed_lingue', verbosity=0)
+
+        self.assertEqual(Lingua.objects.get(codice='en').nome, 'English (UK)')

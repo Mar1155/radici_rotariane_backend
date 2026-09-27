@@ -43,8 +43,9 @@ SEZIONI = [
         'title': 'Adotta un Progetto',
         'accent': 'emerald',
         'tag': 'fiera digitale',
-        'description': 'La vetrina digitale dove i Club possono condividere progetti '
-                       'da finanziare o sostenere operativamente.',
+        'description': 'La vetrina digitale dove è possibile condividere progetti '
+                       'di service e global grant da finanziare o sostenere '
+                       'operativamente.',
         'spiegazione': {
             'title': 'Come funziona',
             'description': 'Scopri e sostieni i progetti degli utenti di Radici Rotariane '
@@ -63,9 +64,9 @@ SEZIONI = [
         'title': 'Storie e Radici',
         'accent': 'sky',
         'tag': 'Identità e Memoria',
-        'description': "L'archivio multimediale dedicato alle culture dei territori "
-                       'italiani: racconti autentici che intrecciano memoria, identità '
-                       'e appartenenza.',
+        'description': "L'archivio multimediale dedicato alla storia e alla cultura "
+                       "dell'Italia: racconti autentici che intrecciano memoria, "
+                       'identità e appartenenza.',
         'spiegazione': {
             'title': 'Condividi la tua storia',
             'description': 'Condividi foto, video e documenti relativi ad esperienze personali, '
@@ -98,8 +99,8 @@ SEZIONI = [
         'spiegazione': {
             'title': 'Vuoi aderire?',
             'description': "Hai un'attività o conosci un'attività che vorrebbe aderire al "
-                           'progetto offrendo sconti esclusivi ai rotariani di passaggio? '
-                           'Contattaci',
+                           'progetto offrendo sconti esclusivi ai rotariani in visita? '
+                           'Contattaci!',
             'steps': [],
             'contact_email': 'info@rotary2102.org',
         },

@@ -133,38 +133,6 @@
   "value": {
    "items": [
     {
-     "id": "6f4824ad-a797-4b76-b1bd-dfb1d8a8c68d",
-     "type": "item",
-     "value": {
-      "name": "PDG Francesco SOCIEVOLE",
-      "role": "Presidente Nazionale CIP Italia-Malta-San Marino/Canada",
-      "areas": [
-       {
-        "id": "2a553640-4446-4dc2-a258-9891debfdafc",
-        "type": "item",
-        "value": "Italia"
-       },
-       {
-        "id": "ca933da1-76d3-4bf5-8530-d0b6bc9090dd",
-        "type": "item",
-        "value": "Malta"
-       },
-       {
-        "id": "ddb3e44d-316d-4cba-86e8-cc0a680748bd",
-        "type": "item",
-        "value": "San Marino"
-       },
-       {
-        "id": "712d43c1-7584-4c2c-a5db-966c29ded840",
-        "type": "item",
-        "value": "Canada"
-       }
-      ],
-      "email": "f.socievole@gmail.com",
-      "photo": null
-     }
-    },
-    {
      "id": "564a4f72-5a15-4fb0-b140-558325364045",
      "type": "item",
      "value": {

@@ -385,7 +385,11 @@ TEST_RUNNER = 'backend.test_runner.Runner'
 # chiavi e un glossario solo, quindi lo stesso termine veniva tradotto in due
 # modi a seconda di dove fosse scritto.
 TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
-TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-opus-5')
+# Sonnet e non Opus: tradurre rispettando un glossario in prosa non e' un
+# compito che chiede il modello piu' grande, e la differenza di prezzo si
+# moltiplica per ogni lingua registrata. Si cambia da variabile d'ambiente se
+# un giorno la qualita' non bastasse.
+TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-sonnet-5')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
 # Le lingue in cui si traduce sono quelle registrate (`CONTENT_LANGUAGES`), non

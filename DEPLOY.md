@@ -200,33 +200,82 @@ Poi a mano:
 
 ---
 
-## 8. Aggiungere una lingua
+## 8. Le lingue
 
-E' un'operazione **a due mani**, e lo sara' sempre: e' la regola che tiene in
-piedi il progetto — l'app la scrive lo sviluppatore, i contenuti l'admin.
+Il sito ne serve **sei**: italiano, inglese, spagnolo, portoghese, francese,
+tedesco. Non sono le lingue piu' parlate al mondo — sono i paesi dove e' andata
+la diaspora italiana, cioe' le stesse dei club esteri fra i dati di prova.
 
-**I contenuti**, subito, senza deploy:
-`/cms/` → Struttura → Lingue → aggiungi una riga. Al primo giro del cron tutto
-cio' che non ha quella lingua viene tradotto.
+Ogni lingua ha **due meta'**, e lo avra' sempre: e' la regola che tiene in piedi
+il progetto — l'app la scrive lo sviluppatore, i contenuti l'admin.
 
-**Le etichette dell'app** (bottoni, form, errori), con un commit:
+| | dove | quando ha effetto |
+|---|---|---|
+| **contenuti** (pagine, articoli, menu, tag) | una riga in `traduzione.Lingua` | subito, al primo giro del cron |
+| **etichette** (bottoni, form, errori) | `intlayer.config.ts` nel frontend | al deploy successivo |
+
+### Le sei di adesso: cosa resta da fare
+
+I contenuti sono pronti: `seed_lingue` crea tutte e sei, e `translate_pending`
+le riempie appena trova la chiave.
+
+Le etichette no: **italiano e inglese sono scritte, le altre quattro no.**
+Vanno riempite una volta, dal repository del frontend, con la tua chiave:
 
 ```bash
-# in radici-rotariane_front-end
-# 1. aggiungi la lingua a `locales` E a `requiredLocales` in intlayer.config.ts
-npm run i18n:fill -- --output-locales es
-# 2. rileggi il diff: e' l'unico momento in cui puoi fermare una traduzione
-#    sbagliata delle etichette
-git commit && git push
+cd radici-rotariane_front-end
+export ANTHROPIC_API_KEY=...          # la stessa che hai messo su Railway
+
+npm run i18n:fill -- --output-locales es,pt,fr,de
+
+git diff                              # rileggi: e' l'unico momento in cui una
+                                      # persona puo' fermare una traduzione
+                                      # sbagliata delle etichette
 ```
 
-> ⚠️ `i18n:fill` **non va messo nel deploy**: riscrive i file sorgente, quindi
-> in un container si perde al riavvio, ogni deploy ripaga il modello, e il
-> testo cambierebbe fra un deploy e l'altro senza che nessuno abbia toccato
-> niente.
+Poi, in `intlayer.config.ts`, sposta le quattro lingue **anche** in
+`requiredLocales`. Da quel momento una chiave nuova senza traduzione rompe la
+build invece di ricadere in silenzio sull'italiano — che e' quello che vuoi,
+una volta che le traduzioni ci sono.
 
-Il selettore mostra solo le lingue che hanno **entrambe** le meta': finche' non
-hai fatto tutte e due, la lingua non compare a nessuno.
+Infine `git commit && git push`.
+
+### Aggiungerne una domani
+
+```bash
+# 1. contenuti: /cms/ -> Struttura -> Lingue -> nuova riga. Basta questo, e il
+#    cron la riempie. Il sito continua a funzionare: chi la sceglie legge i
+#    contenuti nella sua lingua e i bottoni in italiano.
+
+# 2. etichette, nel frontend:
+#    - aggiungi la lingua a `locales` in intlayer.config.ts
+npm run i18n:fill -- --output-locales <codice>
+#    - rileggi il diff, spostala in `requiredLocales`, commit
+```
+
+> ⚠️ `i18n:fill` **non va nel deploy**: riscrive i file sorgente, quindi in un
+> container si perde al riavvio, ogni deploy ripaga il modello, e il testo
+> cambierebbe fra un deploy e l'altro senza che nessuno abbia toccato niente.
+
+### Il modello, e quanto costa
+
+`claude-sonnet-5`, sia per i contenuti (`TRANSLATION_MODEL`) sia per le
+etichette. Sonnet e non Opus perche' rispettare un glossario in prosa non
+richiede il modello piu' grande, e la differenza di prezzo si moltiplica per
+ogni lingua.
+
+⚠️ Con sei lingue il **primo** giro di `translate_pending` in produzione fa
+circa **3.800 traduzioni** (720 oggetti × 5 lingue di arrivo). E' una spesa una
+volta sola: dopo, si traduce solo cio' che cambia. Per farla a scaglioni e
+guardare quanto costa prima di lanciarla tutta:
+
+```bash
+python manage.py translate_pending --limite 20    # 20 oggetti per modello
+python manage.py translate_pending --lingua es    # una lingua alla volta
+```
+
+Il tetto di spesa su console.anthropic.com resta la rete di sicurezza: superato,
+l'API risponde 429 e non addebita altro.
 
 ## 9. La coda di revisione
 
