@@ -1,3 +1,5 @@
+import logging
+
 from traduzione.servizio import traduci_in_sottofondo
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -5,6 +7,15 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 from .models import Chat, Message, ChatParticipant
 from .services.presence import mark_user_connected, mark_user_disconnected
+
+logger = logging.getLogger(__name__)
+
+# Il channel layer non risponde (Redis spento, irraggiungibile, credenziali
+# sbagliate). E' un codice nostro, fuori dall'intervallo dei codici standard,
+# perche' il client deve poterlo distinguere: non e' una sessione scaduta e
+# non si risolve rifacendo il login, quindi non ha senso chiedere il token
+# nuovo tre volte di fila prima di arrendersi.
+CODICE_INFRASTRUTTURA = 4500
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -204,34 +215,56 @@ class GlobalChatConsumer(AsyncJsonWebsocketConsumer):
         - { type: "error", message: "..." }
     """
 
+    async def _rifiuta(self, code):
+        """Chiude dicendo perche', in modo che il browser lo senta.
+
+        Chiudere *prima* di accettare fa fallire la stretta di mano, e una
+        stretta di mano fallita il browser la riporta sempre come codice 1006:
+        il motivo si perde per strada. Il client non puo' distinguere "il tuo
+        token non vale" da "il server non c'e'", quindi rifa' il token due
+        volte per niente prima di dire qualcosa all'utente. Accettare e
+        chiudere subito dopo costa un giro in piu' e consegna il codice vero.
+        """
+        await self.accept()
+        await self.close(code=code)
+
     async def connect(self):
         user = self.scope["user"]
         token_error = self.scope.get("token_error")
 
         if not user.is_authenticated:
             if token_error == "token_expired":
-                await self.close(code=4001)
-            elif token_error == "invalid_token":
-                await self.close(code=4002)
-            elif token_error == "user_not_found":
-                await self.close(code=4002)
+                await self._rifiuta(4001)
+            elif token_error in ("invalid_token", "user_not_found"):
+                await self._rifiuta(4002)
             else:
-                await self.close(code=4003)
+                await self._rifiuta(4003)
             return
 
         self.user = user
         self.user_group = f"user_{user.id}"
         self.chat_groups = set()
 
-        # Entra nel gruppo notifiche personale
-        await self.channel_layer.group_add(self.user_group, self.channel_name)
-
-        # Entra in tutti i gruppi chat dell'utente
-        chat_ids = await self._get_user_chat_ids()
-        for chat_id in chat_ids:
-            group_name = f"chat_{chat_id}"
-            self.chat_groups.add(group_name)
-            await self.channel_layer.group_add(group_name, self.channel_name)
+        # Le iscrizioni ai gruppi vengono PRIMA dell'accept, ed e' il punto
+        # fragile: se il channel layer non risponde, l'eccezione uccide la
+        # connessione durante la stretta di mano. Il browser riceve una
+        # chiusura 1006 senza motivo, ritenta, e resta su "Connessione in
+        # corso" all'infinito. Qui l'errore diventa un codice di chiusura che
+        # il client sa leggere, e una riga nei log per chi deve sistemarlo.
+        try:
+            # Gruppo notifiche personale + un gruppo per ogni chat dell'utente.
+            await self.channel_layer.group_add(self.user_group, self.channel_name)
+            chat_ids = await self._get_user_chat_ids()
+            for chat_id in chat_ids:
+                group_name = f"chat_{chat_id}"
+                self.chat_groups.add(group_name)
+                await self.channel_layer.group_add(group_name, self.channel_name)
+        except Exception:
+            logger.exception(
+                'Channel layer non disponibile: la chat non puo funzionare. '
+                'Controlla REDIS_URL.')
+            await self._rifiuta(CODICE_INFRASTRUTTURA)
+            return
 
         await self.accept()
         self.presence_registered = True
@@ -245,17 +278,32 @@ class GlobalChatConsumer(AsyncJsonWebsocketConsumer):
         })
 
     async def disconnect(self, code):
-        if hasattr(self, "user_group"):
-            await self.channel_layer.group_discard(self.user_group, self.channel_name)
-        if hasattr(self, "chat_groups"):
-            for group_name in self.chat_groups:
-                await self.channel_layer.group_discard(group_name, self.channel_name)
+        # Si arriva qui anche quando la connessione e' morta proprio perche' il
+        # channel layer non risponde: riprovare a parlargli fallirebbe di
+        # nuovo, e l'eccezione impedirebbe di segnare l'utente come offline.
+        try:
+            if hasattr(self, "user_group"):
+                await self.channel_layer.group_discard(self.user_group, self.channel_name)
+            if hasattr(self, "chat_groups"):
+                for group_name in self.chat_groups:
+                    await self.channel_layer.group_discard(group_name, self.channel_name)
+        except Exception:
+            logger.warning('Channel layer non raggiungibile durante la disconnessione.')
         if getattr(self, 'presence_registered', False):
             await sync_to_async(mark_user_disconnected)(self.scope['user'].id)
             self.presence_registered = False
 
     async def receive_json(self, content):
         msg_type = content.get("type")
+
+        # Il battito del client. Serve a due cose: tenere viva la connessione
+        # attraverso i proxy, che chiudono un websocket muto dopo un minuto o
+        # due, e far accorgere il client che il collegamento e' morto anche
+        # quando nessuno ha ancora provato a scrivere — senza, la chat sembra
+        # funzionare finche' non si preme invio.
+        if msg_type == "ping":
+            await self.send_json({"type": "pong"})
+            return
 
         if msg_type == "message.send":
             await self._handle_send_message(content)

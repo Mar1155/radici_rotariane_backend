@@ -54,6 +54,16 @@ def controlla_produzione(app_configs, **kwargs):
                  'si accumulano nella coda di revisione. Il sito funziona.',
             id='deploy.W004'))
 
+    layer = (settings.CHANNEL_LAYERS.get('default') or {}).get('BACKEND', '')
+    if 'InMemory' in layer:
+        problemi.append(Warning(
+            'Il channel layer e\' in memoria: manca REDIS_URL.',
+            hint='Chat e notifiche funzionano solo dentro un singolo processo. '
+                 'Con piu istanze due utenti collegati a istanze diverse non '
+                 'si vedono scrivere, e ogni riavvio interrompe le conversazioni '
+                 'aperte. Collega un Redis e riferiscine l\'URL.',
+            id='deploy.W006'))
+
     if getattr(settings, 'FRONTEND_BASE_URL', '') and _vuoto('REVALIDATE_SECRET'):
         problemi.append(Warning(
             'REVALIDATE_SECRET non e\' configurato.',

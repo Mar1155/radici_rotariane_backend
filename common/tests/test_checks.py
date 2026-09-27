@@ -14,7 +14,12 @@ class ControlliDiDeployTest(TestCase):
         DEBUG=False, EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend',
         EMAIL_HOST_USER='posta@esempio.it', CSRF_TRUSTED_ORIGINS=['https://a.it'],
         USE_S3=True, TRANSLATION_ENGINE='claude', ANTHROPIC_API_KEY='sk-finta',
-        FRONTEND_BASE_URL='https://a.it', REVALIDATE_SECRET='segreto')
+        FRONTEND_BASE_URL='https://a.it', REVALIDATE_SECRET='segreto',
+        CHANNEL_LAYERS={'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': ['redis://esempio:6379']}}})
+
+    IN_MEMORIA = {'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'}}
 
     def test_in_sviluppo_tacciono(self):
         """Con DEBUG acceso non manca niente per sbaglio: sarebbe solo rumore."""
@@ -34,6 +39,11 @@ class ControlliDiDeployTest(TestCase):
 
     def test_senza_chiave_di_traduzione(self):
         self.assertIn('deploy.W004', avvisi(**{**self.PRODUZIONE, 'ANTHROPIC_API_KEY': ''}))
+
+    def test_channel_layer_in_memoria(self):
+        """Senza Redis la chat funziona solo dentro un processo: va detto."""
+        self.assertIn('deploy.W006', avvisi(
+            **{**self.PRODUZIONE, 'CHANNEL_LAYERS': self.IN_MEMORIA}))
 
     def test_senza_segreto_di_invalidazione(self):
         self.assertIn('deploy.W005', avvisi(**{**self.PRODUZIONE, 'REVALIDATE_SECRET': ''}))

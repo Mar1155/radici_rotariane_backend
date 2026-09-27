@@ -17,6 +17,13 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 INSTALLED_APPS = [
+    # Prima di 'django.contrib.staticfiles', perche' e' cosi' che Daphne
+    # sostituisce `runserver` con un server ASGI. Senza questa riga in
+    # sviluppo si continua a parlare solo HTTP: le API rispondono, il sito si
+    # naviga, e ogni connessione a /ws/ viene rifiutata — la chat resta ferma
+    # su "Connessione in corso" e nei log non compare niente. In produzione
+    # non cambia nulla: li' Daphne lo avvia railpack.json a mano.
+    'daphne',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -93,21 +100,33 @@ TEMPLATES = [
 # WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = "backend.asgi.application"
 
-# Channel Layers Configuration
-# Support REDIS_URL (Railway/Heroku style) or REDIS_HOST/REDIS_PORT
+# =============================================================================
+# Channel layer — il canale su cui viaggiano chat e notifiche
+# =============================================================================
+# Redis quando c'e' scritto dove sta (REDIS_URL, oppure REDIS_HOST), in
+# memoria quando non c'e' scritto niente.
+#
+# Prima il ripiego era `localhost:6379`: un indirizzo inventato, che non e'
+# l'assenza di Redis ma un Redis che non risponde. La differenza si vede
+# all'uso — il consumer entra nei gruppi *prima* di accettare la connessione,
+# quindi il websocket muore durante la stretta di mano, senza codice di
+# chiusura e senza errore leggibile. Dal browser si vede solo "Connessione in
+# corso" per sempre.
+#
+# In memoria vale per un processo solo: due istanze non si parlano, e un
+# riavvio azzera le iscrizioni. Va benissimo in sviluppo, non in produzione —
+# per quello c'e' il controllo `deploy.W006`.
 REDIS_URL = config('REDIS_URL', default=None)
+REDIS_HOST = config('REDIS_HOST', default=None)
 
 if REDIS_URL:
-    # Parse Redis URL for channels_redis
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {"hosts": [REDIS_URL]},
         }
     }
-else:
-    # Fallback to host/port configuration
-    REDIS_HOST = config('REDIS_HOST', default='localhost')
+elif REDIS_HOST:
     _redis_port_raw = config('REDIS_PORT', default='6379')
     try:
         REDIS_PORT = int(_redis_port_raw)
@@ -119,6 +138,10 @@ else:
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {"hosts": [(REDIS_HOST, REDIS_PORT)]},
         }
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
     }
 
 # =============================================================================
@@ -385,11 +408,16 @@ TEST_RUNNER = 'backend.test_runner.Runner'
 # chiavi e un glossario solo, quindi lo stesso termine veniva tradotto in due
 # modi a seconda di dove fosse scritto.
 TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
-# Sonnet e non Opus: tradurre rispettando un glossario in prosa non e' un
-# compito che chiede il modello piu' grande, e la differenza di prezzo si
-# moltiplica per ogni lingua registrata. Si cambia da variabile d'ambiente se
-# un giorno la qualita' non bastasse.
-TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-sonnet-5')
+# Haiku: i testi da tradurre sono brevi, il glossario e' in prosa e sta nel
+# system prompt, e il compito e' meccanico. Il modello piu' grande non lo
+# farebbe meglio in modo percepibile, e il prezzo si moltiplica per ogni lingua
+# registrata — con sei, il primo giro sono migliaia di chiamate.
+#
+# Due cose rendono la scelta sicura: `MotoreClaude` solleva se il modello non
+# restituisce le stesse chiavi (un fraintendimento si vede, non passa), e le
+# traduzioni finiscono in una coda di revisione dove si correggono per frase.
+# Se un giorno non bastasse, e' una variabile d'ambiente.
+TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-haiku-4-5-20251001')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
 # Le lingue in cui si traduce sono quelle registrate (`CONTENT_LANGUAGES`), non
