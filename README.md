@@ -22,7 +22,7 @@ Panoramica rapida della struttura del progetto e dei suoi componenti principali.
 
 ```bash
 python manage.py migrate
-python manage.py build_site     # lingue, pagine, menu, tipi di articolo, geografia
+python manage.py build_site     # lingue, pagine, menu, tipi di articolo, geografia, competenze
 python manage.py seed_demo      # account, articoli, forum, chat
 python manage.py translate_pending   # traduzioni (serve ANTHROPIC_API_KEY)
 ```
@@ -56,7 +56,7 @@ lanciano a mano, una volta, **prima** del primo deploy:
 
 ```bash
 python manage.py migrate      # ~220 migrazioni: qualche minuto
-python manage.py build_site   # pagine, menu, tipi di articolo, geografia
+python manage.py build_site   # pagine, menu, tipi di articolo, geografia, competenze
 python manage.py createsuperuser
 ```
 
@@ -73,7 +73,7 @@ modo prima di pubblicarlo.
 | Componente | Perche' | Se manca |
 |---|---|---|
 | PostgreSQL | Database | non parte |
-| Redis | Django Channels | chat e notifiche mute, il resto funziona |
+| Redis | Django Channels | la chat vale solo dentro una singola istanza |
 | SMTP | Verifica dell'indirizzo | **nessuno riesce a registrarsi** |
 | S3 | File caricati | spariscono a ogni riavvio del container |
 | `ANTHROPIC_API_KEY` | Traduzione automatica | i contenuti restano nella lingua d'origine |

@@ -36,6 +36,15 @@ PASSI = [
     ('build_page_home', 'homepage'),
     ('seed_menus', 'menu'),
     ('seed_cms_groups', 'gruppi di redazione'),
+    # I vocabolari del profilo: Aree Focus del Rotary, competenze tecniche e
+    # trasversali. Non sono dati di prova — sono le tendine che /skills fa
+    # scegliere a chi cerca un socio, e senza di loro il filtro "Macro aree"
+    # si apre vuoto. Stavano solo in comandi da lanciare a mano, che nessuna
+    # procedura di messa in opera citava: su un database nuovo la pagina
+    # nasceva rotta e niente lo diceva.
+    ('seed_focus_areas', 'aree focus del Rotary'),
+    ('seed_skills', 'competenze tecniche'),
+    ('seed_softskills', 'competenze trasversali'),
 ]
 
 

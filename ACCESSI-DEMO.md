@@ -45,7 +45,7 @@ Se il database è vuoto, prima serve il contenuto del sito:
 
 ```bash
 python manage.py migrate
-python manage.py build_site     # pagine, menu, tipi di articolo, geografia
+python manage.py build_site     # pagine, menu, tipi di articolo, geografia, competenze
 python manage.py seed_demo      # account, articoli, forum, chat
 ```
 
