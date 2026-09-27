@@ -69,49 +69,82 @@ URL firmato. Il backend lo fa da solo quando trova `AWS_S3_ENDPOINT_URL`.
 
 ## 3. Variabili d'ambiente
 
-### Railway (servizio backend)
+### Railway (servizio backend) — tutte in una volta
 
-Riferisci le variabili del bucket invece di copiarle, cosi' restano allineate
-se Railway le ruota (`NomeDelBucket` e' il nome del servizio bucket):
+Non si aggiungono una per una: nella scheda **Variables** del servizio c'e'
+**RAW Editor**, che accetta un blocco `.env` incollato.
 
-```
+> ⚠️ Il RAW Editor mostra le variabili **gia' presenti** e salva quello che
+> resta nella casella: e' una sostituzione, non un'aggiunta. Apri l'editor,
+> **aggiungi** le righe che mancano a quelle che vedi, e non cancellare quelle
+> che Railway ha messo da sola (`DATABASE_URL`, `REDIS_URL`, le `RAILWAY_*`).
+
+Questo e' il blocco completo. Le righe `${{...}}` **non** vanno sostituite:
+sono riferimenti, e restano allineati se Railway ruota le credenziali.
+`NomeDelBucket` e' il nome che hai dato al servizio Storage Bucket.
+
+```sh
+# --- Django
+SECRET_KEY=GENERA_UN_VALORE
+DEBUG=False
+ALLOWED_HOSTS=DOMINIO-RAILWAY
+CSRF_TRUSTED_ORIGINS=https://DOMINIO-RAILWAY
+CORS_ALLOWED_ORIGINS=https://DOMINIO-VERCEL
+
+# --- Indirizzi
+WAGTAILADMIN_BASE_URL=https://DOMINIO-RAILWAY
+FRONTEND_BASE_URL=https://DOMINIO-VERCEL
+REVALIDATE_SECRET=LO_STESSO_CHE_METTI_SU_VERCEL
+
+# --- Traduzione
+ANTHROPIC_API_KEY=LA_TUA_CHIAVE
+TRANSLATION_MODEL=claude-haiku-4-5-20251001
+
+# --- Media sul bucket Railway
 USE_S3=True
 AWS_STORAGE_BUCKET_NAME=${{NomeDelBucket.BUCKET}}
 AWS_ACCESS_KEY_ID=${{NomeDelBucket.ACCESS_KEY_ID}}
 AWS_SECRET_ACCESS_KEY=${{NomeDelBucket.SECRET_ACCESS_KEY}}
 AWS_S3_REGION_NAME=${{NomeDelBucket.REGION}}
 AWS_S3_ENDPOINT_URL=${{NomeDelBucket.ENDPOINT}}
-```
 
-E le altre:
-
-```
-SECRET_KEY=            # python -c "import secrets; print(secrets.token_urlsafe(64))"
-DEBUG=False
-ALLOWED_HOSTS=<dominio-railway>            # senza https://
-CSRF_TRUSTED_ORIGINS=https://<dominio-railway>
-CORS_ALLOWED_ORIGINS=https://<dominio-vercel>
-WAGTAILADMIN_BASE_URL=https://<dominio-railway>
-FRONTEND_BASE_URL=https://<dominio-vercel>
-REVALIDATE_SECRET=                          # stesso valore su Vercel
-ANTHROPIC_API_KEY=
+# --- Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
 EMAIL_HOST_USER=
 EMAIL_HOST_PASSWORD=
 ```
 
-`DATABASE_URL` e `REDIS_URL` le collega Railway da sole se i servizi Postgres
-e Redis sono nello stesso progetto.
+I quattro valori da riempire a mano:
 
-L'elenco completo con la spiegazione di cosa si rompe se una manca sta in
+| | come |
+|---|---|
+| `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
+| `REVALIDATE_SECRET` | stesso comando, e **lo stesso valore** anche su Vercel |
+| `DOMINIO-RAILWAY` / `DOMINIO-VERCEL` | i due domini, senza `https://` nel solo `ALLOWED_HOSTS` |
+| `ANTHROPIC_API_KEY` | dalla console Anthropic |
+
+`DATABASE_URL` e `REDIS_URL` non stanno nel blocco apposta: le collega Railway
+da sola quando Postgres e Redis sono nello stesso progetto. Se le riscrivi a
+mano, si scollegano.
+
+L'elenco completo, con scritto per ciascuna cosa si rompe se manca, e' in
 [.env.example](.env.example).
 
-### Vercel
+### Vercel — stessa cosa
 
+Nelle impostazioni del progetto, **Environment Variables**, c'e' un campo che
+accetta un `.env` incollato (o il pulsante *Import .env*).
+
+```sh
+NEXT_PUBLIC_API_URL=https://DOMINIO-RAILWAY
+NEXT_PUBLIC_WS_URL=wss://DOMINIO-RAILWAY
+REVALIDATE_SECRET=LO_STESSO_CHE_HAI_MESSO_SU_RAILWAY
 ```
-NEXT_PUBLIC_API_URL=https://<dominio-railway>
-NEXT_PUBLIC_WS_URL=wss://<dominio-railway>
-REVALIDATE_SECRET=                          # identico a quello su Railway
-```
+
+⚠️ `wss://`, non `https://`, per il secondo: e' l'indirizzo websocket, e con lo
+schema sbagliato la chat non si connette e non lo dice.
 
 ### Email — da verificare
 
@@ -169,7 +202,7 @@ Dalla shell del servizio backend su Railway:
 
 ```bash
 python manage.py migrate          # ~205 migrazioni, qualche minuto
-python manage.py build_site       # lingue, pagine, menu, tipi di articolo, geografia
+python manage.py build_site       # lingue, pagine, menu, tipi di articolo, geografia, competenze
 python manage.py seed_demo        # 23 club, 62 soci, 102 articoli, 20 discussioni
 python manage.py createsuperuser  # il tuo accesso a /cms/
 ```
@@ -259,10 +292,16 @@ npm run i18n:fill -- --output-locales <codice>
 
 ### Il modello, e quanto costa
 
-`claude-sonnet-5`, sia per i contenuti (`TRANSLATION_MODEL`) sia per le
-etichette. Sonnet e non Opus perche' rispettare un glossario in prosa non
-richiede il modello piu' grande, e la differenza di prezzo si moltiplica per
-ogni lingua.
+`claude-haiku-4-5-20251001`, sia per i contenuti (`TRANSLATION_MODEL`) sia per
+le etichette. Haiku e non un modello piu' grande perche' i testi sono brevi, il
+glossario e' in prosa nel system prompt, e il compito e' meccanico — mentre il
+prezzo si moltiplica per ogni lingua registrata.
+
+Due cose rendono la scelta sicura invece che ottimistica: `MotoreClaude`
+**solleva** se il modello non restituisce esattamente le stesse chiavi, quindi
+un fraintendimento si vede invece di passare in silenzio; e tutto finisce nella
+coda di revisione, dove si corregge per frase. Se la qualita' non bastasse,
+`TRANSLATION_MODEL` e' una variabile d'ambiente e si alza senza toccare codice.
 
 ⚠️ Con sei lingue il **primo** giro di `translate_pending` in produzione fa
 circa **3.800 traduzioni** (720 oggetti × 5 lingue di arrivo). E' una spesa una
