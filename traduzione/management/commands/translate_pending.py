@@ -16,6 +16,7 @@ le etichette dei tag — che prima non erano coperti affatto.
 """
 
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 from traduzione import lingue
 from traduzione.motori import motore
@@ -23,6 +24,10 @@ from traduzione.percorsi import estrai
 from traduzione.servizio import (e_allineata, lingua_di_stesura, traduci,
                                  traduzione_di)
 from traduzione.traducibili import TRADUCIBILI, etichetta, modelli
+
+
+# Un numero qualunque, purche' sempre lo stesso: e' il nome del lucchetto.
+LUCCHETTO = 8314159
 
 
 class Command(BaseCommand):
@@ -38,6 +43,19 @@ class Command(BaseCommand):
         parser.add_argument('--solo', help='Un modello solo, es. section.Card.')
 
     def handle(self, *args, **options):
+        """Un giro solo alla volta, poi il lavoro."""
+        if not prendi_lucchetto():
+            self.stderr.write(self.style.ERROR(
+                'Un altro translate_pending sta gia girando: mi fermo qui.\n'
+                'Due giri insieme traducono le stesse cose e le pagano due '
+                'volte. Aspetta che finisca, oppure fermalo.'))
+            return
+        try:
+            self.lavora(options)
+        finally:
+            lascia_lucchetto()
+
+    def lavora(self, options):
         m = motore()
         self.stdout.write(f'Motore: {m.nome}')
         if m.da_rivedere:
@@ -103,3 +121,31 @@ class Command(BaseCommand):
                     self.stderr.write(self.style.ERROR(
                         f'  {etichetta(modello)} #{oggetto.pk} -> {lingua}: {exc}'))
         return fatte
+
+
+def prendi_lucchetto() -> bool:
+    """Se questo processo e' l'unico a tradurre. Lo decide il database.
+
+    Ogni traduzione si paga, e due giri paralleli pagano due volte lo stesso
+    testo: succede facilmente, perche' una sessione che cade a meta' invita a
+    rilanciare il comando mentre il primo giro e' ancora vivo. Ed era la causa
+    di migliaia di errori di chiave duplicata: due processi che scrivevano la
+    stessa riga.
+
+    Un lucchetto consultivo e non una riga di tabella, perche' si libera da
+    solo quando il processo muore — anche se muore male. Un lucchetto scritto
+    da qualche parte, dopo una sessione caduta, resterebbe appeso a bloccare
+    anche il cron, e ci vorrebbe una persona per toglierlo.
+    """
+    if connection.vendor != 'postgresql':
+        return True
+    with connection.cursor() as cursore:
+        cursore.execute('SELECT pg_try_advisory_lock(%s)', [LUCCHETTO])
+        return bool(cursore.fetchone()[0])
+
+
+def lascia_lucchetto() -> None:
+    if connection.vendor != 'postgresql':
+        return
+    with connection.cursor() as cursore:
+        cursore.execute('SELECT pg_advisory_unlock(%s)', [LUCCHETTO])

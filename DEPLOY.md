@@ -343,6 +343,17 @@ python manage.py translate_pending --limite 20    # 20 oggetti per modello
 python manage.py translate_pending --lingua es    # una lingua alla volta
 ```
 
+⚠️ Un giro intero dura a lungo, e una sessione che cade lo interrompe. Il
+comando e' riprendibile — rilanciato, salta cio' che e' gia' fatto — ma **due
+giri insieme traducono le stesse cose e le pagano due volte**, quindi il
+secondo si rifiuta di partire finche' il primo e' vivo. Per non dipendere
+dalla sessione:
+
+```bash
+nohup python manage.py translate_pending > /tmp/traduzioni.log 2>&1 &
+tail -f /tmp/traduzioni.log    # si riattacca dopo una disconnessione
+```
+
 Il tetto di spesa su console.anthropic.com resta la rete di sicurezza: superato,
 l'API risponde 429 e non addebita altro.
 

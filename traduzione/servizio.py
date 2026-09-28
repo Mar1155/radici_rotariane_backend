@@ -35,8 +35,18 @@ def lingua_di_stesura(oggetto) -> str:
             or settings.LANGUAGE_CODE.split('-')[0])
 
 
-def traduzione_di(oggetto, lingua: str):
-    """La riga di traduzione, se c'e'. Usa il prefetch quando c'e' stato."""
+def traduzione_di(oggetto, lingua: str, fresca: bool = False):
+    """La riga di traduzione, se c'e'. Usa il prefetch quando c'e' stato.
+
+    `fresca` scavalca il prefetch e chiede al database. Serve prima di pagare
+    una traduzione: il prefetch e' una fotografia scattata quando la lista e'
+    stata letta, e un comando che macina migliaia di oggetti ci mette minuti ad
+    arrivare in fondo. Se in quei minuti qualcun altro ha scritto la stessa
+    riga — il cron, il thread di sottofondo, un secondo comando lanciato a mano
+    — la fotografia non lo mostra.
+    """
+    if fresca:
+        return oggetto.traduzioni.filter(target_language=lingua).first()
     precaricate = getattr(oggetto, '_traduzioni_lingua', None)
     if precaricate is not None:
         return next((t for t in precaricate if t.target_language == lingua), None)
@@ -94,6 +104,9 @@ def traduci(oggetto, lingua: str, m: MotoreTraduzione | None = None,
 
     m = m or motore()
     esistente = traduzione_di(oggetto, lingua)
+    if esistente is None:
+        # Una query per non pagare una traduzione che esiste gia'.
+        esistente = traduzione_di(oggetto, lingua, fresca=True)
     if esistente is not None and not forza and e_allineata(esistente, sorgente, m):
         return esistente
 
@@ -115,12 +128,25 @@ def traduci(oggetto, lingua: str, m: MotoreTraduzione | None = None,
         'source_digest': impronta(sorgente),
     }
     if esistente is None:
-        return Traduzione.objects.create(
+        # `get_or_create` e non `create`: fra il controllo di poco fa e questa
+        # riga c'e' stata la chiamata al motore, che dura secondi, e in quei
+        # secondi un altro processo puo' aver scritto la stessa traduzione. Con
+        # `create` il vincolo di unicita' lo trasforma in un errore per ogni
+        # oggetto e per ogni lingua, e il lavoro fatto si butta via.
+        esistente, creata = Traduzione.objects.get_or_create(
             content_type=ContentType.objects.get_for_model(oggetto),
             object_id=str(oggetto.pk),
             target_language=lingua,
-            locked_paths=[],
-            **valori)
+            defaults={'locked_paths': [], **valori})
+        if creata:
+            return esistente
+        # C'era. Le frasi che nel frattempo qualcuno ha corretto a mano vincono
+        # su quelle appena tradotte: e' la stessa regola di `da_tradurre`,
+        # applicata a una riga che quando abbiamo deciso non esisteva.
+        bloccati = set(esistente.locked_paths or [])
+        valori['texts'] = {**valori['texts'],
+                           **{k: v for k, v in (esistente.texts or {}).items()
+                              if k in bloccati}}
 
     for campo, valore in valori.items():
         setattr(esistente, campo, valore)

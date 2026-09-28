@@ -6,6 +6,8 @@ dal traduttore, e devono ritrovarsi identici dall'altra parte.
 """
 
 import json
+from io import StringIO
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -220,6 +222,25 @@ class TraduzioneArticoloTest(TestCase):
         # E' cosi' che il lettore sa di stare leggendo una traduzione.
         self.assertEqual(inglese['translated_from'], 'it')
 
+    def test_il_comando_si_rilancia_senza_restare_chiuso_fuori(self):
+        """Il lucchetto va lasciato: un comando che non lo rilascia si blocca
+        da solo al giro dopo, e il cron non riparte piu'."""
+        call_command('translate_pending', verbosity=0)
+        call_command('translate_pending', verbosity=0)
+
+    def test_un_secondo_giro_insieme_al_primo_si_ferma(self):
+        """Due giri paralleli traducono le stesse cose e le pagano due volte.
+
+        Non e' teoria: e' quello che e' successo in produzione quando la
+        sessione e' caduta a meta' e il comando e' stato rilanciato mentre il
+        primo era ancora vivo.
+        """
+        card = self.crea()
+        with patch('traduzione.management.commands.translate_pending'
+                   '.prendi_lucchetto', return_value=False):
+            call_command('translate_pending', verbosity=0, stderr=StringIO())
+        self.assertEqual(card.traduzioni.count(), 0)
+
     def test_il_comando_non_ritraduce_cio_che_c_e_gia(self):
         card = self.crea()
         traduci(card, 'en', MotoreFinto())
@@ -271,6 +292,51 @@ class TraduzioneArticoloTest(TestCase):
         m = MotoreFinto()
         traduci(card, 'en', m)
         self.assertEqual(m.chiamate, [])
+
+    def test_cio_che_e_stato_tradotto_nel_frattempo_non_si_ripaga(self):
+        """Il prefetch e' una fotografia, e un comando lungo la usa per minuti.
+
+        Se in quei minuti un altro processo traduce lo stesso oggetto — il
+        cron, il thread di sottofondo, un secondo comando lanciato a mano — la
+        fotografia non lo mostra, e senza rileggere si paga due volte.
+        """
+        card = self.crea()
+        dal_comando = Card.objects.prefetch_related('traduzioni').get(pk=card.pk)
+        traduci(Card.objects.get(pk=card.pk), 'en', MotoreFinto())
+
+        m = MotoreFinto()
+        traduci(dal_comando, 'en', m)
+
+        self.assertEqual(m.chiamate, [])
+        self.assertEqual(Traduzione.objects.filter(
+            object_id=str(card.pk), target_language='en').count(), 1)
+
+    def test_una_riga_comparsa_durante_la_chiamata_non_e_un_errore(self):
+        """La finestra che resta: il motore ci mette secondi, e in quei secondi
+        un altro processo puo' scrivere la stessa riga.
+
+        Con `create` il vincolo di unicita' lo trasformava in un errore per
+        ogni oggetto e per ogni lingua, e la traduzione appena pagata finiva
+        nel cestino. Ed era rumore: la risposta giusta e' aggiornare la riga
+        che c'e', rispettando le correzioni a mano che nel frattempo porta.
+        """
+        card = self.crea()
+
+        class Intruso(MotoreFinto):
+            def traduci(se_stesso, testi, da, a):
+                altra = traduci(Card.objects.get(pk=card.pk), 'en', MotoreFinto())
+                altra.texts['title'] = 'Corretto a mano'
+                altra.locked_paths = ['title']
+                altra.save()
+                return super().traduci(testi, da, a)
+
+        dal_comando = Card.objects.prefetch_related('traduzioni').get(pk=card.pk)
+        riga = traduci(dal_comando, 'en', Intruso())
+
+        self.assertEqual(Traduzione.objects.filter(
+            object_id=str(card.pk), target_language='en').count(), 1)
+        self.assertEqual(riga.texts['title'], 'Corretto a mano')
+        self.assertEqual(riga.texts['subtitle'], 'IL SOTTOTITOLO')
 
     def test_una_frase_cancellata_sparisce_dalla_traduzione(self):
         card = self.crea()
