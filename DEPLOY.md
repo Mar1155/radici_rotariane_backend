@@ -278,6 +278,16 @@ git diff                              # rileggi: e' l'unico momento in cui una
 > Per sapere a che punto sei: `npx intlayer content test` elenca cosa manca,
 > lingua per lingua.
 
+⚠️ **Quel rapporto segnala `rotaSpace` come mancante in tutte le lingue,
+italiano compreso, anche quando e' completo.** E' un falso positivo: il file ha
+103 voci su 103 con le sei lingue, e non c'e' una foglia incompleta ne' nel
+dizionario unito ne' in quello non unito. Il via libera non e' "Total missing:
+0" ma **"resta solo rotaSpace"**.
+
+La prova vera e' un'altra, e vale la pena farla: metti tutte le lingue in
+`requiredLocales` e lancia `npm run build`. Se passa, ogni `t({})` del progetto
+ha tutte le lingue — il type-check lo pretende, e non si lascia ingannare.
+
 Poi, in `intlayer.config.ts`, sposta le quattro lingue **anche** in
 `requiredLocales`. Da quel momento una chiave nuova senza traduzione rompe la
 build invece di ricadere in silenzio sull'italiano — che e' quello che vuoi,
