@@ -259,12 +259,24 @@ Vanno riempite una volta, dal repository del frontend, con la tua chiave:
 cd radici-rotariane_front-end
 export ANTHROPIC_API_KEY=...          # la stessa che hai messo su Railway
 
-npm run i18n:fill -- --output-locales es,pt,fr,de
+npm run i18n:fill                     # senza elenco di lingue: le prende da
+                                      # `locales` e in modalita' `complete`
+                                      # riempie solo cio' che manca
 
 git diff                              # rileggi: e' l'unico momento in cui una
                                       # persona puo' fermare una traduzione
                                       # sbagliata delle etichette
 ```
+
+> ⚠️ **Non passare `--output-locales`.** Se lo fai, l'opzione e' *variadica*:
+> vuole `es pt fr de` separati da spazi. Scritto con le virgole —
+> `--output-locales es,pt,fr,de` — viene letto come **una sola lingua** che si
+> chiama cosi', non corrisponde a niente, e il comando stampa `No locales to
+> fill, Skipping` per ogni file e **esce con successo**. Sembra che abbia
+> funzionato e non ha fatto niente.
+>
+> Per sapere a che punto sei: `npx intlayer content test` elenca cosa manca,
+> lingua per lingua.
 
 Poi, in `intlayer.config.ts`, sposta le quattro lingue **anche** in
 `requiredLocales`. Da quel momento una chiave nuova senza traduzione rompe la
@@ -282,7 +294,7 @@ Infine `git commit && git push`.
 
 # 2. etichette, nel frontend:
 #    - aggiungi la lingua a `locales` in intlayer.config.ts
-npm run i18n:fill -- --output-locales <codice>
+npm run i18n:fill                    # riempie cio' che manca, in tutte le lingue
 #    - rileggi il diff, spostala in `requiredLocales`, commit
 ```
 
