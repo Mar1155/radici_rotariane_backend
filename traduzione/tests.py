@@ -243,6 +243,35 @@ class TraduzioneArticoloTest(TestCase):
         self.assertEqual(card.traduzioni.get(target_language='en').texts['title'],
                          'UN TITOLO NUOVO')
 
+    def test_cio_che_il_motore_di_identita_ha_scritto_si_ritraduce(self):
+        """Un giro senza motore non deve congelare il sito per sempre.
+
+        Il motore di identita' salva l'originale e ne registra l'impronta,
+        quindi al confronto la riga risulta allineata: senza il controllo sul
+        `provider`, configurare il motore dopo non basterebbe piu' e servirebbe
+        `--forza`, che nessuno sa di dover dare. E' successo in produzione,
+        dove mancava il pacchetto invece della chiave.
+        """
+        card = self.crea()
+        traduci(card, 'en', MotoreIdentita())
+        riga = card.traduzioni.get(target_language='en')
+        self.assertEqual(riga.provider, 'identita')
+        self.assertEqual(riga.texts['title'], 'Il titolo')
+
+        traduci(card, 'en', MotoreFinto())
+
+        riga.refresh_from_db()
+        self.assertEqual(riga.provider, 'finto')
+        self.assertEqual(riga.texts['title'], 'IL TITOLO')
+
+    def test_una_traduzione_vera_non_si_rifa_a_ogni_giro(self):
+        """Il controllo sul provider non deve diventare una spesa ricorrente."""
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        m = MotoreFinto()
+        traduci(card, 'en', m)
+        self.assertEqual(m.chiamate, [])
+
     def test_una_frase_cancellata_sparisce_dalla_traduzione(self):
         card = self.crea()
         traduci(card, 'en', MotoreFinto())

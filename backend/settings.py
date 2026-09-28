@@ -420,10 +420,9 @@ TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
 TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-haiku-4-5-20251001')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
-# Le lingue in cui si traduce sono quelle registrate (`CONTENT_LANGUAGES`), non
-# un secondo elenco: averne due significava poter tradurre una chat in spagnolo
-# mentre il sito lo spagnolo non ce l'ha.
-TRANSLATION_HTTP_TIMEOUT = config('TRANSLATION_HTTP_TIMEOUT', default=10, cast=int)
+# Le lingue in cui si traduce sono le righe di `traduzione.Lingua`, non un
+# secondo elenco in una variabile d'ambiente: averne due significava poter
+# tradurre una chat in spagnolo mentre il sito lo spagnolo non ce l'ha.
 
 LOGGING = {
     'version': 1,

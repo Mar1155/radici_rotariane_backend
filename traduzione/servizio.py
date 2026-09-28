@@ -16,7 +16,7 @@ from django.db import close_old_connections, transaction
 
 from traduzione import lingue
 from traduzione.models import Traduzione, impronta
-from traduzione.motori import MotoreTraduzione, motore
+from traduzione.motori import MotoreIdentita, MotoreTraduzione, motore
 from traduzione.percorsi import estrai
 from traduzione.traducibili import e_traducibile
 
@@ -57,6 +57,23 @@ def da_tradurre(oggetto, esistente, sorgente: dict) -> dict[str, str]:
     return {k: v for k, v in sorgente.items() if k not in bloccati}
 
 
+def e_allineata(esistente, sorgente: dict, m: MotoreTraduzione) -> bool:
+    """Se la riga che c'e' gia' e' una traduzione vera, e di questo originale.
+
+    Due condizioni, non una. L'impronta dice che l'originale non e' cambiato.
+    Il `provider` dice che qualcuno l'ha davvero tradotta: una riga scritta dal
+    motore di identita' **contiene l'originale**, e il confronto delle impronte
+    la dichiarerebbe a posto per sempre. Senza questa seconda condizione, un
+    solo giro di cron senza motore configurato congela il sito nella lingua di
+    stesura, e configurare il motore dopo non basta piu': servirebbe `--forza`,
+    che nessuno sa di dover dare perche' il comando non segnala niente.
+    """
+    if not esistente.e_aggiornata(sorgente):
+        return False
+    return not (esistente.provider == MotoreIdentita.nome
+                and m.nome != MotoreIdentita.nome)
+
+
 def traduci(oggetto, lingua: str, m: MotoreTraduzione | None = None,
             forza: bool = False) -> Traduzione | None:
     """Traduce un oggetto in una lingua. Restituisce la riga, o None.
@@ -75,12 +92,12 @@ def traduci(oggetto, lingua: str, m: MotoreTraduzione | None = None,
     if not sorgente:
         return None
 
+    m = m or motore()
     esistente = traduzione_di(oggetto, lingua)
-    if esistente is not None and not forza and esistente.e_aggiornata(sorgente):
+    if esistente is not None and not forza and e_allineata(esistente, sorgente, m):
         return esistente
 
     richiesti = da_tradurre(oggetto, esistente, sorgente)
-    m = m or motore()
     tradotti = m.traduci(richiesti, da=origine, a=lingua) if richiesti else {}
 
     # I percorsi bloccati mantengono la versione corretta a mano.

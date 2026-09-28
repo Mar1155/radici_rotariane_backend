@@ -325,6 +325,14 @@ un fraintendimento si vede invece di passare in silenzio; e tutto finisce nella
 coda di revisione, dove si corregge per frase. Se la qualita' non bastasse,
 `TRANSLATION_MODEL` e' una variabile d'ambiente e si alza senza toccare codice.
 
+⚠️ Se `translate_pending` stampa `Motore: identita`, **fermati**: sta salvando
+l'originale al posto della traduzione, e il sito si vedra' in italiano in tutte
+le lingue. Le cause sono due — la chiave assente, o il pacchetto `anthropic`
+non installato — e `python manage.py check --deploy` le nomina entrambe
+(`deploy.W004`, `deploy.W007`). Rimossa la causa basta rilanciare
+`translate_pending`: cio' che il motore di identita' aveva scritto si ritraduce
+da solo, senza `--forza`.
+
 ⚠️ Con sei lingue il **primo** giro di `translate_pending` in produzione fa
 circa **3.800 traduzioni** (720 oggetti × 5 lingue di arrivo). E' una spesa una
 volta sola: dopo, si traduce solo cio' che cambia. Per farla a scaglioni e

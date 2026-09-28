@@ -22,3 +22,8 @@ django-jazzmin>=3.0.2
 # CMS — composizione pagine, tipi di articolo, traduzioni
 wagtail>=7.4,<8.0
 wagtail-headless-preview>=0.9,<1.0
+
+# Traduzione automatica dei contenuti. Serve a `traduzione/motori.py`: senza,
+# `translate_pending` ripiega sul motore di identita' e ogni contenuto resta
+# nella lingua in cui e' stato scritto.
+anthropic>=0.40,<1.0

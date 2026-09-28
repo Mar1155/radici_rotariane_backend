@@ -20,7 +20,8 @@ from django.core.management.base import BaseCommand
 from traduzione import lingue
 from traduzione.motori import motore
 from traduzione.percorsi import estrai
-from traduzione.servizio import lingua_di_stesura, traduci, traduzione_di
+from traduzione.servizio import (e_allineata, lingua_di_stesura, traduci,
+                                 traduzione_di)
 from traduzione.traducibili import TRADUCIBILI, etichetta, modelli
 
 
@@ -94,7 +95,7 @@ class Command(BaseCommand):
                 try:
                     prima = traduzione_di(oggetto, lingua)
                     if (prima is not None and not options['forza']
-                            and prima.e_aggiornata(estrai(oggetto))):
+                            and e_allineata(prima, estrai(oggetto), m)):
                         continue
                     if traduci(oggetto, lingua, m, forza=options['forza']):
                         fatte += 1

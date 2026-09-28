@@ -1,5 +1,7 @@
 """I controlli di deploy dicono quello che manca, e solo in produzione."""
 
+from unittest.mock import patch
+
 from django.core.checks import run_checks
 from django.test import TestCase, override_settings
 
@@ -51,3 +53,18 @@ class ControlliDiDeployTest(TestCase):
     def test_un_motore_diverso_non_chiede_la_chiave_di_claude(self):
         self.assertNotIn('deploy.W004', avvisi(
             **{**self.PRODUZIONE, 'TRANSLATION_ENGINE': 'identita', 'ANTHROPIC_API_KEY': ''}))
+
+    def test_senza_il_pacchetto_di_traduzione(self):
+        """E' il guasto che ha fatto vedere il sito in italiano in sei lingue.
+
+        La chiave c'era, il motore era configurato, `anthropic` no: ogni
+        traduzione ripiegava sull'originale. In locale non si vedeva, perche'
+        senza chiave il motore non veniva scelto e nessuno tentava l'import.
+        """
+        with patch('traduzione.motori.pacchetto_disponibile', return_value=False):
+            self.assertIn('deploy.W007', avvisi(**self.PRODUZIONE))
+
+    def test_un_motore_diverso_non_chiede_il_pacchetto(self):
+        with patch('traduzione.motori.pacchetto_disponibile', return_value=False):
+            self.assertNotIn('deploy.W007', avvisi(
+                **{**self.PRODUZIONE, 'TRANSLATION_ENGINE': 'identita'}))

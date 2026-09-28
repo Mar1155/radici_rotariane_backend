@@ -126,6 +126,17 @@ class MotoreClaude(MotoreTraduzione):
         return json.loads(testo)
 
 
+def pacchetto_disponibile() -> bool:
+    """Se la libreria di Anthropic c'e'.
+
+    Sta in una funzione perche' lo chiedono due posti: la scelta del motore, per
+    non fallire un oggetto alla volta, e il controllo di deploy, per accorgersene
+    prima di pubblicare invece che al primo giro del cron.
+    """
+    from importlib.util import find_spec
+    return find_spec('anthropic') is not None
+
+
 def motore() -> MotoreTraduzione:
     """Il motore configurato, o quello di identita' se non ce n'e' uno."""
     scelta = (getattr(settings, 'TRANSLATION_ENGINE', '') or '').lower()
@@ -134,6 +145,16 @@ def motore() -> MotoreTraduzione:
     if scelta == 'claude':
         if not chiave:
             logger.warning('TRANSLATION_ENGINE=claude ma ANTHROPIC_API_KEY manca.')
+            return MotoreIdentita()
+        if not pacchetto_disponibile():
+            # Detto qui, una volta. Prima l'import stava dentro `traduci()`, e
+            # un pacchetto mancante diventava un errore per ogni oggetto e per
+            # ogni lingua: con sei lingue, migliaia di righe identiche che non
+            # dicevano dove guardare.
+            logger.error(
+                'TRANSLATION_ENGINE=claude ma il pacchetto `anthropic` non e\' '
+                'installato: i contenuti restano nella lingua in cui sono '
+                'scritti. Aggiungilo alle dipendenze e ridistribuisci.')
             return MotoreIdentita()
         return MotoreClaude(chiave)
     if scelta in ('', 'nessuno', 'identita'):

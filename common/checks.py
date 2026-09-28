@@ -54,6 +54,18 @@ def controlla_produzione(app_configs, **kwargs):
                  'si accumulano nella coda di revisione. Il sito funziona.',
             id='deploy.W004'))
 
+    if getattr(settings, 'TRANSLATION_ENGINE', '') == 'claude':
+        from traduzione.motori import pacchetto_disponibile
+        if not pacchetto_disponibile():
+            problemi.append(Warning(
+                'Il pacchetto `anthropic` non e\' installato.',
+                hint='Il motore e\' configurato e la chiave c\'e\', ma la libreria '
+                     'manca: ogni traduzione ripiega sull\'originale e il sito si '
+                     'vede in italiano in tutte le lingue. E\' successo davvero, '
+                     'ed era invisibile in locale perche\' senza chiave il motore '
+                     'non si sceglieva mai. Reinstalla le dipendenze.',
+                id='deploy.W007'))
+
     layer = (settings.CHANNEL_LAYERS.get('default') or {}).get('BACKEND', '')
     if 'InMemory' in layer:
         problemi.append(Warning(

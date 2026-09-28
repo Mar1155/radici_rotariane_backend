@@ -727,7 +727,7 @@ Content-Type: application/json
   "message": 5,
   "target_language": "en",
   "translated_text": "Hello everyone!",
-  "provider": "deepl",
+  "provider": "claude",
   "detected_source_language": "it",
   "created_at": "2025-11-02T10:40:00Z"
 }
@@ -735,7 +735,7 @@ Content-Type: application/json
 
 **Note**:
 - La traduzione viene salvata per ciascuna coppia messaggio/lingua per evitare chiamate ripetute al provider.
-- Le lingue disponibili si configurano tramite `TRANSLATION_SUPPORTED_LANGUAGES` (default: it, en, es, fr, de).
+- Le lingue disponibili sono le righe di `traduzione.Lingua`, e si aggiungono da /cms/ -> Struttura -> Lingue senza deploy. Non ci sono piu' variabili d'ambiente con elenchi di lingue.
 - Se un altro messaggio ha lo stesso testo, viene riutilizzata la traduzione già presente in cache senza chiamare il provider.
 
 **Errori**:
