@@ -1,33 +1,26 @@
 """Traduce cio' che non ha ancora tutte le lingue.
 
-Perche' un comando e non un lavoro dentro la richiesta: tradurre un articolo
-lungo richiede secondi, e nessuno deve aspettarli premendo "Pubblica". Non
-esiste una coda di lavori nel progetto — Redis c'e' ma e' il canale di
-Channels, senza persistenza ne' ritentativi — quindi il posto giusto e' un
-comando su cron, che si puo' rilanciare senza danni.
+**Non serve metterlo su cron.** Il server traduce da solo: cio' che viene
+pubblicato finisce in coda e diventa tradotto in pochi secondi, e all'avvio il
+processo recupera quello che era rimasto indietro. Questo comando resta per le
+volte in cui si vuole decidere a mano:
 
-    python manage.py translate_pending
+    python manage.py translate_pending                  # tutto cio' che manca
     python manage.py translate_pending --lingua en --forza
     python manage.py translate_pending --solo cms.StandardPage
+    python manage.py translate_pending --limite 20      # per provare, e vedere quanto costa
 
-Prima girava su quattro generi cablati nel codice. Ora gira su cio' che e'
-dichiarato in `traducibili.py`, quindi copre anche le pagine del CMS, i menu e
-le etichette dei tag — che prima non erano coperti affatto.
+Ed e' il modo di tradurre dopo un `build_site` o un `seed_*`: i comandi di
+gestione non accendono la coda, apposta — creano centinaia di oggetti in un
+colpo, e si metterebbero a tradurre l'intero sito per poi morire a meta'.
 """
 
 from django.core.management.base import BaseCommand
-from django.db import connection
 
-from traduzione import lingue
+from traduzione import lingue, lucchetto
+from traduzione.arretrati import traduci_arretrati
 from traduzione.motori import motore
-from traduzione.percorsi import estrai
-from traduzione.servizio import (e_allineata, lingua_di_stesura, traduci,
-                                 traduzione_di)
 from traduzione.traducibili import TRADUCIBILI, etichetta, modelli
-
-
-# Un numero qualunque, purche' sempre lo stesso: e' il nome del lucchetto.
-LUCCHETTO = 8314159
 
 
 class Command(BaseCommand):
@@ -43,17 +36,14 @@ class Command(BaseCommand):
         parser.add_argument('--solo', help='Un modello solo, es. section.Card.')
 
     def handle(self, *args, **options):
-        """Un giro solo alla volta, poi il lavoro."""
-        if not prendi_lucchetto():
-            self.stderr.write(self.style.ERROR(
-                'Un altro translate_pending sta gia girando: mi fermo qui.\n'
-                'Due giri insieme traducono le stesse cose e le pagano due '
-                'volte. Aspetta che finisca, oppure fermalo.'))
-            return
-        try:
+        with lucchetto.preso() as nostro:
+            if not nostro:
+                self.stderr.write(self.style.ERROR(
+                    'Un altro giro di traduzioni e gia in corso: mi fermo qui.\n'
+                    'Due giri insieme traducono le stesse cose e le pagano due '
+                    'volte. Aspetta che finisca, oppure fermalo.'))
+                return
             self.lavora(options)
-        finally:
-            lascia_lucchetto()
 
     def lavora(self, options):
         m = motore()
@@ -77,75 +67,20 @@ class Command(BaseCommand):
                     f'{", ".join(sorted(TRADUCIBILI))}'))
                 return
 
-        totale = 0
-        for modello in da_fare:
-            fatte = self._traduci_modello(modello, m, options)
-            totale += fatte
-            if fatte:
-                self.stdout.write(f'  {etichetta(modello):32} {fatte}')
+        fatte = traduci_arretrati(
+            m, lingua=options['lingua'], forza=options['forza'],
+            limite=options['limite'], da_fare=da_fare, su_errore=self.dillo)
 
-        self.stdout.write(self.style.SUCCESS(f'{totale} tradotte.'))
+        for nome, quante in fatte.items():
+            self.stdout.write(f'  {nome:32} {quante}')
+        self.stdout.write(self.style.SUCCESS(f'{sum(fatte.values())} tradotte.'))
 
         from traduzione.models import Traduzione
         in_coda = Traduzione.objects.filter(needs_review=True).count()
         if in_coda:
             self.stdout.write(self.style.WARNING(
-                f'In coda di revisione: {in_coda}. Si vedono da /cms/snippets/traduzione/traduzione/.'))
+                f'In coda di revisione: {in_coda}. Si vedono da '
+                f'/cms/snippets/traduzione/traduzione/.'))
 
-    def _traduci_modello(self, modello, m, options):
-        qs = modello.objects.all().order_by('pk')
-        # Gli articoli non pubblicati non si servono a nessuno: tradurli sarebbe
-        # spesa per un testo che forse non vedra' mai la luce.
-        if hasattr(modello, 'is_published'):
-            qs = qs.filter(is_published=True)
-        qs = qs.prefetch_related('traduzioni')
-        if options['limite']:
-            qs = qs[:options['limite']]
-
-        fatte = 0
-        for oggetto in qs:
-            origine = lingua_di_stesura(oggetto)
-            bersagli = ([options['lingua']] if options['lingua']
-                        else lingue.altre_lingue(origine))
-            for lingua in bersagli:
-                if lingua == origine:
-                    continue
-                try:
-                    prima = traduzione_di(oggetto, lingua)
-                    if (prima is not None and not options['forza']
-                            and e_allineata(prima, estrai(oggetto), m)):
-                        continue
-                    if traduci(oggetto, lingua, m, forza=options['forza']):
-                        fatte += 1
-                except Exception as exc:
-                    self.stderr.write(self.style.ERROR(
-                        f'  {etichetta(modello)} #{oggetto.pk} -> {lingua}: {exc}'))
-        return fatte
-
-
-def prendi_lucchetto() -> bool:
-    """Se questo processo e' l'unico a tradurre. Lo decide il database.
-
-    Ogni traduzione si paga, e due giri paralleli pagano due volte lo stesso
-    testo: succede facilmente, perche' una sessione che cade a meta' invita a
-    rilanciare il comando mentre il primo giro e' ancora vivo. Ed era la causa
-    di migliaia di errori di chiave duplicata: due processi che scrivevano la
-    stessa riga.
-
-    Un lucchetto consultivo e non una riga di tabella, perche' si libera da
-    solo quando il processo muore — anche se muore male. Un lucchetto scritto
-    da qualche parte, dopo una sessione caduta, resterebbe appeso a bloccare
-    anche il cron, e ci vorrebbe una persona per toglierlo.
-    """
-    if connection.vendor != 'postgresql':
-        return True
-    with connection.cursor() as cursore:
-        cursore.execute('SELECT pg_try_advisory_lock(%s)', [LUCCHETTO])
-        return bool(cursore.fetchone()[0])
-
-
-def lascia_lucchetto() -> None:
-    if connection.vendor != 'postgresql':
-        return
-    with connection.cursor() as cursore:
-        cursore.execute('SELECT pg_advisory_unlock(%s)', [LUCCHETTO])
+    def dillo(self, modello, pk, lingua, errore):
+        self.stderr.write(self.style.ERROR(f'  {modello} #{pk} -> {lingua}: {errore}'))

@@ -6,5 +6,6 @@ class TraduzioneConfig(AppConfig):
     name = 'traduzione'
 
     def ready(self):
-        from traduzione import checks, lingue  # noqa: F401  registra i controlli
+        from traduzione import checks, lingue, segnali  # noqa: F401
         lingue._collega()
+        segnali.collega()

@@ -12,7 +12,6 @@ from __future__ import annotations
 import logging
 
 from django.contrib.contenttypes.models import ContentType
-from django.db import close_old_connections, transaction
 
 from traduzione import lingue
 from traduzione.models import Traduzione, impronta
@@ -162,29 +161,12 @@ def traduci_tutto(oggetto, m: MotoreTraduzione | None = None, forza: bool = Fals
 
 
 def traduci_in_sottofondo(oggetto):
-    """Traduce senza far aspettare chi ha scritto.
+    """Traduce senza far aspettare chi ha scritto: mette in coda e torna.
 
-    Un thread e non una coda di lavori, perche' nel progetto non ce n'e' una:
-    Redis c'e' ma e' il canale di Channels, senza persistenza ne' ritentativi.
-    Il thread e' quindi **best effort** — se il processo si riavvia a meta', la
-    traduzione si perde. La rete di sicurezza e' `translate_pending` su cron.
-
-    Parte al commit, non subito: il thread ha una connessione sua e non vede
-    quello che la transazione di chi ha scritto non ha ancora confermato.
+    Resta come nome perche' e' cosi' che la chiamano le viste, ma il lavoro
+    vero sta in `coda.py`. Prima apriva un thread per oggetto; adesso la coda
+    ne tiene uno solo, e chi arriva dopo aspetta il suo turno invece di
+    chiamare il modello tutti insieme.
     """
-    import threading
-
-    from django.conf import settings
-    if not getattr(settings, 'TRADUZIONE_IN_SOTTOFONDO', True):
-        return
-
-    def lavora():
-        try:
-            close_old_connections()
-            traduci_tutto(oggetto)
-        except Exception:
-            logger.exception('Traduzione in sottofondo non riuscita.')
-        finally:
-            close_old_connections()
-
-    transaction.on_commit(lambda: threading.Thread(target=lavora, daemon=True).start())
+    from traduzione import coda
+    coda.accoda(oggetto)

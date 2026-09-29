@@ -420,6 +420,12 @@ TRANSLATION_ENGINE = config('TRANSLATION_ENGINE', default='claude')
 TRANSLATION_MODEL = config('TRANSLATION_MODEL', default='claude-haiku-4-5-20251001')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 
+# Il server traduce da solo cio' che viene pubblicato, in coda, uno alla volta
+# (`traduzione/coda.py`). Spegnendolo il sito continua a funzionare: i
+# contenuti restano nella lingua in cui sono scritti e si traducono a mano con
+# `translate_pending`. E' l'interruttore per fermare la spesa di colpo.
+TRADUZIONE_IN_SOTTOFONDO = config('TRADUZIONE_IN_SOTTOFONDO', default=True, cast=bool)
+
 # Le lingue in cui si traduce sono le righe di `traduzione.Lingua`, non un
 # secondo elenco in una variabile d'ambiente: averne due significava poter
 # tradurre una chat in spagnolo mentre il sito lo spagnolo non ce l'ha.

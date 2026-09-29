@@ -6,6 +6,7 @@ dal traduttore, e devono ritrovarsi identici dall'altra parte.
 """
 
 import json
+from contextlib import contextmanager
 from io import StringIO
 from unittest.mock import patch
 
@@ -16,10 +17,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from wagtail.models import Locale, Page, Site
 
-from cms.models import ArticleType, HomePage
+from cms.models import ArticleType, HomePage, StandardPage
 from section.models import Card
 from section.schema import estrai_testi, reinserisci_testi
-from traduzione import lingue
+from traduzione import coda, lingue
 from traduzione.models import Lingua, Traduzione
 from traduzione.percorsi import applica, estrai
 from traduzione.servizio import traduci, traduci_tutto
@@ -54,6 +55,25 @@ def due_lingue():
     lingue.svuota_cache()
     Lingua.objects.create(codice='it', nome='Italiano', ordine=0)
     Lingua.objects.create(codice='en', nome='English', ordine=1)
+
+
+@contextmanager
+def coda_accesa():
+    """La coda accesa ma senza lavoratore: i compiti restano dentro, visibili.
+
+    Accendere quello vero renderebbe i test dipendenti dal momento in cui un
+    thread si sveglia, che e' il modo piu' sicuro di scrivere un test che
+    passa quattro volte su cinque.
+    """
+    coda._lavoratore = object()
+    try:
+        yield coda._coda
+    finally:
+        coda._lavoratore = None
+        with coda._guardia:
+            coda._in_attesa.clear()
+        while not coda._coda.empty():
+            coda._coda.get_nowait()
 
 
 def documento():
@@ -222,6 +242,70 @@ class TraduzioneArticoloTest(TestCase):
         # E' cosi' che il lettore sa di stare leggendo una traduzione.
         self.assertEqual(inglese['translated_from'], 'it')
 
+    def test_salvare_un_articolo_lo_mette_in_coda(self):
+        """Il buco che c'era: post e commenti si traducevano al salvataggio,
+        articoli e pagine aspettavano il comando su cron. Cioe' proprio cio'
+        che scrive l'admin restava indietro."""
+        with coda_accesa() as compiti:
+            with self.captureOnCommitCallbacks(execute=True):
+                card = self.crea()
+            self.assertEqual(compiti.get_nowait(), ('section.Card', str(card.pk)))
+
+    def test_una_pagina_si_mette_in_coda_quando_viene_pubblicata(self):
+        """Per le pagine il segnale e' la pubblicazione, non il salvataggio:
+        una pagina si salva in bozza molte volte, e una bozza non la legge
+        nessuno."""
+        pagina = StandardPage(title='Una pagina', slug='una-pagina')
+        HomePage.objects.first().add_child(instance=pagina)
+        with coda_accesa() as compiti:
+            with self.captureOnCommitCallbacks(execute=True):
+                pagina.save_revision().publish()
+            self.assertEqual(compiti.get_nowait(), ('cms.StandardPage', str(pagina.pk)))
+
+    def test_lo_stesso_articolo_non_si_accoda_due_volte(self):
+        """Salvare cinque volte mentre si aggiusta un titolo deve produrre una
+        traduzione, non cinque: al suo turno il lavoratore rilegge comunque
+        l'ultima versione."""
+        with coda_accesa() as compiti:
+            with self.captureOnCommitCallbacks(execute=True):
+                card = self.crea()
+                card.title = 'Ripensandoci'
+                card.save()
+                card.title = 'Ripensandoci ancora'
+                card.save()
+            self.assertEqual(compiti.qsize(), 1)
+
+    def test_il_lavoratore_traduce_la_versione_di_quando_ci_arriva(self):
+        """Fra l'accodamento e il turno possono passare minuti."""
+        card = self.crea()
+        Card.objects.filter(pk=card.pk).update(title='Cambiato dopo')
+        with patch('traduzione.servizio.motore', return_value=MotoreFinto()):
+            coda._traduci(('section.Card', str(card.pk)))
+        self.assertEqual(card.traduzioni.get(target_language='en').texts['title'],
+                         'CAMBIATO DOPO')
+
+    def test_con_la_coda_spenta_salvare_non_traduce(self):
+        """E' lo stato dei comandi di gestione: `build_site` e i `seed_*`
+        creano centinaia di oggetti in un colpo, e se ognuno partisse il
+        comando tradurrebbe l'intero sito per poi morire a meta'."""
+        self.assertFalse(coda.accesa())
+        with self.captureOnCommitCallbacks(execute=True):
+            card = self.crea()
+        self.assertTrue(coda._coda.empty())
+        self.assertEqual(card.traduzioni.count(), 0)
+
+    def test_aggiungere_una_lingua_chiede_il_ripasso(self):
+        """La promessa della fase e' che basti una riga dal pannello.
+
+        Aggiungere una lingua non fa salvare nessun contenuto, quindi nessun
+        salvataggio farebbe da innesco: senza questo la lingua nuova resterebbe
+        vuota fino al riavvio successivo del server.
+        """
+        with coda_accesa() as compiti:
+            with self.captureOnCommitCallbacks(execute=True):
+                Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
+            self.assertEqual(compiti.get_nowait(), coda.RECUPERO)
+
     def test_il_comando_si_rilancia_senza_restare_chiuso_fuori(self):
         """Il lucchetto va lasciato: un comando che non lo rilascia si blocca
         da solo al giro dopo, e il cron non riparte piu'."""
@@ -236,8 +320,7 @@ class TraduzioneArticoloTest(TestCase):
         primo era ancora vivo.
         """
         card = self.crea()
-        with patch('traduzione.management.commands.translate_pending'
-                   '.prendi_lucchetto', return_value=False):
+        with patch('traduzione.lucchetto.prendi', return_value=False):
             call_command('translate_pending', verbosity=0, stderr=StringIO())
         self.assertEqual(card.traduzioni.count(), 0)
 

@@ -1,4 +1,3 @@
-from traduzione.servizio import traduci_in_sottofondo
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -237,9 +236,7 @@ class MessageViewSet(SoloInScrittura, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         chat = self.get_chat()
-        messaggio = serializer.save(sender=self.request.user, chat=chat)
-        # In sottofondo: il messaggio parte subito, la traduzione arriva dopo.
-        traduci_in_sottofondo(messaggio)
+        serializer.save(sender=self.request.user, chat=chat)
 
     def list(self, request, *args, **kwargs):
         chat = self.get_chat()

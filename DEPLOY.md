@@ -244,7 +244,7 @@ il progetto — l'app la scrive lo sviluppatore, i contenuti l'admin.
 
 | | dove | quando ha effetto |
 |---|---|---|
-| **contenuti** (pagine, articoli, menu, tag) | una riga in `traduzione.Lingua` | subito, al primo giro del cron |
+| **contenuti** (pagine, articoli, menu, tag) | una riga in `traduzione.Lingua` | subito: salvarla avvia la traduzione |
 | **etichette** (bottoni, form, errori) | `intlayer.config.ts` nel frontend | al deploy successivo |
 
 ### Le sei di adesso: cosa resta da fare
@@ -299,8 +299,8 @@ Infine `git commit && git push`.
 
 ```bash
 # 1. contenuti: /cms/ -> Struttura -> Lingue -> nuova riga. Basta questo, e il
-#    cron la riempie. Il sito continua a funzionare: chi la sceglie legge i
-#    contenuti nella sua lingua e i bottoni in italiano.
+#    server comincia a riempirla. Il sito continua a funzionare: chi la
+#    sceglie legge i contenuti nella sua lingua e i bottoni in italiano.
 
 # 2. etichette, nel frontend:
 #    - aggiungi la lingua a `locales` in intlayer.config.ts
@@ -365,13 +365,34 @@ testo di partenza. Correggerne una la **blocca**, e da li' in poi la
 ritraduzione automatica la lascia stare — per frase, non per articolo, quindi
 il resto continua a rinfrescarsi.
 
-## 10. Il cron delle traduzioni
+## 10. Le traduzioni automatiche — non serve nessun cron
 
-Su Railway, **+ New → Cron Job** sullo stesso repository, comando
-`python manage.py translate_pending`, ogni 5 minuti (`*/5 * * * *`).
+Il server traduce da solo. Un articolo pubblicato, una pagina salvata dal
+pannello, un post, un commento, un messaggio: al salvataggio finiscono in coda
+e sono tradotti in pochi secondi, senza far aspettare chi ha premuto Pubblica.
 
-Senza, il sito funziona: chi scrive vede il suo testo, gli altri lo vedono
-nella lingua d'origine con la nota che lo dice.
+**Una alla volta.** La coda ha un solo lavoratore: dieci articoli pubblicati
+di fila diventano dieci traduzioni in fila, non dieci chiamate simultanee al
+modello — che si prenderebbero un 429 e terrebbero aperte dieci connessioni al
+database. Lo stesso oggetto salvato cinque volte si traduce una volta sola, e
+con l'ultima versione.
+
+**Un riavvio non perde niente.** La coda vive nella memoria del processo,
+quindi un deploy a meta' lavoro la azzera. Per questo, all'avvio, il server
+ripassa una volta tutto cio' che non ha ancora tutte le lingue e recupera
+quello che mancava. Se le istanze sono piu' d'una, il lucchetto fa in modo che
+a ripassare sia una sola.
+
+Quando non c'e' niente di nuovo il ripasso non costa niente: confronta le
+impronte dei testi e passa oltre, senza chiamare il modello.
+
+`translate_pending` resta, e serve in due casi: dopo un `build_site` o un
+`seed_*`, perche' i comandi di gestione non accendono la coda apposta (creano
+centinaia di oggetti in un colpo); e quando si vuole forzare qualcosa a mano.
+
+Per fermare la spesa di colpo: `TRADUZIONE_IN_SOTTOFONDO=false`. Il sito resta
+in piedi, i contenuti restano nella lingua in cui sono scritti, e i lettori
+vedono la nota che lo dice.
 
 ---
 

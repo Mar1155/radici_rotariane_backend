@@ -1,4 +1,3 @@
-from traduzione.servizio import traduci_in_sottofondo
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -77,9 +76,7 @@ class PostViewSet(SoloInScrittura, viewsets.ModelViewSet):
         return PostListSerializer
 
     def perform_create(self, serializer):
-        post = serializer.save(author=self.request.user)
-        # Tradotto appena pubblicato, in sottofondo: chi scrive non aspetta.
-        traduci_in_sottofondo(post)
+        serializer.save(author=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
         post = self.get_object()
@@ -140,7 +137,6 @@ class PostViewSet(SoloInScrittura, viewsets.ModelViewSet):
         serializer = CommentCreateSerializer(data=request.data, context={'request': request, 'post': post})
         if serializer.is_valid():
             comment = serializer.save(post=post, author=request.user)
-            traduci_in_sottofondo(comment)
             return Response(
                 CommentSerializer(comment, context=self.get_serializer_context()).data,
                 status=status.HTTP_201_CREATED
