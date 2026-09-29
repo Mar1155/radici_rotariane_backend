@@ -1,3 +1,5 @@
+versione 2.1
+
 # Radici Rotariane — Backend
 
 Panoramica rapida della struttura del progetto e dei suoi componenti principali.
