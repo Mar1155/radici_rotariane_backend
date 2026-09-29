@@ -55,6 +55,30 @@
   }
  },
  {
+  "id": "f7e24bdf-d352-42d2-80e8-78515de57eaf",
+  "type": "cta_banner",
+  "value": {
+   "title": "Il logo di Radici Rotariane",
+   "surface": "light",
+   "description": "Cosa significano i simboli, i colori e le radici del marchio.",
+   "primary_cta": {
+    "page": null,
+    "label": "Scarica la spiegazione del logo",
+    "route": "/spiegazione-logo.pdf",
+    "external_url": "",
+    "visibility": "always"
+   },
+   "secondary_cta": {
+    "page": null,
+    "label": "Visita il sito del Distretto 2102",
+    "route": "",
+    "external_url": "https://rotary2102.org/",
+    "visibility": "always"
+   },
+   "visibility": "always"
+  }
+ },
+ {
   "id": "c6734d5d-62e4-484e-bb3f-58f6390ca9ce",
   "type": "icon_card_grid",
   "value": {
@@ -325,27 +349,27 @@
   "id": "4022cb3c-7c33-48cb-82ab-33fa0a764ac8"
  },
  {
-  "id": "f7e24bdf-d352-42d2-80e8-78515de57eaf",
+  "id": "c1b7f0a4-6d3e-4d2a-9f5b-2e7c10d4a8f3",
   "type": "cta_banner",
   "value": {
-   "title": "Il logo di Radici Rotariane",
-   "surface": "light",
-   "description": "Cosa significano i simboli, i colori e le radici del marchio.",
+   "title": "Pronto a iniziare il tuo viaggio?",
+   "description": "Unisciti a Radici Rotariane nel Mondo e scopri una comunità di rotariani connessi e appassionati.",
+   "surface": "brand-gradient",
    "primary_cta": {
+    "label": "Registrati ora",
     "page": null,
-    "label": "Scarica la spiegazione del logo",
-    "route": "/spiegazione-logo.pdf",
+    "route": "/register",
     "external_url": "",
     "visibility": "always"
    },
    "secondary_cta": {
+    "label": "",
     "page": null,
-    "label": "Visita il sito del Distretto 2102",
     "route": "",
-    "external_url": "https://rotary2102.org/",
+    "external_url": "",
     "visibility": "always"
    },
-   "visibility": "always"
+   "visibility": "anonymous"
   }
  }
 ]

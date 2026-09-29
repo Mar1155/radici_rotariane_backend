@@ -47,6 +47,23 @@ class PagineeStaticheTest(TestCase):
         self.assertEqual(team[0].value['title'], 'Il nostro Team')
         self.assertGreaterEqual(len(team[0].value['items']), 7)
 
+    def test_progetto_offre_la_spiegazione_del_logo(self):
+        """Il pulsante che scarica il PDF c'era nella pagina scritta a mano.
+
+        Passando al CMS era finito in coda, dopo i ringraziamenti, dove nessuno
+        andava a cercarlo. Qui si controlla che ci sia **e** che stia accanto
+        alla sezione che parla della piattaforma, come prima.
+        """
+        prog = StandardPage.objects.get(slug='progetto')
+        blocchi = list(prog.body)
+        logo = [i for i, b in enumerate(blocchi)
+                if b.block_type == 'cta_banner'
+                and b.value['primary_cta']['route'] == '/spiegazione-logo.pdf']
+        self.assertEqual(len(logo), 1)
+        precedente = blocchi[logo[0] - 1]
+        self.assertTrue(precedente.value['title'].startswith("Cos'è la Piattaforma"),
+                        f'il riquadro del logo segue {precedente.value["title"]!r}')
+
     def test_le_immagini_sono_riferite_per_titolo(self):
         """Le chiavi numeriche non sopravvivono a un azzeramento; i titoli si'."""
         grezzo = json.loads((CONTENUTI / 'partner.json').read_text(encoding='utf-8'))
