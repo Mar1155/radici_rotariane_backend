@@ -3,6 +3,11 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from traduzione import lingue
+from traduzione.models import Lingua
+from traduzione.servizio import traduci
+from traduzione.tests import MotoreFinto
+
 from .models import Post, Comment
 
 
@@ -70,3 +75,57 @@ class CommentReplyAPITests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(len(response.data['comments']), 1)
 		self.assertEqual(len(response.data['comments'][0]['replies']), 1)
+
+
+class ForumInLinguaDelLettoreTests(APITestCase):
+	"""Il forum in inglese, chiesto come lo chiede il browser.
+
+	E' il sintomo che l'utente ha segnalato: "cambio lingua ma rimane in
+	italiano, e sembra anche i commenti". Le traduzioni c'erano; la lingua non
+	arrivava, perche' `forumService` non aggiungeva `?locale=` e il backend
+	leggeva solo quello.
+	"""
+
+	def setUp(self):
+		User = get_user_model()
+		Lingua.objects.all().delete()
+		lingue.svuota_cache()
+		Lingua.objects.create(codice='it', nome='Italiano', ordine=0)
+		Lingua.objects.create(codice='en', nome='English', ordine=1)
+		self.autore = User.objects.create_user(
+			username='a', email='a@prova.it', password='prova12345')
+		self.client.force_authenticate(self.autore)
+		self.post = Post.objects.create(
+			title='Il titolo', description='Il sommario',
+			content_html='<p>Il corpo</p>', author=self.autore)
+		self.commento = Comment.objects.create(
+			post=self.post, author=self.autore, text='Il commento')
+		for oggetto in (self.post, self.commento):
+			traduci(oggetto, 'en', MotoreFinto())
+
+	def inglese(self, url):
+		return self.client.get(url, HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9').json()
+
+	def test_il_post_si_legge_in_inglese(self):
+		dati = self.inglese(reverse('post-detail', args=[str(self.post.id)]))
+		self.assertEqual(dati['title'], 'IL TITOLO')
+		# Il corpo non era mai stato tradotto prima di questa fase.
+		self.assertEqual(dati['content_html'], '<p>IL CORPO</p>')
+		self.assertEqual(dati['translated_from'], 'it')
+
+	def test_anche_i_commenti(self):
+		dati = self.inglese(reverse('post-comments', args=[str(self.post.id)]))
+		voci = dati['results'] if isinstance(dati, dict) and 'results' in dati else dati
+		self.assertEqual(voci[0]['text'], 'IL COMMENTO')
+		self.assertEqual(voci[0]['translated_from'], 'it')
+
+	def test_e_la_lista_dei_post(self):
+		dati = self.inglese(reverse('post-list'))
+		voci = dati['results'] if isinstance(dati, dict) and 'results' in dati else dati
+		self.assertEqual(voci[0]['title'], 'IL TITOLO')
+
+	def test_senza_intestazione_resta_l_originale(self):
+		dati = self.client.get(reverse('post-detail', args=[str(self.post.id)])).json()
+		self.assertEqual(dati['title'], 'Il titolo')
+		self.assertIsNone(dati['translated_from'])
+

@@ -6,13 +6,16 @@ le pagine non erano piu' ricostruibili. Questi test verificano che ora lo siano.
 """
 
 import json
+import re
 
 from django.core.management import call_command
 from django.test import TestCase
 from wagtail.models import Locale, Page, Site
 
-from cms.management.commands.build_pages_statiche import CONTENUTI, PAGINE
-from cms.models import HomePage, StandardPage
+from cms.management.commands.build_pages_statiche import (CONTENUTI, PAGINE,
+                                                          risolvi_immagini, verifica)
+from cms.models import CMSImage, HomePage, StandardPage
+from traduzione.percorsi import estrai
 
 
 class PagineeStaticheTest(TestCase):
@@ -70,6 +73,43 @@ class PagineeStaticheTest(TestCase):
         testo = json.dumps(grezzo)
         self.assertNotRegex(testo, r'"logo":\s*\d+')
         self.assertIn('"logo": "@', testo)
+
+    def test_ogni_contenuto_versionato_e_accettato_dai_blocchi(self):
+        """Assegnare un corpo a uno StreamField non lo valida: il JSON entra nel
+        database qualunque cosa contenga.
+
+        E' costato tre sintomi lontani dalla causa — un'icona che sul sito non
+        compariva, una tendina vuota nel pannello, una pubblicazione rifiutata
+        per un blocco che nessuno aveva aggiunto — e nessun errore da nessuna
+        parte. Questo test e' la stessa domanda che ora fa il comando.
+        """
+        immagini = {i.title: i.pk for i in CMSImage.objects.all()}
+        for slug, _ in PAGINE:
+            corpo = json.loads((CONTENUTI / f'{slug}.json').read_text(encoding='utf-8'))
+            problemi = verifica(risolvi_immagini(corpo, immagini, set()))
+            self.assertEqual(problemi, [], f'{slug}.json: ' + '; '.join(problemi))
+
+    def test_i_contenuti_sono_scritti_in_italiano_con_gli_accenti(self):
+        """Nei commenti del codice scrivo `perche'` e `piu'` senza accento di
+        proposito. In una pagina pubblica la stessa abitudine e' un errore di
+        ortografia, ed e' arrivata in produzione: "Funzionalita del Rota-Space",
+        "Perche usare il Rota-Space".
+
+        Cosa sia prosa e cosa un identificatore lo decide `traduzione.percorsi`,
+        che lo sa gia' — un'ancora come `funzionalita` deve restare ASCII, e un
+        elenco di campi da saltare scritto qui divergerebbe dal suo.
+        """
+        atteso = re.compile(r'\b(' + '|'.join([
+            'piu', 'puo', 'perche', 'cosi', 'gia', 'pero', 'cio', 'funzionalita',
+            'attivita', 'citta', 'qualita', 'comunita', 'universita', 'identita',
+            'novita', 'societa', 'verita', 'possibilita', 'opportunita', 'realta',
+        ]) + r')\b', re.IGNORECASE)
+        for pagina in StandardPage.objects.all():
+            for percorso, testo in estrai(pagina).items():
+                trovato = atteso.search(testo)
+                self.assertIsNone(
+                    trovato, f'{pagina.slug} {percorso}: '
+                             f'"{trovato.group(0) if trovato else ""}" senza accento')
 
     def test_ricostruire_non_duplica(self):
         call_command('build_pages_statiche', verbosity=0)

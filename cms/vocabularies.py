@@ -76,6 +76,13 @@ ICON_CHOICES = [
         'Flag', 'Globe', 'Heart', 'Mail', 'MapPin', 'Phone', 'Star', 'Tag',
         'Target', 'TrendingUp', 'Users', 'Utensils', 'Camera', 'BookOpen',
         'Handshake', 'Lightbulb', 'Leaf', 'Music', 'Info', 'Code',
+        # Aggiunte perche' i contenuti versionati le usavano e qui non c'erano.
+        # Il risultato era il peggiore possibile: la pagina si costruiva, il
+        # blocco veniva salvato, sul sito l'icona non compariva, e aprendo la
+        # pagina nel pannello la tendina era vuota e la pubblicazione fallita.
+        # Adesso il controllo in `build_pages_statiche` lo impedisce, ma queste
+        # servono comunque: sono icone che una pagina di servizi vuole avere.
+        'CheckCircle', 'Lock', 'MessageCircle', 'Briefcase', 'Search',
     ]
 ]
 ICON_KEYS = [k for k, _ in ICON_CHOICES]

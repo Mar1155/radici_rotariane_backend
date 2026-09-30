@@ -59,6 +59,57 @@ def normalizza(richiesta: str | None) -> str | None:
     return codice if e_attiva(codice) else None
 
 
+def dalla_richiesta(request) -> str | None:
+    """La lingua in cui chi sta leggendo vuole il contenuto. Un posto solo.
+
+    Due modi, in ordine. Il parametro `?locale=` vince, perche' e' esplicito:
+    un collegamento condiviso porta con se' la lingua in cui e' stato letto.
+    Altrimenti l'intestazione `Accept-Language`, che il frontend mette su
+    **ogni** richiesta.
+
+    L'intestazione e' stata aggiunta dopo un guasto che vale la pena ricordare:
+    con il solo `?locale=`, ogni servizio del frontend doveva ricordarsi di
+    aggiungerlo, e due su quattro non lo facevano. Forum e chat si servivano
+    sempre in italiano — non perche' le traduzioni mancassero, ma perche'
+    nessuno le chiedeva. Una cosa che ogni chiamante deve ricordare e' una cosa
+    che qualche chiamante dimentica.
+    """
+    if request is None:
+        return None
+    esplicita = normalizza(request.GET.get('locale'))
+    if esplicita:
+        return esplicita
+    return dall_intestazione(request.META.get('HTTP_ACCEPT_LANGUAGE'))
+
+
+def dall_intestazione(valore: str | None) -> str | None:
+    """La prima lingua di `Accept-Language` che serviamo.
+
+    Formato: `en-GB,en;q=0.9,it;q=0.8`. Si guardano in ordine di preferenza e
+    si prende la prima che e' attiva, cosi' un browser che chiede una lingua
+    che non abbiamo ricade su quella dopo invece che sull'originale.
+    """
+    if not valore:
+        return None
+    pezzi = []
+    for parte in valore.split(','):
+        codice, _, resto = parte.strip().partition(';')
+        peso = 1.0
+        if resto.startswith('q='):
+            try:
+                peso = float(resto[2:])
+            except ValueError:
+                peso = 0.0
+        pezzi.append((peso, codice))
+    for _, codice in sorted(pezzi, key=lambda x: -x[0]):
+        if codice.strip() == '*':
+            continue
+        scelta = normalizza(codice)
+        if scelta:
+            return scelta
+    return None
+
+
 def svuota_cache(**kwargs):
     global _cache
     _cache = None

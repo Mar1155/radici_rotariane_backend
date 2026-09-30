@@ -4,7 +4,7 @@ from wagtail import blocks
 
 
 from cms import vocabularies as vocab
-from .common import (ACCENT_CHOICES, SURFACE_CHOICES, BloccoVisibile,
+from .common import (ACCENT_CHOICES, SURFACE_CHOICES, BloccoVisibile, Elenco,
                      IdentificatoreBlock,
                      ImmagineBlock,
                      LinkBlock, TipoArticoloBlock)
@@ -34,7 +34,7 @@ class HeroBlock(BloccoVisibile):
                   'per non mostrare la freccia.')
     # Facoltativi, aggiunti per la landing di Rota-Space: lasciati vuoti,
     # l'intestazione e' esattamente quella di prima.
-    highlights = blocks.ListBlock(
+    highlights = Elenco(
         blocks.StructBlock([
             ('icon', blocks.ChoiceBlock(choices=vocab.ICON_CHOICES, label='icona')),
             ('label', blocks.CharBlock(label='testo')),
@@ -90,7 +90,7 @@ class PartnerGridBlock(blocks.StructBlock):
     columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (2, 3, 4)],
                                  default='4', label='colonne')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
-    items = blocks.ListBlock(PartnerItemBlock(), label='partner')
+    items = Elenco(PartnerItemBlock(), label='partner')
 
     class Meta:
         icon = 'group'
@@ -118,7 +118,7 @@ class IconCardGridBlock(BloccoVisibile):
     columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3, 4)],
                                  default='3', label='colonne')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
-    items = blocks.ListBlock(IconCardBlock(), label='schede')
+    items = Elenco(IconCardBlock(), label='schede')
 
     class Meta:
         icon = 'form'
@@ -190,7 +190,7 @@ class NumberedStepsBlock(blocks.StructBlock):
     title = blocks.CharBlock(label='titolo')
     subtitle = blocks.TextBlock(required=False, label='sottotitolo')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='light', label='sfondo')
-    steps = blocks.ListBlock(NumberedStepBlock(), label='passi')
+    steps = Elenco(NumberedStepBlock(), label='passi')
     cta = LinkBlock(required=False, label='invito all azione')
 
     class Meta:
@@ -223,7 +223,7 @@ class SectionTilesBlock(blocks.StructBlock):
     columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3, 4)],
                                  default='4', label='colonne')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
-    tiles = blocks.ListBlock(SectionTileBlock(), label='riquadri')
+    tiles = Elenco(SectionTileBlock(), label='riquadri')
 
     class Meta:
         icon = 'grip'
@@ -250,7 +250,7 @@ class StatsBarBlock(blocks.StructBlock):
 
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='brand-primary',
                                  label='sfondo')
-    items = blocks.ListBlock(StatBlock(), label='numeri')
+    items = Elenco(StatBlock(), label='numeri')
 
     class Meta:
         icon = 'form'
@@ -304,7 +304,7 @@ class ExplanationStepsBlock(BloccoVisibile):
     accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
                                 label='colore')
     contact_email = blocks.EmailBlock(required=False, label='email di contatto')
-    steps = blocks.ListBlock(ExplanationStepBlock(), label='passi')
+    steps = Elenco(ExplanationStepBlock(), label='passi')
 
     class Meta:
         icon = 'list-ol'
@@ -363,7 +363,7 @@ class TabbedArticleListBlock(blocks.StructBlock):
     heading = blocks.CharBlock(required=False, label='titolo')
     accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',
                                 label='colore')
-    tabs = blocks.ListBlock(TabbedArticleListTabBlock(), label='tab')
+    tabs = Elenco(TabbedArticleListTabBlock(), label='tab')
     show_search = blocks.BooleanBlock(required=False, default=True, label='campo di ricerca')
     show_tag_filter = blocks.BooleanBlock(required=False, default=True, label='filtro per tag')
     show_geo_filter = blocks.BooleanBlock(required=False, default=True, label='filtro geografico')
@@ -399,7 +399,7 @@ class TaskListBlock(blocks.StructBlock):
 
     title = blocks.CharBlock(label='titolo')
     subtitle = blocks.TextBlock(required=False, label='sottotitolo')
-    items = blocks.ListBlock(TaskBlock(), label='voci')
+    items = Elenco(TaskBlock(), label='voci')
     note = blocks.TextBlock(required=False, label='nota finale')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
 
@@ -413,7 +413,7 @@ class PersonBlock(blocks.StructBlock):
     role = blocks.CharBlock(required=False, label='ruolo')
     email = blocks.EmailBlock(required=False, label='email')
     photo = ImmagineBlock(required=False, label='foto')
-    areas = blocks.ListBlock(blocks.CharBlock(label='area'), required=False,
+    areas = Elenco(blocks.CharBlock(label='area'), required=False,
                              label='aree di competenza',
                              help_text='Es. i paesi seguiti da un referente.')
 
@@ -435,7 +435,7 @@ class PeopleGridBlock(blocks.StructBlock):
     columns = blocks.ChoiceBlock(choices=[(str(n), str(n)) for n in (1, 2, 3)],
                                  default='2', label='colonne')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
-    items = blocks.ListBlock(PersonBlock(), label='persone')
+    items = Elenco(PersonBlock(), label='persone')
 
     class Meta:
         icon = 'group'
@@ -464,7 +464,7 @@ class TierCardsBlock(blocks.StructBlock):
     title = blocks.CharBlock(required=False, label='titolo')
     subtitle = blocks.TextBlock(required=False, label='sottotitolo')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='white', label='sfondo')
-    items = blocks.ListBlock(TierCardBlock(), label='livelli')
+    items = Elenco(TierCardBlock(), label='livelli')
 
     class Meta:
         icon = 'pick'

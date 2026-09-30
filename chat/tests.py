@@ -337,3 +337,46 @@ class MessageViewSetTest(APITestCase):
         """Test che un utente non autenticato non possa accedere ai messaggi"""
         response = self.client.get(f"/api/chats/{self.chat.id}/messages/", follow=True)
         self.assertEqual(response.status_code, 401)
+
+
+class MessaggiInLinguaDelLettoreTest(APITestCase):
+    """La chat in inglese, chiesta come la chiede il browser.
+
+    L'utente ha segnalato "la chat non e' tradotta": le traduzioni c'erano, ma
+    `chatService` non aggiungeva `?locale=` e il backend leggeva solo quello.
+    """
+
+    def setUp(self):
+        from traduzione import lingue
+        from traduzione.models import Lingua
+        from traduzione.servizio import traduci
+        from traduzione.tests import MotoreFinto
+
+        Lingua.objects.all().delete()
+        lingue.svuota_cache()
+        Lingua.objects.create(codice='it', nome='Italiano', ordine=0)
+        Lingua.objects.create(codice='en', nome='English', ordine=1)
+
+        self.client = APIClient()
+        self.user1 = crea_utente('lettore1')
+        self.user2 = crea_utente('lettore2')
+        self.chat = Chat.get_or_create_direct_chat(self.user1, self.user2)
+        self.messaggio = Message.objects.create(
+            chat=self.chat, sender=self.user2, body='Ciao come stai')
+        traduci(self.messaggio, 'en', MotoreFinto())
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token(self.user1)}')
+
+    def test_il_messaggio_si_legge_in_inglese(self):
+        risposta = self.client.get(f'/api/chats/{self.chat.id}/messages/', follow=True,
+                                   HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9')
+        voce = risposta.data[0]
+        self.assertEqual(voce['body'], 'CIAO COME STAI')
+        # Senza questo il frontend non disegna "Mostra originale", e una
+        # traduzione sbagliata diventa l'unica versione che esiste.
+        self.assertEqual(voce['translated_from'], 'it')
+
+    def test_senza_intestazione_resta_l_originale(self):
+        risposta = self.client.get(f'/api/chats/{self.chat.id}/messages/', follow=True)
+        self.assertEqual(risposta.data[0]['body'], 'Ciao come stai')
+        self.assertIsNone(risposta.data[0]['translated_from'])
+

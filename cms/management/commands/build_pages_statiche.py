@@ -13,7 +13,8 @@ Idempotente.
 import json
 from pathlib import Path
 
-from django.core.management.base import BaseCommand
+from django.core.exceptions import ValidationError
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from wagtail.models import Locale
 
@@ -44,6 +45,47 @@ def risolvi_immagini(nodo, immagini, mancanti):
     if isinstance(nodo, list):
         return [risolvi_immagini(x, immagini, mancanti) for x in nodo]
     return nodo
+
+
+def spiega(errore, dove: str = '') -> list[str]:
+    """Srotola un errore di StreamField in righe leggibili.
+
+    Wagtail annida gli errori come sono annidati i blocchi, e in cima dice solo
+    "Validation error in StreamBlock" — vero e inutile. Qui diventa
+    `[3][items][0][icon]: MessageCircle non e' tra quelle disponibili`, che dice
+    quale blocco e quale campo, ed e' l'unica forma in cui il messaggio serve a
+    qualcosa.
+    """
+    annidati = getattr(errore, 'block_errors', None)
+    if isinstance(annidati, dict):
+        return [r for k, v in annidati.items() if v is not None
+                for r in spiega(v, f'{dove}[{k}]')]
+    if isinstance(annidati, list):
+        return [r for i, v in enumerate(annidati) if v is not None
+                for r in spiega(v, f'{dove}[{i}]')]
+    if len(getattr(errore, 'error_list', [])) > 1:
+        return [r for v in errore.error_list for r in spiega(v, dove)]
+    messaggi = getattr(errore, 'messages', None) or [str(errore)]
+    return [f'{dove or "(pagina)"}: {" ".join(messaggi)}']
+
+
+def verifica(corpo, modello=None) -> list[str]:
+    """Cio' che i blocchi rifiutano di questo contenuto. Vuoto se va bene.
+
+    Serve perche' assegnare un corpo a uno StreamField **non lo valida**: il
+    JSON grezzo entra nel database qualunque cosa contenga. Un'icona che non
+    esiste nel vocabolario dava il guasto peggiore possibile — la pagina si
+    costruiva, il comando diceva "pubblicate", sul sito il blocco non si
+    vedeva, e aprendo la pagina nel pannello la tendina era vuota e la
+    pubblicazione fallita. Tre sintomi lontani dalla causa, e nessun errore.
+    """
+    from cms.models import StandardPage
+    blocco = (modello or StandardPage)._meta.get_field('body').stream_block
+    try:
+        blocco.clean(blocco.to_python(corpo))
+    except ValidationError as errore:
+        return spiega(errore)
+    return []
 
 
 PAGINE = [
@@ -80,6 +122,15 @@ class Command(BaseCommand):
                 continue
             corpo = json.loads(file.read_text(encoding='utf-8'))
             corpo = risolvi_immagini(corpo, immagini, mancanti)
+
+            problemi = verifica(corpo)
+            if problemi:
+                raise CommandError(
+                    f'{file.name} contiene valori che i blocchi non accettano. '
+                    'Non lo scrivo: finirebbe nel database senza che nessuno se '
+                    'ne accorga, e la pagina sarebbe invisibile sul sito e non '
+                    'pubblicabile dal pannello.\n  '
+                    + '\n  '.join(problemi))
 
             pagina = StandardPage.objects.filter(slug=slug, locale=locale).first()
             if pagina is None:

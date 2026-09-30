@@ -242,6 +242,73 @@ class TraduzioneArticoloTest(TestCase):
         # E' cosi' che il lettore sa di stare leggendo una traduzione.
         self.assertEqual(inglese['translated_from'], 'it')
 
+    def test_la_risposta_porta_anche_l_originale(self):
+        """Serve a "Vedi originale" senza una seconda richiesta.
+
+        Prima il frontend rileggeva l'oggetto omettendo la lingua. Da quando la
+        lingua viaggia nell'intestazione quel modo non funziona — l'intestazione
+        la dice comunque — e il pulsante avrebbe ricaricato la traduzione.
+        """
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        dati = self.client.get(f'/api/section/cards/{card.slug}',
+                               HTTP_ACCEPT_LANGUAGE='en').json()
+        self.assertEqual(dati['title'], 'IL TITOLO')
+        self.assertEqual(dati['originale']['title'], 'Il titolo')
+
+    def test_senza_traduzione_la_forma_della_risposta_non_cambia(self):
+        """Un campo che a volte c'e' e a volte no costringe ogni chiamante a
+        difendersi."""
+        card = self.crea()
+        dati = self.client.get(f'/api/section/cards/{card.slug}').json()
+        self.assertIsNone(dati['translated_from'])
+        self.assertIsNone(dati['originale'])
+
+    def test_l_intestazione_del_browser_basta_senza_parametro(self):
+        """E' il guasto vero di forum e chat.
+
+        Le traduzioni c'erano, pagate e salvate. Ma la lingua si chiedeva solo
+        con `?locale=`, che ogni servizio del frontend doveva ricordarsi di
+        aggiungere — e due su quattro non lo facevano. Adesso la lingua viaggia
+        nell'intestazione su ogni richiesta, e chi serve contenuto non deve piu'
+        ricordarsi di niente.
+        """
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+
+        risposta = self.client.get(f'/api/section/cards/{card.slug}',
+                                   HTTP_ACCEPT_LANGUAGE='en-GB,en;q=0.9,it;q=0.8')
+        self.assertEqual(risposta.json()['title'], 'IL TITOLO')
+        self.assertEqual(risposta.json()['translated_from'], 'it')
+        # E la risposta lo dichiara, altrimenti una cache condivisa servirebbe
+        # questa copia inglese al prossimo lettore italiano.
+        self.assertIn('Accept-Language', risposta.headers.get('Vary', ''))
+
+    def test_una_lingua_che_non_serviamo_non_cambia_niente(self):
+        """Un browser giapponese non deve ottenere una pagina vuota: ottiene
+        l'originale, come chiunque non chieda niente."""
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        risposta = self.client.get(f'/api/section/cards/{card.slug}',
+                                   HTTP_ACCEPT_LANGUAGE='ja,ko;q=0.9')
+        self.assertEqual(risposta.json()['title'], 'Il titolo')
+
+    def test_fra_le_lingue_del_browser_si_prende_la_prima_che_serviamo(self):
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        risposta = self.client.get(f'/api/section/cards/{card.slug}',
+                                   HTTP_ACCEPT_LANGUAGE='ja;q=1.0,en;q=0.5')
+        self.assertEqual(risposta.json()['title'], 'IL TITOLO')
+
+    def test_il_parametro_vince_sull_intestazione(self):
+        """Un collegamento condiviso porta con se' la lingua in cui e' stato
+        letto, e deve vincere sulle preferenze del browser di chi lo apre."""
+        card = self.crea()
+        traduci(card, 'en', MotoreFinto())
+        risposta = self.client.get(f'/api/section/cards/{card.slug}', {'locale': 'it'},
+                                   HTTP_ACCEPT_LANGUAGE='en')
+        self.assertEqual(risposta.json()['title'], 'Il titolo')
+
     def test_salvare_un_articolo_lo_mette_in_coda(self):
         """Il buco che c'era: post e commenti si traducevano al salvataggio,
         articoli e pagine aspettavano il comando su cron. Cioe' proprio cio'

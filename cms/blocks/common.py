@@ -65,6 +65,26 @@ class IdentificatoreBlock(blocks.CharBlock):
     """
 
 
+class Elenco(blocks.ListBlock):
+    """Una lista di blocchi che, quando e' vuota, e' vuota.
+
+    Esiste per un guasto preciso. `blocks.ListBlock` senza `default` esplicito
+    ne restituisce **una voce in bianco**, non zero: e' un comodo per chi
+    compone, ma su un campo aggiunto dopo — `highlights` della hero — significa
+    che ogni pagina che non lo aveva si ritrova una voce con i campi
+    obbligatori vuoti. Sul sito non si vede niente; nel pannello la tendina
+    dell'icona e' vuota; e alla pubblicazione la pagina viene rifiutata per un
+    blocco che nessuno ha mai aggiunto.
+
+    Correggerlo qui invece che su ogni lista: le liste sono dodici, e la
+    tredicesima la scriverebbe qualcun altro.
+    """
+
+    def __init__(self, child_block=None, **kwargs):
+        kwargs.setdefault('default', [])
+        super().__init__(child_block, **kwargs)
+
+
 class LinkBlock(blocks.StructBlock):
     """Un collegamento: a una pagina del sito, a una rotta o all'esterno.
 
@@ -80,6 +100,11 @@ class LinkBlock(blocks.StructBlock):
     route = IdentificatoreBlock(required=False, label='percorso interno',
                              help_text='Es. /rota-space')
     external_url = blocks.URLBlock(required=False, label='indirizzo esterno')
+    # Un URLBlock rifiuta `mailto:`, e un pulsante "Richiedi informazioni" che
+    # apre la posta e' una cosa che si vuole. Campo suo invece di allargare le
+    # regole di `external_url`: cosi' il pannello chiede un'email e valida
+    # un'email, invece di accettare qualunque cosa cominci con `mailto:`.
+    external_email = blocks.EmailBlock(required=False, label='email esterna')
     visibility = blocks.ChoiceBlock(choices=vocab.VISIBILITY_CHOICES, default='always',
                                     label='a chi si mostra',
                                     help_text='Un "Iscriviti" non ha senso per chi '
@@ -88,7 +113,7 @@ class LinkBlock(blocks.StructBlock):
     def clean(self, value):
         risultato = super().clean(value)
         destinazione = (risultato.get('route') or risultato.get('external_url')
-                        or risultato.get('page'))
+                        or risultato.get('external_email') or risultato.get('page'))
         if destinazione and not risultato.get('label'):
             raise blocks.StructBlockValidationError(
                 block_errors={'label': ValidationError(
@@ -101,10 +126,13 @@ class LinkBlock(blocks.StructBlock):
             return None
         # Un collegamento senza destinazione non e' un collegamento: e' un campo
         # facoltativo lasciato vuoto.
-        if not (value.get('route') or value.get('external_url') or value.get('page')):
+        email = value.get('external_email')
+        if not (value.get('route') or value.get('external_url') or email
+                or value.get('page')):
             return None
         pagina = value.get('page')
-        href = (value.get('external_url') or value.get('route')
+        href = (value.get('external_url') or (f'mailto:{email}' if email else None)
+                or value.get('route')
                 or (percorso_pagina(pagina) if pagina else None))
         return {
             'label': value.get('label'),
