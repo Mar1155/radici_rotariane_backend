@@ -47,7 +47,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--rinomina', action='store_true',
-            help='Riscrive anche il nome delle lingue che esistono gia.')
+            help='Riscrive anche il nome delle lingue che esistono già.')
 
     def handle(self, *args, **options):
         for codice, nome, ordine in LINGUE:
