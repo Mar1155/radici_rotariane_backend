@@ -57,6 +57,13 @@ TRONCAMENTI = {"po'", "mo'", "de'", "be'", "ca'", "fa'", "da'", "di'", "va'", "s
                "un'", "l'", "d'", "all'", "dell'", "nell'", "sull'", "quell'",
                "bell'", "sant'", "anch'", "dov'", "cos'", "qualcos'", "tutt'"}
 
+#: Le forme che esistono **solo** elise: senza apostrofo non sono italiano.
+#: `un` non c'e' dentro, ed e' il punto — "un agronomo" e' corretto, "un'ora" no,
+#: e la differenza e' il genere del nome, che una regola non sa.
+ELISIONE = re.compile(
+    r"\b(all|dall|nell|dell|sull|coll|quell|bell|sant|anch|dov|cos|tutt|d) "
+    r"([aeiouAEIOU][a-z\u00e0-\u00ff]{2,})")
+
 #: Una parola che finisce con una vocale e un apostrofo ASCII e' un accento
 #: scritto male: `sostenibilita'`, `perche'`, `piu'`. E' la regola generale che
 #: l'elenco di parole qui sopra non copriva — l'ha dimostrato `sostenibilita'`,
@@ -99,3 +106,22 @@ class ItalianoScrittoBeneTest(SimpleTestCase):
                                     f'{trovato.group(1)!r} in {testo[:60]!r}')
         self.assertEqual(problemi, [],
                          "Apostrofo al posto di un accento:\n" + '\n'.join(problemi))
+
+    def test_nessun_apostrofo_caduto(self):
+        """L'altra meta' dello stesso errore: non un accento scritto male, ma un
+        apostrofo semplicemente non scritto.
+
+        L'ho visto leggendo un messaggio della chat in produzione: "Lo metto all
+        ordine del giorno". Sono trentotto casi, e nessun controllo li prendeva
+        perche' guardavo solo gli accenti.
+        """
+        problemi = []
+        for percorso in sorted(RADICE.glob('*/management/commands/*.py')):
+            if percorso.name in AMMESSI:
+                continue
+            for riga, testo in stringhe(percorso):
+                for trovato in ELISIONE.finditer(testo):
+                    problemi.append(f'{percorso.relative_to(RADICE)}:{riga} '
+                                    f'{trovato.group(0)!r} in {testo[:60]!r}')
+        self.assertEqual(problemi, [],
+                         "Apostrofo caduto:\n" + '\n'.join(problemi))

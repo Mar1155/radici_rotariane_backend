@@ -668,9 +668,9 @@ class Command(BaseCommand):
             ("Incontro con i club gemellati di Baviera", "Tre giorni di visite e tavoli di lavoro congiunti", "bolzano"),
             ("Forum sui giovani e il lavoro", "Imprenditori e studenti a confronto", "firenze"),
             ("Concerto di primavera al Teatro Massimo", "Il ricavato al progetto di borse di studio", "palermo"),
-            ("Congresso distrettuale sull acqua", "Relatori da quattro paesi del Mediterraneo", "cagliari"),
+            ("Congresso distrettuale sull'acqua", "Relatori da quattro paesi del Mediterraneo", "cagliari"),
             ("Torneo di golf per la Rotary Foundation", "Diciotto buche e una cena di premiazione", "varese"),
-            ("Camminata della memoria", "Dieci chilometri fra i luoghi dell emigrazione", "campobasso"),
+            ("Camminata della memoria", "Dieci chilometri fra i luoghi dell'emigrazione", "campobasso"),
             ("Premio giovani ricercatori", "Cinque tesi di laurea premiate in Sala dei Notari", "perugia"),
             ("Mercatino di Natale rotariano", "Tre giorni di banchi in centro, ricavato ai service locali", "trento"),
         ],
@@ -683,14 +683,14 @@ class Command(BaseCommand):
             ("Le cinque terre fuori stagione", "Quattro giorni di sentieri alti, senza folla", "la-spezia"),
             ("Sulle tracce dei Longobardi", "Cividale, Brescia, Spoleto: tre siti UNESCO in una settimana", "udine"),
             ("Il Salento delle masserie", "Sei giorni fra fortificazioni rurali e frantoi ipogei", "brindisi"),
-            ("Anello dell Appennino tosco-emiliano", "Cinque giorni sul crinale, con rientro in treno", "modena"),
+            ("Anello dell'Appennino tosco-emiliano", "Cinque giorni sul crinale, con rientro in treno", "modena"),
             ("Le valli valdesi", "Tre giorni fra templi, musei e sentieri della resistenza", "torino"),
         ],
         "esperienza": [
             ("Vendemmia nelle Langhe", "Una giornata in vigna e in cantina con un produttore socio del club", "cuneo"),
             ("Laboratorio di ceramica a Grottaglie", "Mezza giornata al tornio nel quartiere delle ceramiche", "taranto"),
-            ("Pesca turismo a Cetara", "In mare all alba con i pescatori di alici", "salerno"),
-            ("Cammino notturno sull Etna", "Salita guidata fino ai crateri sommitali", "catania"),
+            ("Pesca turismo a Cetara", "In mare all'alba con i pescatori di alici", "salerno"),
+            ("Cammino notturno sull'Etna", "Salita guidata fino ai crateri sommitali", "catania"),
             ("Raccolta delle olive in Sabina", "Una giornata di raccolta e frangitura a freddo", "rieti"),
             ("Corso di cucina con le sfogline", "Tre ore di mattarello, tagliatelle e tortellini", "bologna"),
             ("Battuta di transumanza in Molise", "Due giorni lungo il tratturo con i pastori", "isernia"),
@@ -726,7 +726,7 @@ class Command(BaseCommand):
             ("La Sartiglia di Oristano", "La giostra equestre che apre il carnevale sardo", None),
             ("I Gigli di Nola", "Otto obelischi di legno portati a spalla per le vie del centro", None),
             ("La Faggiola di Bagnoli", "Il rito del tronco trascinato a valle, ogni anno da sei secoli", None),
-            ("Il Palio marinaro dell Argentario", "Quattro rioni, quattro gozzi, una regata di duemila metri", None),
+            ("Il Palio marinaro dell'Argentario", "Quattro rioni, quattro gozzi, una regata di duemila metri", None),
             ("La Fiera di Sant Orso ad Aosta", "Mille banchi di artigianato valdostano in due giorni di gennaio", None),
             ("Il Canto a tenore in Barbagia", "Quattro voci, nessuno strumento: come si impara ancora oggi", None),
         ],
@@ -736,13 +736,13 @@ class Command(BaseCommand):
             ("", "Da studente ospite a socio: vent anni dopo ospito io i ragazzi", "padova"),
             ("", "Non parlavo italiano quando sono arrivato. Il club mi ha trovato un insegnante e un lavoro", "brescia"),
             ("", "Ho conosciuto i miei cugini argentini a un congresso rotariano, per caso", "roma"),
-            ("", "Mia figlia ha fatto lo scambio in Giappone. E tornata un altra persona", "firenze"),
+            ("", "Mia figlia ha fatto lo scambio in Giappone. E tornata un'altra persona", "firenze"),
             ("", "Abbiamo adottato un progetto in Senegal e ci siamo andati tutti insieme", "verona"),
             ("", "Sono entrata nel club a trentadue anni. Pensavo di essere fuori posto, mi sbagliavo", "bari"),
         ],
         "documento-archivio": [
             ("Verbale del gemellaggio con il RC Nizza, 1987", "Il documento originale firmato dai due presidenti", None),
-            ("Fotografie del service alluvione 1994", "Quarantadue scatti dai giorni dell emergenza in Piemonte", None),
+            ("Fotografie del service alluvione 1994", "Quarantadue scatti dai giorni dell'emergenza in Piemonte", None),
             ("Registro dei soci fondatori", "Riproduzione digitale del registro del 1949", None),
             ("Corrispondenza con il Rotary International, 1952-1958", "Lettere sulla nascita del distretto", None),
             ("Album del primo scambio giovani, 1974", "Trenta fotografie e l elenco delle famiglie ospitanti", None),
@@ -763,7 +763,7 @@ class Command(BaseCommand):
             ("Studente in cerca di alloggio a Porto", "Semestre Erasmus, cerco famiglia ospitante", "bari"),
             ("Ospitalita a Buenos Aires", "Per un viaggio sulle tracce dei nonni emigrati", "roma"),
             ("Alloggio a Barcellona per un mese", "Tirocinio universitario, giugno 2026", "torino"),
-            ("Famiglia ospitante in Canada", "Nostro figlio diciassettenne, anno scolastico all estero", "padova"),
+            ("Famiglia ospitante in Canada", "Nostro figlio diciassettenne, anno scolastico all'estero", "padova"),
             ("Una settimana a Lisbona in agosto", "Coppia con due bambini piccoli", "napoli"),
             ("Cerco ospitalita a Melbourne", "Per ritrovare i parenti emigrati nel 1955", "messina"),
             ("Alloggio a Bruxelles per tre mesi", "Stage presso le istituzioni europee", "milano"),
@@ -772,7 +772,7 @@ class Command(BaseCommand):
             ("Casa Calabria International", "Il portale dei calabresi nel mondo", None),
             ("Portale del Turismo delle Radici", "Il sito del Ministero degli Esteri dedicato al turismo di ritorno", None),
             ("Antenati, il portale degli archivi", "Registri di stato civile digitalizzati, ricerca per cognome e comune", None),
-            ("Il Museo Nazionale dell Emigrazione", "A Genova, alla Commenda di Pre", None),
+            ("Il Museo Nazionale dell'Emigrazione", "A Genova, alla Commenda di Pre", None),
             ("My Rotary", "L area riservata del Rotary International, per soci e dirigenti", None),
             ("Rotary Showcase", "La vetrina internazionale dei progetti dei club", None),
         ],
@@ -934,7 +934,7 @@ class Command(BaseCommand):
                 ),
             },
             {
-                "title": "Eventi culturali per gli italiani all estero",
+                "title": "Eventi culturali per gli italiani all'estero",
                 "summary": "Connessioni tra community all'estero e club italiani.",
                 "content": (
                     "<p>Le serate di networking hanno favorito il dialogo tra professionisti residenti in Italia e all'estero.</p>"
@@ -1036,7 +1036,7 @@ class Command(BaseCommand):
                 "title": "Comunicare il Rotary senza sembrare autoreferenziali",
                 "summary": "Cosa pubblicare, cosa evitare, e chi se ne occupa nel club.",
                 "content": (
-                    "<p>La foto della consegna dell assegno non racconta niente a chi sta fuori.</p>"
+                    "<p>La foto della consegna dell'assegno non racconta niente a chi sta fuori.</p>"
                     "<p>Raccogliamo esempi di comunicazione che ha portato persone nuove.</p>"
                 ),
             },
@@ -1229,7 +1229,7 @@ class Command(BaseCommand):
             "Ottima idea. Ci vediamo domenica allora.",
         ],
         [
-            "Ho parlato con la scuola: sono interessati al progetto sull orto.",
+            "Ho parlato con la scuola: sono interessati al progetto sull'orto.",
             "Che classi coinvolgono?",
             "Tre quarte e due quinte, circa novanta bambini.",
             "Serve un agronomo per gli incontri.",
@@ -1237,7 +1237,7 @@ class Command(BaseCommand):
             "Chiediamo un preventivo per le serre?",
             "Fatto. Sono milleduecento euro, montaggio compreso.",
             "Nel budget ci stiamo. Portiamolo al direttivo.",
-            "Lo metto all ordine del giorno del prossimo consiglio.",
+            "Lo metto all'ordine del giorno del prossimo consiglio.",
         ],
     ]
 

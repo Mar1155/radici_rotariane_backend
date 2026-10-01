@@ -32,7 +32,7 @@ NOMI = {
         'Un progetto che cerca sostegno: importo, impatto e scadenza.'),
     ('storie-e-radici', 'storie'): (
         'storia', 'Storia', 'Storie',
-        'Un racconto lungo, con copertina e corpo dell articolo.'),
+        "Un racconto lungo, con copertina e corpo dell'articolo."),
     ('storie-e-radici', 'tradizioni'): (
         'tradizione', 'Tradizione', 'Tradizioni',
         'Usanze, feste, proverbi e leggende del territorio.'),
@@ -42,7 +42,7 @@ NOMI = {
     ('eccellenze-calabresi', 'main'): (
         'eccellenza', 'Eccellenza', 'Eccellenze',
         'Una realtà di eccellenza segnalata dalla redazione. '
-        'Non ha corpo dell articolo: la scheda e tutto.'),
+        "Non ha corpo dell'articolo: la scheda e tutto."),
     ('calendario-delle-radici', 'main'): (
         'evento', 'Evento', 'Eventi',
         'Un appuntamento con una data, mostrabile su calendario.'),
@@ -55,16 +55,16 @@ NOMI = {
     ('scopri-la-calabria', 'consigli'): (
         'consiglio', 'Consiglio', 'Consigli',
         'Una scheda che rimanda a un referente esterno. '
-        'Nessuno pubblica articoli di questo tipo dall app.'),
+        "Nessuno pubblica articoli di questo tipo dall'app."),
     ('scambi-e-mobilita', 'offri'): (
         'scambio-offerta', 'Offerta di scambio', 'Offerte di scambio',
         'Chi mette a disposizione posti per uno scambio.'),
     ('scambi-e-mobilita', 'cerca'): (
         'scambio-richiesta', 'Richiesta di scambio', 'Richieste di scambio',
-        'Chi cerca posti per uno scambio. Stessa struttura dell offerta, '
+        "Chi cerca posti per uno scambio. Stessa struttura dell'offerta, "
         'ma tipo distinto: e il tipo a dire in quale elenco sta un articolo.'),
     ('archivio', 'main'): (
-        'documento-archivio', 'Documento d archivio', 'Documenti d archivio',
+        'documento-archivio', "Documento d'archivio", "Documenti d'archivio",
         'Materiale storico con galleria di allegati.'),
 }
 
