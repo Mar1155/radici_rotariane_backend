@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
         riga = f'{caricate} immagini caricate'
         if presenti:
-            riga += f', {presenti} gia presenti'
+            riga += f', {presenti} già presenti'
         if mancanti:
             riga += f', {mancanti} senza file'
         self.stdout.write(self.style.SUCCESS(riga + '.'))

@@ -853,3 +853,79 @@ class SeedLingueTest(TestCase):
         call_command('seed_lingue', verbosity=0)
 
         self.assertEqual(Lingua.objects.get(codice='en').nome, 'English (UK)')
+
+
+class LinguaDiStesuraDellePagineTest(TestCase):
+    """Una pagina scritta in inglese non e' una pagina italiana.
+
+    Prima si dava per scontato l'italiano, perche' "le pagine si compongono
+    sempre nella lingua del sito". Appena il sito smette di essere di una
+    regione sola non e' piu' vero: una pagina scritta in inglese veniva mandata
+    al traduttore come italiana, e tradurla "in inglese" chiedeva al modello di
+    tradurre dall'italiano un testo che era gia' inglese.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        due_lingue()
+        locale = Locale.get_default()
+        home = HomePage(title='Casa', slug='casa', locale=locale)
+        Page.objects.get(depth=1).add_child(instance=home)
+        sito = Site.objects.get(is_default_site=True)
+        sito.root_page = home
+        sito.save()
+        cls.home = home
+
+    def pagina(self, **extra):
+        dati = dict(title='Una pagina', slug='una-pagina',
+                    body=json.dumps([{'type': 'text_band', 'id': 'b1', 'value': {
+                        'title': 'Il titolo', 'body': 'Il testo', 'surface': 'white',
+                        'visibility': 'always'}}]))
+        dati.update(extra)
+        pagina = StandardPage(**dati)
+        self.home.add_child(instance=pagina)
+        return pagina
+
+    def test_una_pagina_italiana_si_traduce_in_inglese(self):
+        pagina = self.pagina()
+        self.assertEqual([t.target_language for t in traduci_tutto(pagina, MotoreFinto())],
+                         ['en'])
+
+    def test_una_pagina_inglese_non_si_traduce_in_inglese(self):
+        """E' il caso che prima produceva una traduzione inutile e pagata."""
+        pagina = self.pagina(slug='english-page', source_locale='en')
+        self.assertEqual([t.target_language for t in traduci_tutto(pagina, MotoreFinto())],
+                         ['it'])
+
+    def test_il_campo_offre_le_lingue_registrate(self):
+        """La tendina del pannello segue le righe, non un elenco nel codice."""
+        campo = StandardPage._meta.get_field('source_locale')
+        self.assertEqual([c for c, _ in campo.get_choices(include_blank=False)],
+                         ['it', 'en'])
+
+    def test_senza_lingue_registrate_si_puo_ancora_salvare(self):
+        """`choices` decide anche cosa il database accetta: su un database
+        appena migrato non si poteva creare nessuna pagina."""
+        Lingua.objects.all().delete()
+        lingue.svuota_cache()
+        pagina = self.pagina(slug='senza-lingue')
+        pagina.full_clean()  # non deve sollevare
+
+    def test_correggere_la_lingua_di_stesura_rifa_la_traduzione(self):
+        """Senza questo, la traduzione sbagliata resterebbe per sempre: il
+        testo di partenza non e' cambiato, cambia da dove si parte."""
+        pagina = self.pagina(slug='ci-ripenso')
+        traduci(pagina, 'en', MotoreFinto())
+        riga = pagina.traduzioni.get(target_language='en')
+        self.assertEqual(riga.source_language, 'it')
+
+        # La lingua va registrata prima: `choices` decide anche cosa il
+        # database accetta, ed e' giusto cosi'.
+        Lingua.objects.create(codice='es', nome='Espanol', ordine=2)
+        lingue.svuota_cache()
+        pagina.source_locale = 'es'
+        pagina.save()
+        traduci(pagina, 'en', MotoreFinto())
+
+        riga.refresh_from_db()
+        self.assertEqual(riga.source_language, 'es')

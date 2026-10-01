@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 def lingua_di_stesura(oggetto) -> str:
     """La lingua in cui l'oggetto e' stato scritto.
 
-    Gli articoli e i messaggi la registrano; le pagine del CMS no, perche' si
-    compongono sempre nella lingua del sito. Se un giorno servisse, e' una
-    colonna in piu' su un modello, non un concetto nuovo.
+    La registrano tutti: articoli, messaggi, post e — da adesso — anche le
+    pagine del CMS, che prima si davano per italiane. Chi non ce l'ha ricade
+    sulla lingua del sito.
     """
     from django.conf import settings
     return (getattr(oggetto, 'source_locale', None)
@@ -66,7 +66,8 @@ def da_tradurre(oggetto, esistente, sorgente: dict) -> dict[str, str]:
     return {k: v for k, v in sorgente.items() if k not in bloccati}
 
 
-def e_allineata(esistente, sorgente: dict, m: MotoreTraduzione) -> bool:
+def e_allineata(esistente, sorgente: dict, m: MotoreTraduzione,
+                origine: str) -> bool:
     """Se la riga che c'e' gia' e' una traduzione vera, e di questo originale.
 
     Due condizioni, non una. L'impronta dice che l'originale non e' cambiato.
@@ -78,6 +79,12 @@ def e_allineata(esistente, sorgente: dict, m: MotoreTraduzione) -> bool:
     che nessuno sa di dover dare perche' il comando non segnala niente.
     """
     if not esistente.e_aggiornata(sorgente):
+        return False
+    # Tradotta da un'altra lingua: non vale piu'. Capita quando chi scrive
+    # corregge la lingua di stesura — una pagina composta in inglese e salvata
+    # come italiana — e senza questo controllo la traduzione sbagliata
+    # resterebbe li' per sempre, perche' il testo di partenza non e' cambiato.
+    if esistente.source_language != origine:
         return False
     return not (esistente.provider == MotoreIdentita.nome
                 and m.nome != MotoreIdentita.nome)
@@ -106,7 +113,7 @@ def traduci(oggetto, lingua: str, m: MotoreTraduzione | None = None,
     if esistente is None:
         # Una query per non pagare una traduzione che esiste gia'.
         esistente = traduzione_di(oggetto, lingua, fresca=True)
-    if esistente is not None and not forza and e_allineata(esistente, sorgente, m):
+    if esistente is not None and not forza and e_allineata(esistente, sorgente, m, origine):
         return esistente
 
     richiesti = da_tradurre(oggetto, esistente, sorgente)

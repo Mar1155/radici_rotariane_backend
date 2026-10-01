@@ -59,6 +59,35 @@ def normalizza(richiesta: str | None) -> str | None:
     return codice if e_attiva(codice) else None
 
 
+def scelte() -> list[tuple[str, str]]:
+    """Le lingue in cui si puo' dichiarare di aver scritto qualcosa.
+
+    Callable e non lista: Django 5 la rivaluta a ogni form, quindi una lingua
+    aggiunta da /cms/ compare subito nella tendina senza una migrazione. Con una
+    lista fissa, aggiungere una lingua dal pannello avrebbe lasciato fuori
+    proprio il campo che serve a dire in che lingua si sta scrivendo.
+
+    **Tutte** le registrate, anche quelle spente, e in ogni caso la lingua del
+    sito. Due ragioni, entrambe imparate rompendo qualcosa: `choices` non decide
+    solo cosa mostrare, decide anche cosa il database accetta — quindi su un
+    database appena migrato, senza righe, nemmeno l'italiano era un valore
+    valido e **non si poteva creare una pagina**. E spegnere una lingua serve a
+    toglierla dal selettore dei lettori, non a rendere impossibile salvare le
+    pagine che qualcuno aveva scritto in quella lingua.
+    """
+    from django.conf import settings
+    from traduzione.models import Lingua
+    predefinita = settings.LANGUAGE_CODE.split('-')[0]
+    try:
+        righe = [(l.codice, l.nome) for l in Lingua.objects.order_by('ordine', 'codice')]
+    except Exception:
+        # La tabella non c'e' ancora (prima migrate): non e' un errore.
+        righe = []
+    if predefinita not in {c for c, _ in righe}:
+        righe.insert(0, (predefinita, predefinita))
+    return righe
+
+
 def dalla_richiesta(request) -> str | None:
     """La lingua in cui chi sta leggendo vuole il contenuto. Un posto solo.
 

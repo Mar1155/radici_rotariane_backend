@@ -41,7 +41,7 @@ NOMI = {
         'Una voce diretta, senza titolo ne copertina: conta il testo.'),
     ('eccellenze-calabresi', 'main'): (
         'eccellenza', 'Eccellenza', 'Eccellenze',
-        'Una realta di eccellenza segnalata dalla redazione. '
+        'Una realtà di eccellenza segnalata dalla redazione. '
         'Non ha corpo dell articolo: la scheda e tutto.'),
     ('calendario-delle-radici', 'main'): (
         'evento', 'Evento', 'Eventi',
@@ -51,7 +51,7 @@ NOMI = {
         'Un percorso da fare, con la durata in giorni.'),
     ('scopri-la-calabria', 'esperienze'): (
         'esperienza', 'Esperienza', 'Esperienze',
-        'Un attivita da vivere, con il prezzo.'),
+        "Un'attività da vivere, con il prezzo."),
     ('scopri-la-calabria', 'consigli'): (
         'consiglio', 'Consiglio', 'Consigli',
         'Una scheda che rimanda a un referente esterno. '

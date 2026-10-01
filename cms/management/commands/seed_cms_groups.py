@@ -100,6 +100,6 @@ class Command(BaseCommand):
             f'{REDAZIONE}: pagine, immagini, documenti e menu | '
             f'{GESTIONE_TIPI}: {gestione.permissions.count()} permessi'))
         self.stdout.write(
-            f'{REDAZIONE} puo aggiungere, modificare e pubblicare sotto la '
+            f'{REDAZIONE} può aggiungere, modificare e pubblicare sotto la '
             f'radice del sito. Per restringerla a un ramo, si cambia da '
             f'/cms/groups/ (voce visibile solo ai superuser).')

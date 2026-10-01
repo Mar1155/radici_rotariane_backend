@@ -267,7 +267,7 @@ class Command(BaseCommand):
                 "club_district": "2071",
                 "club_latitude": 43.7228,
                 "club_longitude": 10.4017,
-                "bio": "<p>Collaborazioni con universita' e centri di ricerca.</p>",
+                "bio": "<p>Collaborazioni con università e centri di ricerca.</p>",
             },
             {
                 "club_name": "Rotary Club Perugia Etrusca",
@@ -430,7 +430,7 @@ class Command(BaseCommand):
                 "club_district": "4895",
                 "club_latitude": -34.6037,
                 "club_longitude": -58.3816,
-                "bio": "<p>La piu grande comunita italiana fuori dall Italia, dal 1949.</p>",
+                "bio": "<p>La più grande comunità italiana fuori dall'Italia, dal 1949.</p>",
             },
             {
                 "club_name": "Rotary Club Sao Paulo Italia",
@@ -470,7 +470,7 @@ class Command(BaseCommand):
                 "club_district": "2000",
                 "club_latitude": 47.3769,
                 "club_longitude": 8.5417,
-                "bio": "<p>Il ponte piu antico: italiani in Svizzera da tre generazioni.</p>",
+                "bio": "<p>Il ponte più antico: italiani in Svizzera da tre generazioni.</p>",
             },
         ]
 
@@ -589,7 +589,7 @@ class Command(BaseCommand):
             "<p>Mentore per giovani talenti, appassionato di networking e scambi culturali.</p>",
             "<p>Specializzato in strategie data-driven e sviluppo di progetti complessi.</p>",
             "<p>Credo nel valore delle relazioni e nella crescita attraverso il dialogo.</p>",
-            "<p>Coordino programmi di formazione e sviluppo di comunita' locali.</p>",
+            "<p>Coordino programmi di formazione e sviluppo di comunità locali.</p>",
             "<p>Esperienza in project finance e modelli di governance sostenibile.</p>",
             "<p>Appassionato di tecnologia civica e collaborazione pubblico-privato.</p>",
             "<p>Promotore di iniziative culturali con ricaduta sui territori.</p>",
@@ -703,7 +703,7 @@ class Command(BaseCommand):
             ("Hotel Torre del Parco", "Dimora storica del 1419 nel centro di Lecce", "lecce"),
             ("Cantine Vallebruna", "Vini biologici e visite guidate in cantina", "verona"),
             ("Sartoria Lo Verso", "Su misura e riparazioni sartoriali", "palermo"),
-            ("Liuteria Bellandi", "Violini e viole costruiti a mano nella citta di Stradivari", "cremona"),
+            ("Liuteria Bellandi", "Violini e viole costruiti a mano nella città di Stradivari", "cremona"),
             ("Caseificio Le Tre Valli", "Pecorino e ricotta di giornata, punto vendita in azienda", "grosseto"),
             ("Libreria Antiquaria Palladio", "Stampe, mappe e edizioni rare dal Cinquecento", "vicenza"),
             ("Ristorante Il Faro Vecchio", "Cucina di mare con pescato del giorno", "livorno"),
@@ -722,7 +722,7 @@ class Command(BaseCommand):
         ],
         "tradizione": [
             ("La Infiorata di Spello", "Come si preparano i tappeti di petali, quartiere per quartiere", None),
-            ("Il pane di Altamura", "Impasto, lievito madre e forno a legna: una filiera che non e cambiata", None),
+            ("Il pane di Altamura", "Impasto, lievito madre e forno a legna: una filiera che non è cambiata", None),
             ("La Sartiglia di Oristano", "La giostra equestre che apre il carnevale sardo", None),
             ("I Gigli di Nola", "Otto obelischi di legno portati a spalla per le vie del centro", None),
             ("La Faggiola di Bagnoli", "Il rito del tronco trascinato a valle, ogni anno da sei secoli", None),
@@ -789,8 +789,8 @@ class Command(BaseCommand):
             {'type': 'heading', 'attrs': {'level': 2},
              'content': [{'type': 'text', 'text': 'Di cosa si tratta'}]},
             paragrafo(
-                'Questo e un contenuto di prova, inserito per poter esplorare '
-                'la piattaforma con le pagine gia popolate: mostra come si '
+                'Questo è un contenuto di prova, inserito per poter esplorare '
+                'la piattaforma con le pagine già popolate: mostra come si '
                 'presenta un articolo completo, con la copertina, le '
                 'informazioni laterali e i tag.'),
             paragrafo(
@@ -809,7 +809,7 @@ class Command(BaseCommand):
         "sconto": ["-15%", "-20%", "-10%", "Omaggio"],
         "contattaci": ["info@esempio.it", "prenota@esempio.it", "ciao@esempio.it", "shop@esempio.it"],
         "posti_disponibili": ["4", "2", "6", "3"],
-        "periodo_anno": ["Giugno - Agosto", "Primavera", "Tutto l anno", "Settembre"],
+        "periodo_anno": ["Giugno - Agosto", "Primavera", "Tutto l'anno", "Settembre"],
     }
 
     COLORI_COPERTINA = ["#17458f", "#009739", "#00a2e0", "#00adbb", "#ff7600",
@@ -962,7 +962,7 @@ class Command(BaseCommand):
                 "summary": "Laboratori per riattivare spazi pubblici.",
                 "content": (
                     "<p>Un percorso partecipativo ha coinvolto associazioni, studenti e artigiani.</p>"
-                    "<p>Il risultato e' un calendario di eventi con sponsor locali.</p>"
+                    "<p>Il risultato è un calendario di eventi con sponsor locali.</p>"
                 ),
             },
             {
@@ -975,7 +975,7 @@ class Command(BaseCommand):
             },
             {
                 "title": "Rete di imprese sociali",
-                "summary": "Condivisione di opportunita' e competenze manageriali.",
+                "summary": "Condivisione di opportunità e competenze manageriali.",
                 "content": (
                     "<p>Le imprese coinvolte hanno definito un piano comune di formazione e procurement.</p>"
                     "<p>Prossimo passo: creare un fondo di micro-grant per progetti locali.</p>"
@@ -983,7 +983,7 @@ class Command(BaseCommand):
             },
             {
                 "title": "Turismo delle radici e accoglienza",
-                "summary": "Proposte per valorizzare le comunita' di origine.",
+                "summary": "Proposte per valorizzare le comunità di origine.",
                 "content": (
                     "<p>Stiamo mappando itinerari e servizi dedicati a chi rientra in Italia per motivi familiari.</p>"
                     "<p>Si lavora a un kit informativo multilingue per i club ospitanti.</p>"
@@ -1001,9 +1001,9 @@ class Command(BaseCommand):
                 "title": "Come si scrive una domanda alla Rotary Foundation",
                 "summary": "Errori ricorrenti e documenti da preparare prima di iniziare.",
                 "content": (
-                    "<p>La parte piu lunga non e la compilazione: e mettere d accordo i club partner "
+                    "<p>La parte più lunga non è la compilazione: è mettere d'accordo i club partner "
                     "sul budget e sul referente unico.</p>"
-                    "<p>Raccogliamo qui i modelli che hanno gia superato la revisione distrettuale.</p>"
+                    "<p>Raccogliamo qui i modelli che hanno già superato la revisione distrettuale.</p>"
                 ),
             },
             {
@@ -1041,11 +1041,11 @@ class Command(BaseCommand):
                 ),
             },
             {
-                "title": "Soci under 40: perche entrano e perche se ne vanno",
+                "title": "Soci under 40: perché entrano e perché se ne vanno",
                 "summary": "Numeri del distretto e qualche ipotesi scomoda.",
                 "content": (
-                    "<p>Il problema non e il reclutamento: nei primi due anni entriamo bene. "
-                    "Il problema e il terzo anno.</p>"
+                    "<p>Il problema non è il reclutamento: nei primi due anni entriamo bene. "
+                    "Il problema è il terzo anno.</p>"
                     "<p>Apriamo la discussione con i dati alla mano, non con le impressioni.</p>"
                 ),
             },
@@ -1075,7 +1075,7 @@ class Command(BaseCommand):
                 description=topic["summary"],
                 content_html=(
                     f"{topic['content']}"
-                    "<p>Nel prossimo incontro raccoglieremo nuove proposte e definiremo le priorita'.</p>"
+                    "<p>Nel prossimo incontro raccoglieremo nuove proposte e definiremo le priorità.</p>"
                 ),
                 author=author,
             )
@@ -1085,13 +1085,13 @@ class Command(BaseCommand):
 
     RISPOSTE = [
         "Grazie del riscontro, ci coordiniamo nel gruppo dedicato.",
-        "Ti scrivo in privato, cosi ci mettiamo d accordo sulle date.",
+        "Ti scrivo in privato, così ci mettiamo d'accordo sulle date.",
         "Ottimo, allora metto in calendario e avviso gli altri.",
         "Hai ragione, non ci avevo pensato. Correggo la proposta.",
         "Abbiamo fatto una cosa simile due anni fa, ti giro il materiale.",
-        "Se serve, il nostro club puo mettere a disposizione la sala.",
+        "Se serve, il nostro club può mettere a disposizione la sala.",
         "Segnalo al referente distrettuale e vi faccio sapere.",
-        "Confermo la disponibilita anche per l anno prossimo.",
+        "Confermo la disponibilità anche per l'anno prossimo.",
     ]
 
     def _create_forum_comments(self, posts, members):
@@ -1102,18 +1102,18 @@ class Command(BaseCommand):
             "Suggerisco di aggiungere un momento formativo per i giovani rotariani.",
             "Possiamo integrare una survey per misurare l impatto a sei mesi.",
             "Abbiamo una rete di volontari che potrebbe supportare la logistica.",
-            "Propongo di coinvolgere universita e incubatori locali.",
+            "Propongo di coinvolgere università e incubatori locali.",
             "Disponibile a condividere materiali e template per la pianificazione.",
             "Serve un coordinamento con le amministrazioni locali, posso aiutare.",
             "Molto utile, potremmo allargare il target anche alle scuole tecniche.",
             "Nel nostro distretto abbiamo provato una formula simile: funziona.",
             "Attenzione ai tempi: con le scuole bisogna muoversi entro settembre.",
             "Quanto costa in tutto? Chiedo per capire se e sostenibile da noi.",
-            "Io porterei il tema in assemblea, merita una discussione piu ampia.",
+            "Io porterei il tema in assemblea, merita una discussione più ampia.",
             "Bella idea ma servirebbe un referente fisso, altrimenti si perde.",
             "Possiamo chiedere un contributo alla Fondazione per la parte formativa.",
             "Mi offro per la parte di comunicazione, ho esperienza con i social.",
-            "Abbiamo gia i contatti con la Protezione Civile, se puo servire.",
+            "Abbiamo già i contatti con la Protezione Civile, se può servire.",
             "Domanda pratica: chi tiene i rapporti con le famiglie ospitanti?",
             "Segnalo che il bando regionale scade a fine mese, vale la pena provarci.",
         ]
@@ -1188,12 +1188,12 @@ class Command(BaseCommand):
         [
             "Ciao a tutti, facciamo il punto sul progetto?",
             "Volentieri. Le adesioni sono chiuse: siamo a diciotto famiglie.",
-            "Piu di quante ne aspettavamo. Riusciamo a ospitarli tutti?",
-            "Dodici in citta, le altre sei nei comuni vicini. Serve il pulmino.",
+            "Più di quante ne aspettavamo. Riusciamo a ospitarli tutti?",
+            "Dodici in città, le altre sei nei comuni vicini. Serve il pulmino.",
             "Me ne occupo io, ho un contatto in parrocchia.",
             "Perfetto. Fisso una riunione per giovedi sera?",
             "Per me va bene. In sede o online?",
-            "In sede, cosi vediamo anche la sala per la cena finale.",
+            "In sede, così vediamo anche la sala per la cena finale.",
             "Ci sono. Porto il preventivo del catering.",
             "Allora giovedi alle 21. Mando il promemoria domani.",
         ],
@@ -1209,8 +1209,8 @@ class Command(BaseCommand):
             "Grazie. Intanto giro il tutto al tesoriere.",
         ],
         [
-            "Qualcuno ha gia usato la piattaforma per pubblicare un itinerario?",
-            "Io ne ho messo uno la settimana scorsa, e stato piu semplice del previsto.",
+            "Qualcuno ha già usato la piattaforma per pubblicare un itinerario?",
+            "Io ne ho messo uno la settimana scorsa, e stato più semplice del previsto.",
             "Le foto le hai caricate direttamente o passate da qualcuno?",
             "Direttamente, si trascinano dentro l editor.",
             "Buono a sapersi. E le traduzioni?",
@@ -1221,11 +1221,11 @@ class Command(BaseCommand):
         [
             "Vi segnalo che domenica siamo al mercatino con il banco.",
             "A che ora si monta?",
-            "Dalle sette e mezza. Servirebbero due persone in piu.",
+            "Dalle sette e mezza. Servirebbero due persone in più.",
             "Io ci sono, arrivo per le otto.",
             "Anche io, ma solo fino a mezzogiorno.",
-            "Benissimo, cosi copriamo tutta la mattina.",
-            "Porto il gazebo, l anno scorso e piovuto.",
+            "Benissimo, così copriamo tutta la mattina.",
+            "Porto il gazebo, l'anno scorso e piovuto.",
             "Ottima idea. Ci vediamo domenica allora.",
         ],
         [

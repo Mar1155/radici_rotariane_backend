@@ -31,7 +31,7 @@ def _nome_inglese(area, nome: str):
 
 
 class Command(BaseCommand):
-    help = "Crea nazione, regioni, province e i comuni gia' in uso."
+    help = "Crea nazione, regioni, province e i comuni già in uso."
 
     @transaction.atomic
     def handle(self, *args, **options):

@@ -66,7 +66,8 @@ def _per_modello(modello, m, lingua, forza, limite, su_errore) -> int:
                 continue
             try:
                 prima = traduzione_di(oggetto, verso)
-                if prima is not None and not forza and e_allineata(prima, estrai(oggetto), m):
+                if (prima is not None and not forza
+                        and e_allineata(prima, estrai(oggetto), m, origine)):
                     continue
                 if traduci(oggetto, verso, m, forza=forza):
                     fatte += 1
