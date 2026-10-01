@@ -347,7 +347,7 @@ class Command(BaseCommand):
                 "club_district": "2110",
                 "club_latitude": 38.1157,
                 "club_longitude": 13.3615,
-                "bio": "<p>Progetti su legalita' e promozione della cultura civica.</p>",
+                "bio": "<p>Progetti su legalità e promozione della cultura civica.</p>",
             },
             {
                 "club_name": "Rotary Club Messina Peloro",
@@ -357,7 +357,7 @@ class Command(BaseCommand):
                 "club_district": "2110",
                 "club_latitude": 38.1938,
                 "club_longitude": 15.5540,
-                "bio": "<p>Attivo su mobilita' sostenibile e azioni di protezione civile.</p>",
+                "bio": "<p>Attivo su mobilità sostenibile e azioni di protezione civile.</p>",
             },
             {
                 "club_name": "Rotary Club Cosenza",
@@ -539,7 +539,7 @@ class Command(BaseCommand):
             "Consulente Finanziario",
             "Imprenditore Sociale",
             "Ricercatore Biomedico",
-            "Esperto di Sostenibilita'",
+            "Esperto di Sostenibilità",
             "Docente Universitario",
             "HR Manager",
             "Esperto di Comunicazione",
@@ -926,7 +926,7 @@ class Command(BaseCommand):
                 ),
             },
             {
-                "title": "Progetti di sostenibilita' locale",
+                "title": "Progetti di sostenibilità locale",
                 "summary": "Misurare l'impatto dei service sul territorio.",
                 "content": (
                     "<p>Abbiamo definito KPI semplici (partecipazione, formazione, partnership) per monitorare i risultati.</p>"

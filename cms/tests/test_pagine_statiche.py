@@ -145,6 +145,20 @@ class PagineeStaticheTest(TestCase):
         dopo = StandardPage.objects.get(slug='progetto').body[0].value['surface']
         self.assertEqual(prima, dopo, 'la pagina e stata scritta comunque')
 
+    def test_nessun_apostrofo_al_posto_di_un_accento(self):
+        """Un `sostenibilita'` in una pagina e' lo stesso errore di uno nei dati
+        di prova, e l'elenco di parole del test accanto non lo prendeva."""
+        troncamenti = {"po'", "un'", "l'", "d'", "all'", "dell'", "nell'",
+                       "sull'", "quell'", "bell'", "sant'", "anch'", "dov'",
+                       "cos'", "tutt'"}
+        atteso = re.compile(r"\b([A-Za-z]{2,}[aeiou]')(?=[\s,.;:!?]|$)")
+        for pagina in StandardPage.objects.all():
+            for percorso, testo in estrai(pagina).items():
+                for trovato in atteso.finditer(testo):
+                    self.assertIn(trovato.group(1).lower(), troncamenti,
+                                  f'{pagina.slug} {percorso}: {trovato.group(1)!r} '
+                                  f"e' un accento scritto con l'apostrofo")
+
     def test_ricostruire_non_duplica(self):
         call_command('build_pages_statiche', verbosity=0)
         self.assertEqual(StandardPage.objects.count(), len(PAGINE))

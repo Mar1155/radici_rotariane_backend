@@ -52,6 +52,18 @@ def stringhe(percorso: Path):
             yield nodo.lineno, nodo.value
 
 
+#: I troncamenti veri, dove l'apostrofo non sostituisce un accento.
+TRONCAMENTI = {"po'", "mo'", "de'", "be'", "ca'", "fa'", "da'", "di'", "va'", "sta'",
+               "un'", "l'", "d'", "all'", "dell'", "nell'", "sull'", "quell'",
+               "bell'", "sant'", "anch'", "dov'", "cos'", "qualcos'", "tutt'"}
+
+#: Una parola che finisce con una vocale e un apostrofo ASCII e' un accento
+#: scritto male: `sostenibilita'`, `perche'`, `piu'`. E' la regola generale che
+#: l'elenco di parole qui sopra non copriva — l'ha dimostrato `sostenibilita'`,
+#: arrivato in produzione proprio mentre correggevo gli altri.
+APOSTROFO = re.compile(r"\b([A-Za-z]{2,}[aeiou]')(?=[\s,.;:!?\"]|$)")
+
+
 class ItalianoScrittoBeneTest(SimpleTestCase):
     def test_i_comandi_che_creano_contenuto_scrivono_con_gli_accenti(self):
         problemi = []
@@ -67,3 +79,23 @@ class ItalianoScrittoBeneTest(SimpleTestCase):
                         f'{percorso.relative_to(RADICE)}:{riga} '
                         f'"{trovato.group(0)}" in {testo[:60]!r}')
         self.assertEqual(problemi, [], 'Italiano senza accenti:\n' + '\n'.join(problemi))
+
+    def test_nessun_apostrofo_al_posto_di_un_accento(self):
+        """La stessa cosa detta come regola invece che come elenco.
+
+        L'elenco di parole sopra ne lasciava fuori una per ogni parola che non
+        avevo pensato: `sostenibilita'`, `legalita'`, `mobilita'` sono arrivate
+        in produzione mentre correggevo `perche'` e `piu'`.
+        """
+        problemi = []
+        for percorso in sorted(RADICE.glob('*/management/commands/*.py')):
+            if percorso.name in AMMESSI:
+                continue
+            for riga, testo in stringhe(percorso):
+                for trovato in APOSTROFO.finditer(testo):
+                    if trovato.group(1).lower() in TRONCAMENTI:
+                        continue
+                    problemi.append(f'{percorso.relative_to(RADICE)}:{riga} '
+                                    f'{trovato.group(1)!r} in {testo[:60]!r}')
+        self.assertEqual(problemi, [],
+                         "Apostrofo al posto di un accento:\n" + '\n'.join(problemi))
