@@ -829,6 +829,38 @@ class SeedLingueTest(TestCase):
     def tearDown(self):
         lingue.svuota_cache()
 
+    def test_i_nomi_sono_scritti_nella_loro_lingua_con_gli_accenti(self):
+        """Il selettore mostrava "Espanol", "Portugues", "Francais".
+
+        E' la prima cosa che un visitatore straniero vede scritta male, e nessun
+        controllo sull'italiano poteva prenderla: sono parole di altre lingue.
+        """
+        call_command('seed_lingue', verbosity=0)
+        nomi = dict(Lingua.objects.values_list('codice', 'nome'))
+        self.assertEqual(nomi['es'], 'Español')
+        self.assertEqual(nomi['pt'], 'Português')
+        self.assertEqual(nomi['fr'], 'Français')
+
+    def test_un_nome_sbagliato_si_corregge_chiedendolo(self):
+        """Con il solo `get_or_create` un nome sbagliato era definitivo.
+
+        Le due regole sensate sono in conflitto — rispettare chi rinomina dal
+        pannello, e poter correggere un nome sbagliato spedito da noi — e il
+        conflitto si scioglie chiedendolo: `--rinomina`.
+        """
+        call_command('seed_lingue', verbosity=0)
+        riga = Lingua.objects.get(codice='es')
+        riga.nome = 'Espanol'
+        riga.attiva = False          # una scelta dell'amministratore
+        riga.save()
+
+        call_command('seed_lingue', '--rinomina', verbosity=0)
+
+        riga.refresh_from_db()
+        self.assertEqual(riga.nome, 'Español')
+        # E la sua scelta resta: il comando corregge il nome, non la decide.
+        self.assertFalse(riga.attiva)
+
     def test_crea_le_lingue_della_diaspora(self):
         call_command('seed_lingue', verbosity=0)
 
