@@ -32,9 +32,17 @@ def _codice_lingua(request) -> str:
     Le lingue attive stanno in `traduzione.Lingua`, una riga per lingua,
     aggiunta dal pannello: non serve piu' che qualcuno crei anche un Locale di
     Wagtail perche' un contenuto si veda tradotto.
+
+    Chiede a `lingue.dalla_richiesta` invece di leggere `?locale=` da se'. Aveva
+    una copia sua, e quando la lingua ha cominciato a viaggiare anche
+    nell'intestazione questi endpoint sono rimasti indietro: tipi di articolo,
+    tag e voci di menu si servivano sempre in italiano mentre articoli, post e
+    messaggi si traducevano. Tre punti che rispondono alla stessa domanda ne
+    lasciano indietro uno.
     """
-    richiesta = request.GET.get('locale') or get_language() or ''
-    return lingue.normalizza(richiesta) or settings.LANGUAGE_CODE.split('-')[0]
+    return (lingue.dalla_richiesta(request)
+            or lingue.normalizza(get_language())
+            or settings.LANGUAGE_CODE.split('-')[0])
 
 
 

@@ -9,6 +9,7 @@ import json
 import re
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from wagtail.models import Locale, Page, Site
 
@@ -110,6 +111,39 @@ class PagineeStaticheTest(TestCase):
                 self.assertIsNone(
                     trovato, f'{pagina.slug} {percorso}: '
                              f'"{trovato.group(0) if trovato else ""}" senza accento')
+
+    def test_un_contenuto_invalido_ferma_il_comando(self):
+        """Il guardiano, provato sul guasto che e' davvero accaduto.
+
+        Un'icona che non esiste nel vocabolario entrava nel database senza che
+        nessuno dicesse niente: la pagina si costruiva, il comando diceva
+        "pubblicate", e il guasto si vedeva tre posti piu' in la' — un blocco
+        invisibile sul sito e una pubblicazione rifiutata dal pannello.
+        """
+        corpo = json.loads((CONTENUTI / 'progetto.json').read_text(encoding='utf-8'))
+        corpo[1]['value']['items'][0]['value']['icon'] = 'IconaCheNonEsiste'
+        problemi = verifica(corpo)
+        self.assertTrue(problemi, 'un\'icona inventata e passata senza problemi')
+        self.assertIn('IconaCheNonEsiste', ' '.join(problemi))
+        # E dice **dove**: senza il percorso del blocco il messaggio non serve.
+        self.assertRegex(problemi[0], r'^\[\d+\]')
+
+    def test_il_comando_rifiuta_di_scrivere_un_contenuto_invalido(self):
+        """Non basta accorgersene: non deve scriverlo."""
+        file = CONTENUTI / 'progetto.json'
+        originale = file.read_text(encoding='utf-8')
+        corpo = json.loads(originale)
+        corpo[0]['value']['surface'] = 'un-colore-inventato'
+        prima = StandardPage.objects.get(slug='progetto').body[0].value['surface']
+        try:
+            file.write_text(json.dumps(corpo, indent=1, ensure_ascii=False) + '\n',
+                            encoding='utf-8')
+            with self.assertRaises(CommandError):
+                call_command('build_pages_statiche', verbosity=0)
+        finally:
+            file.write_text(originale, encoding='utf-8')
+        dopo = StandardPage.objects.get(slug='progetto').body[0].value['surface']
+        self.assertEqual(prima, dopo, 'la pagina e stata scritta comunque')
 
     def test_ricostruire_non_duplica(self):
         call_command('build_pages_statiche', verbosity=0)
