@@ -4,7 +4,8 @@ from wagtail import blocks
 
 
 from cms import vocabularies as vocab
-from .common import (ACCENT_CHOICES, SURFACE_CHOICES, BloccoVisibile, Elenco,
+from .common import (ACCENT_CHOICES, SURFACE_CHOICES, TAG_CHOICES,
+                     BloccoVisibile, Elenco,
                      IdentificatoreBlock,
                      ImmagineBlock,
                      LinkBlock, TipoArticoloBlock)
@@ -22,6 +23,11 @@ class HeroBlock(BloccoVisibile):
     description = blocks.TextBlock(label='descrizione')
     tag = blocks.CharBlock(required=False, label='etichetta',
                            help_text='La pillola sopra il titolo.')
+    tag_color = blocks.ChoiceBlock(
+        choices=TAG_CHOICES, default='brand-secondary',
+        label="colore dell'etichetta",
+        help_text='Oro sugli sfondi blu, blu sugli sfondi oro: la pillola deve '
+                  'staccare da quello che ha dietro.')
     surface = blocks.ChoiceBlock(choices=SURFACE_CHOICES, default='brand-gradient',
                                  label='sfondo')
     accent = blocks.ChoiceBlock(choices=ACCENT_CHOICES, default='brand-primary',

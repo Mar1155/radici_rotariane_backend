@@ -23,6 +23,19 @@ SURFACE_CHOICES = [
     ('section', 'Colore della sezione'),
 ]
 
+# I due colori della pillola sopra il titolo di un'intestazione.
+#
+# Due e non nove come gli accenti, e per un motivo che non e' estetico: la
+# pillola deve staccare dallo sfondo, e lo sfondo di un'intestazione e' o blu o
+# oro. La pillola oro sopra lo sfondo oro di /skills era invisibile — oro su
+# oro, con il testo bianco sopra — ed e' il guasto che ha fatto nascere questa
+# scelta. Un terzo colore non risolverebbe nessun caso, e aggiungerebbe un modo
+# in piu' di sbagliare.
+TAG_CHOICES = [
+    ('brand-secondary', 'Oro'),
+    ('brand-primary', 'Blu istituzionale'),
+]
+
 # Accenti per icone e bordi.
 ACCENT_CHOICES = [
     ('brand-primary', 'Blu istituzionale'),

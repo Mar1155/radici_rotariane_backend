@@ -4,6 +4,7 @@
   "type": "hero",
   "value": {
    "tag": "La rete",
+   "tag_color": "brand-primary",
    "title": "Rotariani nel Mondo",
    "description": "Esplora la mappa interattiva e connettiti con la rete globale di Radici Rotariane nel Mondo. Trova un club, contattalo, crea nuovi legami.",
    "surface": "brand-secondary",

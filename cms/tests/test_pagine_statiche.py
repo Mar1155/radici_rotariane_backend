@@ -68,6 +68,45 @@ class PagineeStaticheTest(TestCase):
         self.assertTrue(precedente.value['title'].startswith("Cos'è la Piattaforma"),
                         f'il riquadro del logo segue {precedente.value["title"]!r}')
 
+    def test_la_pillola_non_e_dello_stesso_colore_dello_sfondo(self):
+        """Oro su oro non si vede, e non si vedeva: la pillola di /skills e di
+        /rotariani-nel-mondo stava su un'intestazione gia' oro.
+
+        La regola e' generale perche' il guasto lo era: non "queste due pagine
+        usano il blu", ma "la pillola deve staccare da quello che ha dietro".
+        Una pagina nuova che sceglie lo sfondo oro e lascia l'etichetta oro
+        fallisce qui invece che davanti a chi la guarda.
+        """
+        # Di che colore e' cio' che sta dietro la pillola. La sfumatura parte
+        # dal blu; con lo sfondo "della sezione" il colore e' l'accento.
+        dietro = {'brand-primary': 'brand-primary',
+                  'brand-secondary': 'brand-secondary',
+                  'brand-gradient': 'brand-primary'}
+        for pagina in StandardPage.objects.all():
+            for blocco in pagina.body:
+                if blocco.block_type != 'hero' or not blocco.value['tag']:
+                    continue
+                sfondo = blocco.value['surface']
+                colore = (blocco.value['accent'] if sfondo == 'section'
+                          else dietro.get(sfondo))
+                self.assertNotEqual(
+                    blocco.value['tag_color'], colore,
+                    f"{pagina.slug}: l'etichetta {blocco.value['tag']!r} e' "
+                    f'{colore} sopra uno sfondo {colore}: non si vede')
+
+    def test_una_intestazione_senza_colore_detichetta_resta_oro(self):
+        """Il campo e' nuovo, e le pagine scritte prima non lo nominano.
+
+        Se il valore mancante non ricadesse sull'oro, le tre pagine che non
+        sono state toccate cambierebbero aspetto da sole — ed e' il genere di
+        cambiamento che nessuno collega al campo appena aggiunto.
+        """
+        grezzo = json.loads((CONTENUTI / 'progetto.json').read_text(encoding='utf-8'))
+        self.assertNotIn('tag_color', grezzo[0]['value'],
+                         'il test non prova piu' + chr(39) + ' niente: aggiorna la pagina di prova')
+        prog = StandardPage.objects.get(slug='progetto')
+        self.assertEqual(prog.body[0].value['tag_color'], 'brand-secondary')
+
     def test_le_immagini_sono_riferite_per_titolo(self):
         """Le chiavi numeriche non sopravvivono a un azzeramento; i titoli si'."""
         grezzo = json.loads((CONTENUTI / 'partner.json').read_text(encoding='utf-8'))

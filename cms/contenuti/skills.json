@@ -4,6 +4,7 @@
   "type": "hero",
   "value": {
    "tag": "SKILLS",
+   "tag_color": "brand-primary",
    "title": "Skills Network",
    "description": "Rete delle Risorse Rotariane e Distrettuali (DNR)",
    "surface": "brand-secondary",
