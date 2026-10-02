@@ -61,6 +61,15 @@ TRADUCIBILI: dict[str, dict[str, object]] = {
     'cms.Menu': {'name': TESTO},
     'cms.MenuItem': {'label': TESTO},
     'cms.GeoArea': {'name': TESTO},
+
+    # --- I cataloghi del profilo -------------------------------------------
+    # Competenze, competenze trasversali e aree d'intervento. Avevano un
+    # `translations` JSONField loro, con una lingua dentro: in spagnolo, in
+    # portoghese, in francese e in tedesco un profilo era un elenco di parole
+    # italiane in mezzo a una pagina tradotta.
+    'users.Skill': {'name': TESTO},
+    'users.SoftSkill': {'name': TESTO},
+    'users.FocusArea': {'name': TESTO},
 }
 
 

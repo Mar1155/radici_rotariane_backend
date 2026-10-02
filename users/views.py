@@ -31,32 +31,20 @@ from .serializers import (
 from .services.geocoding import GeocodingError, search_locations
 
 logger = logging.getLogger('app.custom')
-FOCUS_AREA_CODE_PATTERN = re.compile(r'^\s*([A-Z])(\d*)\b')
-
-
-def _extract_focus_area_code(name: str, translations=None):
-    if isinstance(translations, dict):
-        code = translations.get("code")
-        if isinstance(code, str) and code.strip():
-            return code.strip().upper()
-
-    match = FOCUS_AREA_CODE_PATTERN.match((name or '').strip())
-    if not match:
-        return None
-    return f"{match.group(1)}{match.group(2)}"
 
 
 def _focus_area_sort_key(item):
+    """A, A1, A2, ..., A10 — non A, A1, A10, A2.
+
+    L'ordine giusto non si ottiene ordinando le sigle come stringhe, e nemmeno
+    ordinando i nomi: i nomi ora arrivano tradotti, quindi in sei lingue
+    darebbero sei ordini diversi per le stesse voci.
+    """
     code = (item.get('code') or '').upper()
     if not code:
-        return ('Z', 9999, item.get('name') or '')
-    letter = code[0]
-    suffix = code[1:]
-    if not suffix:
-        return (letter, 0, item.get('name') or '')
-    if suffix.isdigit():
-        return (letter, int(suffix), item.get('name') or '')
-    return (letter, 9999, item.get('name') or '')
+        return ('Z', 9999)
+    suffisso = code[1:]
+    return (code[0], int(suffisso) if suffisso.isdigit() else 0 if not suffisso else 9999)
 
 
 class RegisterView(generics.CreateAPIView):
@@ -86,22 +74,38 @@ class MeView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class SkillListView(generics.ListAPIView):
-    queryset = Skill.objects.all()
+class CatalogoView(generics.ListAPIView):
+    """Un catalogo di etichette, nella lingua di chi legge.
+
+    Pubblico, e qui sta un guasto che si vedeva su /skills: i menu a tendina
+    delle macro aree erano vuoti per chi non aveva fatto accesso, perche'
+    l'elenco delle aree rispondeva 401. Non c'e' niente di personale in un
+    elenco di competenze — e' lo stesso elenco per tutti, anche per chi non c'e'
+    ancora — mentre l'elenco dei **soci** resta dietro l'accesso.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        from traduzione.lettura import con_traduzioni, lingua_di
+        # Senza, ogni voce del catalogo chiede la sua traduzione da sola: 346
+        # query per riempire una tendina.
+        return con_traduzioni(self.queryset.all(), lingua_di(self.request))
+
+
+class SkillListView(CatalogoView):
+    queryset = Skill.objects.all().order_by('name')
     serializer_class = SkillSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
-class SoftSkillListView(generics.ListAPIView):
-    queryset = SoftSkill.objects.all()
+class SoftSkillListView(CatalogoView):
+    queryset = SoftSkill.objects.all().order_by('name')
     serializer_class = SoftSkillSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
-class FocusAreaListView(generics.ListAPIView):
+class FocusAreaListView(CatalogoView):
     queryset = FocusArea.objects.all()
     serializer_class = FocusAreaSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 
 class SkillsSearchView(generics.ListAPIView):
@@ -133,9 +137,12 @@ class SkillsSearchView(generics.ListAPIView):
                 Q(profession__icontains=search) |
                 Q(bio__icontains=search) |
                 Q(skills__name__icontains=search) |
-                Q(skills__translations__icontains=search) |
+                # Cercare anche nelle traduzioni e' cio' che fa trovare
+                # "Project Management" a chi legge in inglese e scrive in
+                # inglese, quando la riga si chiama "Gestione Progetti".
+                Q(skills__traduzioni__texts__icontains=search) |
                 Q(soft_skills__name__icontains=search) |
-                Q(soft_skills__translations__icontains=search)
+                Q(soft_skills__traduzioni__texts__icontains=search)
             ).distinct()
             
         if sector:
@@ -144,18 +151,11 @@ class SkillsSearchView(generics.ListAPIView):
         if focus_area_id:
             queryset = queryset.filter(focus_areas__id=focus_area_id)
         elif macro_focus_area_id:
-            macro_obj = FocusArea.objects.filter(id=macro_focus_area_id).first()
-            if macro_obj:
-                macro_code = _extract_focus_area_code(macro_obj.name, macro_obj.translations)
-                if macro_code:
-                    valid_ids = [
-                        area.id
-                        for area in FocusArea.objects.all().only('id', 'name', 'translations')
-                        if (_extract_focus_area_code(area.name, area.translations) or '').startswith(macro_code)
-                    ]
-                    queryset = queryset.filter(focus_areas__id__in=valid_ids)
-                else:
-                    queryset = queryset.none()
+            # Una riga sola e un `startswith` con indice, invece di leggere
+            # tutta la tabella e passare ogni nome per un'espressione regolare.
+            macro = FocusArea.objects.filter(id=macro_focus_area_id).first()
+            if macro and macro.code:
+                queryset = queryset.filter(focus_areas__code__startswith=macro.code)
             else:
                 queryset = queryset.none()
         elif focus_area:
@@ -163,51 +163,60 @@ class SkillsSearchView(generics.ListAPIView):
 
         if profession:
             queryset = queryset.filter(profession__iexact=profession)
-            
+
+        # Trenta soci con tre competenze ciascuno sono novanta etichette, e
+        # senza questo ognuna chiederebbe la sua traduzione per conto proprio.
+        from traduzione.lettura import con_traduzioni, lingua_di
+        lingua = lingua_di(self.request)
+        for catalogo in ('skills', 'soft_skills', 'focus_areas'):
+            queryset = con_traduzioni(queryset, lingua, dentro=catalogo)
         return queryset
 
 
 
 class SkillsFilterOptionsView(generics.GenericAPIView):
-    """Return filter options for the skills directory."""
-    permission_classes = [permissions.IsAuthenticated]
+    """Le tendine dei filtri di /skills, nella lingua di chi legge.
+
+    Pubblica. Le macro aree erano vuote per chi non aveva fatto accesso, e la
+    causa non era nei dati: la risposta era 401 intera. Un elenco di aree
+    d'intervento e' lo stesso per tutti, e serve proprio a chi non e' ancora
+    socio per capire cosa c'e' dentro. L'elenco dei **soci** resta dietro
+    l'accesso: quello si', e' gente.
+    """
+
+    permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
-        macro_focus_area_id = self.request.query_params.get('macro_focus_area_id', None)
+        from traduzione.lettura import con_traduzioni, lingua_di
 
-        base_queryset = User.objects.exclude(id=self.request.user.id).filter(
+        macro_id = request.query_params.get('macro_focus_area_id')
+
+        iscritti = User.objects.filter(
             Q(focus_areas__isnull=False) |
             (Q(profession__isnull=False) & ~Q(profession__exact=''))
         ).distinct()
-        focus_areas_queryset = FocusArea.objects.all().order_by(Lower('name'))
-        serialized_focus_areas = FocusAreaSerializer(focus_areas_queryset, many=True).data
+        # Chi guarda non si propone da solo nei filtri — se c'e' qualcuno che
+        # guarda: da anonimo non c'e' nessuno da escludere.
+        if request.user.is_authenticated:
+            iscritti = iscritti.exclude(id=request.user.id)
 
-        macro_focus_areas = sorted(
-            [item for item in serialized_focus_areas if item.get('is_macro')],
-            key=_focus_area_sort_key
+        aree = FocusAreaSerializer(
+            con_traduzioni(FocusArea.objects.all(), lingua_di(request)),
+            many=True, context={'request': request},
+        ).data
+
+        macro_aree = sorted([a for a in aree if a['is_macro']], key=_focus_area_sort_key)
+
+        sigla = next((a['code'] for a in macro_aree
+                      if str(a['id']) == str(macro_id)), None) if macro_id else None
+        voci = sorted(
+            [a for a in aree
+             if not a['is_macro'] and sigla and (a['code'] or '').startswith(sigla)],
+            key=_focus_area_sort_key,
         )
 
-        selected_macro_code = None
-        if macro_focus_area_id:
-            selected_macro = next(
-                (item for item in macro_focus_areas if str(item.get('id')) == str(macro_focus_area_id)),
-                None
-            )
-            if selected_macro:
-                selected_macro_code = selected_macro.get('code')
-
-        detail_focus_areas = []
-        if selected_macro_code:
-            detail_focus_areas = sorted(
-                [
-                    item for item in serialized_focus_areas
-                    if not item.get('is_macro') and (item.get('code') or '').startswith(selected_macro_code)
-                ],
-                key=_focus_area_sort_key
-            )
-
-        professions = (
-            base_queryset
+        professioni = (
+            iscritti
             .exclude(profession__isnull=True)
             .exclude(profession__exact='')
             .values_list('profession', flat=True)
@@ -216,9 +225,11 @@ class SkillsFilterOptionsView(generics.GenericAPIView):
         )
 
         return Response({
-            'macro_focus_areas': macro_focus_areas,
-            'focus_areas': detail_focus_areas,
-            'professions': list(professions),
+            'macro_focus_areas': macro_aree,
+            'focus_areas': voci,
+            # Sono testo libero scritto da ogni socio nel suo profilo, non un
+            # catalogo: non c'e' una riga da tradurre, e non si traducono.
+            'professions': list(professioni),
         })
 
 

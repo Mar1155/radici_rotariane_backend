@@ -50,42 +50,62 @@ def con_traduzioni(qs, lingua: str | None, dentro: str | None = None):
         to_attr='_traduzioni_lingua'))
 
 
+def lingua_del_contesto(context) -> str | None:
+    """La lingua chiesta da chi legge, dal contesto di un serializer.
+
+    Aveva una copia dentro il mixin, che leggeva solo `?locale=` e non
+    normalizzava: due punti che rispondevano quasi alla stessa cosa, ed e' il
+    genere di "quasi" che si scopre in produzione.
+    """
+    from traduzione import lingue
+    esplicita = (context or {}).get('locale')
+    if esplicita:
+        return lingue.normalizza(esplicita)
+    return lingue.dalla_richiesta((context or {}).get('request'))
+
+
+def tradotti(oggetto, lingua: str | None, solo: set[str]) -> dict[str, object]:
+    """I campi di `oggetto` tradotti in `lingua`. Vuoto se non si traduce.
+
+    E' **la** regola, e sta qui sola perche' ha due chiamanti che non si
+    somigliano: il mixin, che traduce un contenuto intero e deve anche dire
+    cosa ha sostituito, e il campo di catalogo, che traduce una sola etichetta
+    dentro il profilo di qualcun altro. Scriverla due volte voleva dire che una
+    delle due, un giorno, avrebbe ricaduto sull'originale quando l'altra no.
+
+    `solo` non ricostruisce cio' che il chiamante non usa: in una lista di
+    articoli il corpo non si manda, e rifarlo sarebbe lavoro buttato su ogni
+    riga.
+    """
+    if not lingua or lingua == lingua_di_stesura(oggetto):
+        return {}
+    traduzione = traduzione_di(oggetto, lingua)
+    if traduzione is None:
+        return {}
+    return {campo: valore
+            for campo, valore in applica(oggetto, traduzione.texts, solo=solo).items()
+            if valore}
+
+
+def etichetta_tradotta(oggetto, lingua: str | None, campo: str = 'name') -> str:
+    """Un'etichetta nella lingua del lettore, o l'originale se non c'e'."""
+    return tradotti(oggetto, lingua, {campo}).get(campo) or getattr(oggetto, campo)
+
+
 class InLinguaDelLettore:
     """Mixin per i serializer dei contenuti tradotti."""
 
     def lingua_richiesta(self):
-        """La stessa domanda di `lingua_di`, e la stessa risposta.
-
-        Aveva una copia sua, che leggeva solo `?locale=` e non normalizzava: due
-        punti che rispondevano quasi alla stessa cosa, ed e' il genere di
-        "quasi" che si scopre in produzione.
-        """
-        from traduzione import lingue
-        esplicita = self.context.get('locale')
-        if esplicita:
-            return lingue.normalizza(esplicita)
-        return lingue.dalla_richiesta(self.context.get('request'))
+        return lingua_del_contesto(self.context)
 
     def to_representation(self, obj):
         dati = super().to_representation(obj)
-        lingua = self.lingua_richiesta()
         origine = lingua_di_stesura(obj)
 
-        if not lingua or lingua == origine:
-            return self._originale(dati)
-
-        traduzione = traduzione_di(obj, lingua)
-        if traduzione is None:
-            return self._originale(dati)
-
-        # `solo=set(dati)` non ricostruisce cio' che il serializer non emette:
-        # in una lista di articoli il corpo non si manda, e rifarlo sarebbe
-        # lavoro buttato su ogni riga.
         sostituiti = {}
-        for campo, valore in applica(obj, traduzione.texts, solo=set(dati)).items():
-            if valore:
-                sostituiti[campo] = dati[campo]
-                dati[campo] = valore
+        for campo, valore in tradotti(obj, self.lingua_richiesta(), set(dati)).items():
+            sostituiti[campo] = dati[campo]
+            dati[campo] = valore
 
         if not sostituiti:
             return self._originale(dati)

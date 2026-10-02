@@ -57,19 +57,19 @@ class SkillsSearchFiltersTests(TestCase):
         self.skill = Skill.objects.create(name='Leadership')
         self.focus_macro_a = FocusArea.objects.create(
             name='Gestione di Progetti in generale',
-            translations={'it': 'Gestione di Progetti in generale', 'code': 'A', 'macro_code': 'A', 'is_macro': True}
+            code='A'
         )
         self.focus_detail_a1 = FocusArea.objects.create(
             name='Valutazione e monitoraggio',
-            translations={'it': 'Valutazione e monitoraggio', 'code': 'A1', 'macro_code': 'A', 'is_macro': False}
+            code='A1'
         )
         self.focus_macro_b = FocusArea.objects.create(
             name='Rotary Grants',
-            translations={'it': 'Rotary Grants', 'code': 'B', 'macro_code': 'B', 'is_macro': True}
+            code='B'
         )
         self.focus_detail_b1 = FocusArea.objects.create(
             name='Processi di sviluppo di Rotary Grants e loro compilazione',
-            translations={'it': 'Processi di sviluppo di Rotary Grants e loro compilazione', 'code': 'B1', 'macro_code': 'B', 'is_macro': False}
+            code='B1'
         )
 
         self.engineer_user = User.objects.create_user(

@@ -1,30 +1,72 @@
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 
-class Skill(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    translations = models.JSONField(default=dict, blank=True)
+
+class VoceDiCatalogo(models.Model):
+    """Base delle tre tabelle che elencano gli attributi di un profilo.
+
+    Sono cataloghi, non testo libero: una competenza e' una **riga**, e il
+    nome e' solo la sua etichetta. Questa distinzione e' l'unica cosa che
+    rende possibile il multilingua qui, e per un motivo pratico: finche'
+    l'identita' di una competenza era il suo nome, mostrarne il nome tradotto
+    rompeva il salvataggio — il profilo rimandava indietro "Project
+    Management" e il server non trovava "Gestione Progetti".
+
+    Il nome si scrive in italiano, come tutto il resto del sito, e le altre
+    lingue stanno dove stanno tutte le traduzioni. Prima c'era un
+    `translations = JSONField` qui dentro che conteneva una lingua sola
+    (l'italiano, con il nome inglese nella colonna `name`): funzionava in due
+    lingue e in nessuna delle altre quattro.
+    """
+
+    # Non serve solo a leggere comodamente le traduzioni: e' cio' che le fa
+    # sparire insieme alla riga, visto che `object_id` e' testuale e il
+    # database non puo' tenere una chiave esterna vera.
+    traduzioni = GenericRelation('traduzione.Traduzione',
+                                 content_type_field='content_type',
+                                 object_id_field='object_id')
+
+    class Meta:
+        abstract = True
 
     def __str__(self):
         return self.name
 
-class SoftSkill(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    translations = models.JSONField(default=dict, blank=True)
 
-    def __str__(self):
-        return self.name
+class Skill(VoceDiCatalogo):
+    name = models.CharField(max_length=100, unique=True, verbose_name='nome')
 
 
-class FocusArea(models.Model):
-    name = models.CharField(max_length=600, unique=True)
-    translations = models.JSONField(default=dict, blank=True)
+class SoftSkill(VoceDiCatalogo):
+    name = models.CharField(max_length=100, unique=True, verbose_name='nome')
 
-    def __str__(self):
-        return self.name
+
+class FocusArea(VoceDiCatalogo):
+    name = models.CharField(max_length=600, unique=True, verbose_name='nome')
+    # La sigla ufficiale Rotary dell'area: "A" per una macro area, "A3" per una
+    # delle sue voci. Era dentro il JSON delle traduzioni, insieme a due valori
+    # che si ricavano da lei, e chi non lo sapeva la ripescava con
+    # un'espressione regolare dal nome — in due file diversi, con due
+    # risultati che potevano non coincidere.
+    code = models.CharField(max_length=8, blank=True, db_index=True,
+                            verbose_name='sigla')
+
+    class Meta:
+        ordering = ['code', 'name']
+
+    @property
+    def macro_code(self) -> str:
+        """La lettera della macro area a cui appartiene: "A3" -> "A"."""
+        return self.code[:1]
+
+    @property
+    def is_macro(self) -> bool:
+        """Una macro area e' quella la cui sigla e' la sola lettera."""
+        return len(self.code) == 1
 
 class User(AbstractUser):
     class Types(models.TextChoices):

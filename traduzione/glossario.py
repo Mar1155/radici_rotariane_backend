@@ -22,6 +22,9 @@ NOMI CHE NON SI TRADUCONO
   resta "Rotary Club di Cosenza", non diventa "Rotary Club of Cosenza".
 - I nomi propri di luogo restano in italiano: Cosenza, Lecce, Pollino.
 - "Rota-Space" e "Radici Rotariane" sono nomi propri.
+- "SKILLS" e "Skills Network" sono il nome della sezione dedicata alle
+  competenze dei soci, non la parola comune: restano invariati in ogni lingua,
+  comprese le maiuscole.
 
 NOMI UFFICIALI ROTARY
 Usa la terminologia ufficiale Rotary International della lingua di arrivo, non

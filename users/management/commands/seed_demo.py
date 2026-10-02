@@ -177,15 +177,23 @@ class Command(BaseCommand):
             ("Empathy", {"it": "Empatia"}),
         ]
 
-        for name, translations in hard_skills:
-            skill, _ = Skill.objects.get_or_create(name=name)
-            skill.translations = translations
-            skill.save()
+        # Le coppie qui sopra sono (inglese, {"it": italiano}) perche' il
+        # catalogo nasceva inglese. In tabella va il nome italiano, e
+        # l'inglese resta come traduzione bloccata: la stessa regola di
+        # `seed_skills`, che e' il comando vero.
+        from traduzione.umane import fissa
 
-        for name, translations in soft_skills:
-            skill, _ = SoftSkill.objects.get_or_create(name=name)
-            skill.translations = translations
-            skill.save()
+        for modello, voci in ((Skill, hard_skills), (SoftSkill, soft_skills)):
+            for inglese, testi in voci:
+                italiano = testi.get('it') or inglese
+                voce = (modello.objects.filter(name=italiano).first()
+                        or modello.objects.filter(name=inglese).first())
+                if voce is None:
+                    voce = modello.objects.create(name=italiano)
+                elif voce.name != italiano:
+                    voce.name = italiano
+                    voce.save(update_fields=['name'])
+                fissa(voce, 'en', {'name': inglese})
 
     def _create_clubs(self):
         clubs_data = [

@@ -13,21 +13,9 @@ from cms.models import GeoArea
 
 
 def _nome_inglese(area, nome: str):
-    """Il nome inglese di un'area, bloccato perche' e' scritto da una persona.
-
-    `locked_paths` impedisce a `translate_pending` di riscriverlo: nessuno deve
-    trovarsi "Apulia" ritradotto in "Puglia" dal modello linguistico.
-    """
-    from django.contrib.contenttypes.models import ContentType
-    from traduzione.models import Traduzione
-
-    Traduzione.objects.update_or_create(
-        content_type=ContentType.objects.get_for_model(area),
-        object_id=str(area.pk), target_language='en',
-        defaults=dict(source_language='it', texts={'name': nome},
-                      locked_paths=['name'], provider='umano',
-                      needs_review=False),
-    )
+    """Il nome inglese di un'area, bloccato perche' e' scritto da una persona."""
+    from traduzione.umane import fissa
+    fissa(area, 'en', {'name': nome})
 
 
 class Command(BaseCommand):

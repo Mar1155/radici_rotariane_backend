@@ -376,52 +376,46 @@ SOFT_SKILLS = [
 
 
 class Command(BaseCommand):
+    """Il catalogo delle competenze, in italiano e con l'inglese a lato.
+
+    Le coppie qui sopra sono scritte (inglese, italiano) perche' il catalogo
+    nasceva inglese. Il nome che va in tabella e' quello **italiano**: il sito
+    si scrive in italiano, e le altre cinque lingue stanno dove stanno tutte le
+    traduzioni. L'inglese non si butta — e' scritto da una persona, quindi
+    diventa una traduzione bloccata, e in sessantotto casi su trecentoquaranta
+    serve proprio a quello: "Six Sigma" non deve diventare "Sei Sigma" perche'
+    il modello linguistico ci ha provato.
+
+    Idempotente: si riconosce dal nome italiano, quindi rilanciarlo non
+    duplica niente.
+    """
+
     help = "Popola un catalogo esteso di Skill e SoftSkill senza duplicati."
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--overwrite-translations",
-            action="store_true",
-            help="Sovrascrive sempre la traduzione italiana esistente.",
-        )
-
     def handle(self, *args, **options):
-        overwrite = options["overwrite_translations"]
+        hard = self._upsert_items(Skill, HARD_SKILLS)
+        soft = self._upsert_items(SoftSkill, SOFT_SKILLS)
 
-        hard_created, hard_updated = self._upsert_items(
-            model=Skill,
-            items=HARD_SKILLS,
-            overwrite=overwrite,
-        )
-        soft_created, soft_updated = self._upsert_items(
-            model=SoftSkill,
-            items=SOFT_SKILLS,
-            overwrite=overwrite,
-        )
+        self.stdout.write(self.style.SUCCESS(
+            f"Seed completato: Skill create={hard[0]}, aggiornate={hard[1]}; "
+            f"SoftSkill create={soft[0]}, aggiornate={soft[1]}."
+        ))
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "Seed completato: "
-                f"Skill create={hard_created}, aggiornate={hard_updated}; "
-                f"SoftSkill create={soft_created}, aggiornate={soft_updated}."
-            )
-        )
+    def _upsert_items(self, model, items):
+        from traduzione.umane import fissa
 
-    def _upsert_items(self, model, items, overwrite=False):
-        created_count = 0
-        updated_count = 0
-
-        for name, it_translation in items:
-            obj, created = model.objects.get_or_create(name=name)
-            translations = dict(obj.translations or {})
-
-            if created:
-                created_count += 1
-            if overwrite or not translations.get("it"):
-                translations["it"] = it_translation
-                obj.translations = translations
-                obj.save(update_fields=["translations"])
-                if not created:
-                    updated_count += 1
-
-        return created_count, updated_count
+        create = aggiornate = 0
+        for inglese, italiano in items:
+            obj = (model.objects.filter(name=italiano).first()
+                   # Il nome inglese e' l'identita' di prima: un database
+                   # seminato prima di questo cambio si ritrova qui.
+                   or model.objects.filter(name=inglese).first())
+            if obj is None:
+                obj = model.objects.create(name=italiano)
+                create += 1
+            elif obj.name != italiano:
+                obj.name = italiano
+                obj.save(update_fields=["name"])
+                aggiornate += 1
+            fissa(obj, 'en', {'name': inglese})
+        return create, aggiornate

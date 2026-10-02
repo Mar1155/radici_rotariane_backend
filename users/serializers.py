@@ -1,10 +1,11 @@
 from common.richtext import sanitize_rich_text
 import json
-import re
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from traduzione.lettura import (InLinguaDelLettore, etichetta_tradotta,
+                               lingua_del_contesto)
 from .models import User, Skill, SoftSkill, FocusArea
 from .services.geocoding import GeocodingError, geocode_city
 
@@ -19,55 +20,54 @@ class JSONField(serializers.JSONField):
         return super().to_internal_value(data)
 
 
-class SkillSerializer(serializers.ModelSerializer):
+class CampoDiCatalogo(serializers.PrimaryKeyRelatedField):
+    """Una voce di catalogo dentro un profilo: si scrive per id, si legge per nome.
+
+    E' il pezzo che mancava al multilingua di questa parte dell'app. Finche'
+    l'identita' di una competenza era il suo nome, le due meta' si
+    contraddicevano: mostrare l'etichetta tradotta significava che il profilo
+    rimandava indietro "Project Management" e il server cercava una riga che si
+    chiamava "Gestione Progetti". L'id non ha questo problema in nessuna
+    lingua, e il nome torna a essere cio' che e' — un'etichetta.
+    """
+
+    def use_pk_only_optimization(self):
+        # Senza questo DRF consegna un oggetto finto con dentro solo la chiave,
+        # e il nome non si potrebbe nemmeno leggere.
+        return False
+
+    def to_representation(self, oggetto):
+        lingua = lingua_del_contesto(self.context)
+        return {'id': oggetto.pk, 'name': etichetta_tradotta(oggetto, lingua)}
+
+
+class SkillSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     class Meta:
         model = Skill
-        fields = ['id', 'name', 'translations']
+        fields = ['id', 'name']
 
 
-class SoftSkillSerializer(serializers.ModelSerializer):
+class SoftSkillSerializer(InLinguaDelLettore, serializers.ModelSerializer):
     class Meta:
         model = SoftSkill
-        fields = ['id', 'name', 'translations']
+        fields = ['id', 'name']
 
 
-class FocusAreaSerializer(serializers.ModelSerializer):
-    code = serializers.SerializerMethodField()
-    macro_code = serializers.SerializerMethodField()
-    is_macro = serializers.SerializerMethodField()
+class FocusAreaSerializer(InLinguaDelLettore, serializers.ModelSerializer):
+    """`code`, `macro_code` e `is_macro` sono tre campi veri, non tre indovinelli.
 
-    CODE_PATTERN = re.compile(r'^\s*([A-Z])(\d*)\b')
+    Stavano dentro il JSON delle traduzioni, e chi non lo sapeva ripescava la
+    sigla dal nome con un'espressione regolare — qui e in `users/views.py`, con
+    due risultati che potevano non coincidere. Ora la sigla e' una colonna e le
+    altre due si ricavano da lei nel modello.
+    """
 
-    def _extract_code(self, obj):
-        translations = obj.translations or {}
-        code = translations.get("code")
-        if isinstance(code, str) and code.strip():
-            return code.strip().upper()
-
-        source = (obj.name or '').strip()
-        match = self.CODE_PATTERN.match(source)
-        if not match:
-            return None
-        return f"{match.group(1)}{match.group(2)}"
-
-    def get_code(self, obj):
-        return self._extract_code(obj)
-
-    def get_macro_code(self, obj):
-        code = self._extract_code(obj)
-        if not code:
-            return None
-        return code[0]
-
-    def get_is_macro(self, obj):
-        code = self._extract_code(obj)
-        if not code:
-            return False
-        return len(code) == 1
+    macro_code = serializers.ReadOnlyField()
+    is_macro = serializers.ReadOnlyField()
 
     class Meta:
         model = FocusArea
-        fields = ['id', 'name', 'translations', 'code', 'macro_code', 'is_macro']
+        fields = ['id', 'name', 'code', 'macro_code', 'is_macro']
 
 
 def _enrich_club_geodata(data: dict):
@@ -252,9 +252,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 class UserSearchSerializer(serializers.ModelSerializer):
     """Serializer for user search results."""
-    skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
-    soft_skills = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
-    focus_areas = serializers.SlugRelatedField(many=True, read_only=True, slug_field='name')
+    skills = CampoDiCatalogo(many=True, read_only=True)
+    soft_skills = CampoDiCatalogo(many=True, read_only=True)
+    focus_areas = CampoDiCatalogo(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -279,9 +279,9 @@ class PublicProfileSerializer(serializers.ModelSerializer):
     si mostra a nessuno, e nemmeno se un account e' amministratore.
     """
 
-    skills = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
-    soft_skills = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
-    focus_areas = serializers.SlugRelatedField(many=True, slug_field='name', read_only=True)
+    skills = CampoDiCatalogo(many=True, read_only=True)
+    soft_skills = CampoDiCatalogo(many=True, read_only=True)
+    focus_areas = CampoDiCatalogo(many=True, read_only=True)
     email = serializers.SerializerMethodField()
     club_members_count = serializers.SerializerMethodField()
     club_sister_clubs_count = serializers.SerializerMethodField()
@@ -316,24 +316,11 @@ class PublicProfileSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile management."""
-    skills = serializers.SlugRelatedField(
-        many=True, 
-        slug_field='name', 
-        queryset=Skill.objects.all(),
-        required=False
-    )
-    soft_skills = serializers.SlugRelatedField(
-        many=True, 
-        slug_field='name', 
-        queryset=SoftSkill.objects.all(),
-        required=False
-    )
-    focus_areas = serializers.SlugRelatedField(
-        many=True,
-        slug_field='name',
-        queryset=FocusArea.objects.all(),
-        required=False
-    )
+    skills = CampoDiCatalogo(many=True, queryset=Skill.objects.all(), required=False)
+    soft_skills = CampoDiCatalogo(many=True, queryset=SoftSkill.objects.all(),
+                                  required=False)
+    focus_areas = CampoDiCatalogo(many=True, queryset=FocusArea.objects.all(),
+                                  required=False)
     club_members_count = serializers.SerializerMethodField()
     club_sister_clubs_count = serializers.SerializerMethodField()
     club_affiliation_name = serializers.SerializerMethodField()

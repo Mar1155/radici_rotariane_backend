@@ -89,59 +89,52 @@ FOCUS_AREAS = [
 
 
 class Command(BaseCommand):
+    """Le aree d'intervento DRN: sigla a parte, nome in italiano.
+
+    La sigla ("A", "A3") era dentro il JSON delle traduzioni insieme a due
+    valori che si ricavano da lei, e chi non lo sapeva la ripescava dal nome
+    con un'espressione regolare. Ora e' una colonna: una tendina ordinata A,
+    A1, A2 non dipende piu' dal nome, che arriva tradotto e in sei lingue
+    darebbe sei ordini diversi.
+
+    Qui non c'e' una traduzione inglese scritta da una persona come per le
+    competenze: questi nomi li traduce il motore, al primo ripasso.
+
+    Idempotente: si riconosce dalla sigla.
+    """
+
     help = "Popola le FocusArea DRN senza duplicati."
 
-    def add_arguments(self, parser):
-        parser.add_argument(
-            "--overwrite-translations",
-            action="store_true",
-            help="Sovrascrive la traduzione italiana esistente.",
-        )
-
     def handle(self, *args, **options):
-        overwrite = options["overwrite_translations"]
-        created_count = 0
-        updated_count = 0
-        renamed_count = 0
+        create = rinominate = 0
 
-        for code, title in FOCUS_AREAS:
-            full_label = f"{code} {title}".strip()
-            canonical_name = title
+        for sigla, titolo in FOCUS_AREAS:
+            obj = (FocusArea.objects.filter(code=sigla).first()
+                   or FocusArea.objects.filter(name=titolo).first()
+                   # Le forme che il nome ha avuto prima che la sigla fosse
+                   # una colonna: un database seminato allora si ritrova qui.
+                   or FocusArea.objects.filter(name=f'{sigla} {titolo}').first()
+                   or FocusArea.objects.filter(name=sigla).first())
 
-            obj = (
-                FocusArea.objects.filter(translations__code=code).order_by("id").first()
-                or FocusArea.objects.filter(name=canonical_name).order_by("id").first()
-                or FocusArea.objects.filter(name=full_label).order_by("id").first()
-                or FocusArea.objects.filter(name=code).order_by("id").first()
-            )
-            created = False
+            if obj is None:
+                FocusArea.objects.create(name=titolo, code=sigla)
+                create += 1
+                continue
 
-            if not obj:
-                obj = FocusArea.objects.create(name=canonical_name)
-                created = True
-            elif obj.name != canonical_name and not FocusArea.objects.filter(name=canonical_name).exclude(pk=obj.pk).exists():
-                obj.name = canonical_name
-                obj.save(update_fields=["name"])
-                renamed_count += 1
+            da_salvare = []
+            if obj.code != sigla:
+                obj.code = sigla
+                da_salvare.append('code')
+            if obj.name != titolo and not (FocusArea.objects
+                                           .filter(name=titolo)
+                                           .exclude(pk=obj.pk).exists()):
+                obj.name = titolo
+                da_salvare.append('name')
+                rinominate += 1
+            if da_salvare:
+                obj.save(update_fields=da_salvare)
 
-            translations = dict(obj.translations or {})
-            if overwrite or not translations.get("it") or not translations.get("code"):
-                translations["it"] = title
-                translations["code"] = code
-                translations["macro_code"] = code[0]
-                translations["is_macro"] = len(code) == 1
-                obj.translations = translations
-                obj.save(update_fields=["translations"])
-                if not created:
-                    updated_count += 1
-
-            if created:
-                created_count += 1
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                "Seed rotarian skills completato: "
-                f"create={created_count}, rinominate={renamed_count}, "
-                f"aggiornate={updated_count}, totale={len(FOCUS_AREAS)}."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(
+            f"Seed rotarian skills completato: create={create}, "
+            f"rinominate={rinominate}, totale={len(FOCUS_AREAS)}."
+        ))
