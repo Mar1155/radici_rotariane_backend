@@ -25,6 +25,10 @@ NOMI CHE NON SI TRADUCONO
 - "SKILLS" e "Skills Network" sono il nome della sezione dedicata alle
   competenze dei soci, non la parola comune: restano invariati in ogni lingua,
   comprese le maiuscole.
+- I nomi dei programmi Rotary restano invariati: "Rotary Grants", "Vocational
+  Training Team", "WASH". Non sono "borse", "sovvenzioni" ne' "Stipendien".
+  Vale anche quando il nome sta da solo, senza una frase intorno: e' il caso in
+  cui sembra una parola comune ed e' quello in cui si sbaglia.
 
 NOMI UFFICIALI ROTARY
 Usa la terminologia ufficiale Rotary International della lingua di arrivo, non

@@ -217,11 +217,13 @@ class GlossarioTest(TestCase):
         solo guardando il sito.
 
         Ma la regola nel glossario e' l'unica cosa che glielo dice, e sparisce
-        con una riscrittura distratta. "SKILLS" era il nome della sezione, ed
-        era arrivato tradotto come se fosse la parola comune.
+        con una riscrittura distratta. "SKILLS" era il nome della sezione e "Rotary
+        Grants" quello del programma: entrambi erano arrivati tradotti come se
+        fossero parole comuni.
         """
         from traduzione.glossario import REGOLE
-        for nome in ('SKILLS', 'Rota-Space', 'Radici Rotariane'):
+        for nome in ('SKILLS', 'Rota-Space', 'Radici Rotariane',
+                     'Rotary Grants'):
             self.assertIn(nome, REGOLE, f'{nome} non e piu nel glossario')
 
 
